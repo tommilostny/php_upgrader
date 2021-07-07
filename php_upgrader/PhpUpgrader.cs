@@ -28,7 +28,7 @@ namespace php_upgrader
         /// <param name="replaceWith">Čím to nahradit.</param>
         /// <param name="baseFolder">Absolutní cesta základní složky (př. default C:\McRAI\), kde jsou složky 'weby' a 'important'.</param>
         /// <param name="webName">Název webu ve složce 'weby'.</param>
-        /// <param name="adminFolders">Složky obsahující administraci RS Mona (default: 1 složka admin)</param>
+        /// <param name="adminFolders">Složky obsahující administraci RS Mona (default null => 1 složka admin)</param>
         public PhpUpgrader(string[] findWhat, string[] replaceWith, string baseFolder, string webName, string[]? adminFolders)
         {
             _findWhat = findWhat;
@@ -98,7 +98,7 @@ namespace php_upgrader
 
                 while (!sr.EndOfStream)
                 {
-                    string line = sr.ReadLine() ?? string.Empty;
+                    string line = sr.ReadLine();
 
                     if (line.Contains("/*")) inComment = true;
                     if (line.Contains("*/")) inComment = false;
