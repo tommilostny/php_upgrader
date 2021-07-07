@@ -1,16 +1,19 @@
 ﻿using System;
 using System.IO;
 
+var baseFolder = @"C:\McRAI\";
+
 if (args.Length > 0)
 {
     var webName = args[0];
-    var dir = PhpUpgrader.BaseFolder + "weby\\" + webName;
+    var dir = baseFolder + "weby\\" + webName;
+ 
     if (Directory.Exists(dir))
     {
-        var findWhat = File.ReadAllLines(PhpUpgrader.BaseFolder + @"\important\find_what.txt");
-        var replaceWith = File.ReadAllLines(PhpUpgrader.BaseFolder + @"\important\replace_with.txt");
+        var findWhat = File.ReadAllLines(baseFolder + @"\important\find_what.txt");
+        var replaceWith = File.ReadAllLines(baseFolder + @"\important\replace_with.txt");
 
-        var upgrader = new PhpUpgrader(findWhat, replaceWith, webName);
+        var upgrader = new PhpUpgrader(findWhat, replaceWith, baseFolder, webName);
         
         Console.WriteLine("\nProcessed files:\n");
         upgrader.UpgradeFilesInFolders(dir);
@@ -26,4 +29,4 @@ if (args.Length > 0)
         Console.WriteLine($"Folder {dir} does not exist.");
 }
 else
-    Console.WriteLine($"php_upgrader [WEB_FOLDER_NAME]\n\nweb folder name from {PhpUpgrader.BaseFolder}weby\\.");
+    Console.WriteLine($"php_upgrader [WEB_FOLDER_NAME]\n\nweb folder name from {baseFolder}weby\\.");

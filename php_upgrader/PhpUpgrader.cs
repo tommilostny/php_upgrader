@@ -5,18 +5,18 @@ using System.Text.RegularExpressions;
 
 public class PhpUpgrader
 {
-    public const string BaseFolder = @"C:\McRAI\";
-
     public List<string> FilesContainingMysql { get; } = new();
 
     private readonly string[] _findWhat;
     private readonly string[] _replaceWith;
+    private readonly string _baseFolder;
     private readonly string _webName;
 
-    public PhpUpgrader(string[] findWhat, string[] replaceWith, string webName)
+    public PhpUpgrader(string[] findWhat, string[] replaceWith, string baseFolder, string webName)
     {
         _findWhat = findWhat;
         _replaceWith = replaceWith;
+        _baseFolder = baseFolder;
         _webName = webName;
     }
 
@@ -27,11 +27,10 @@ public class PhpUpgrader
             Console.WriteLine(fileName);
             string fileContent = File.ReadAllText(fileName);
 
-            UpgradeConnect(fileName, ref fileContent);
-
             if (UpgradeTinyAjaxBehavior(fileName))
                 continue;
 
+            UpgradeConnect(fileName, ref fileContent);
             UpgradeMysqlResult(ref fileContent);
             UpgradeClanekVypis(ref fileContent);
             UpgradeFindReplace(ref fileContent);
@@ -63,7 +62,7 @@ public class PhpUpgrader
     }
 
     //predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona
-    private static void UpgradeConnect(string fileName, ref string fileContent)
+    private void UpgradeConnect(string fileName, ref string fileContent)
     {
         if (fileName.Contains(@"\connect\connection.php"))
         {
@@ -81,16 +80,16 @@ public class PhpUpgrader
                 if (line.Contains("$password_beta") && !inComment && !line.Contains("//$password_beta"))
                     break;
             }
-            fileContent = connectHead + File.ReadAllText(BaseFolder + "important\\connection.txt");
+            fileContent = connectHead + File.ReadAllText(_baseFolder + "important\\connection.txt");
         }
     }
 
     //predelat soubor (TinyAjaxBehavior.php) v adresari admin/include >>> prekopirovat soubor ze vzoru rs mona
-    private static bool UpgradeTinyAjaxBehavior(string fileName)
+    private bool UpgradeTinyAjaxBehavior(string fileName)
     {
         if (fileName.Contains(@"\admin\include\TinyAjaxBehavior.php"))
         {
-            File.Copy(BaseFolder + "important\\TinyAjaxBehavior.txt", fileName, true);
+            File.Copy(_baseFolder + "important\\TinyAjaxBehavior.txt", fileName, true);
             return true;
         }
         return false;
