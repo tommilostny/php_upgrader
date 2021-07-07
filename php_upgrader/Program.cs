@@ -6,11 +6,12 @@ namespace php_upgrader
     class Program
     {
         /// <summary>
-        /// McRAI PHP upgrader to version 7 by Tomáš Milostný
+        /// McRAI RS Mona PHP upgrader z verze 5 na verzi 7
+        /// autor: Tomáš Milostný
         /// </summary>
-        /// <param name="webName">Required web folder name in 'baseFolder/weby/'.</param>
-        /// <param name="adminFolders">Folders containing Mona administration (default empty -> 'admin/').</param>
-        /// <param name="baseFolder">Absolute path to 'weby' and 'important' directories.</param>
+        /// <param name="webName">Název webu ve složce 'weby' (nesmí chybět).</param>
+        /// <param name="adminFolders">Složky obsahující administraci RS Mona (default prázdné: 1 složka admin)</param>
+        /// <param name="baseFolder">Absolutní cesta základní složky, kde jsou složky 'weby' a 'important'.</param>
         static void Main(string webName, string[]? adminFolders = null, string baseFolder = @"C:\McRAI\")
         {
             var dir = baseFolder + "weby\\" + webName;

@@ -6,12 +6,12 @@ using System.Text.RegularExpressions;
 namespace php_upgrader
 {
     /// <summary>
-    /// 
+    /// PHP upgrader pro RS Mona z verze 5 na verzi 7.
     /// </summary>
     public class PhpUpgrader
     {
         /// <summary>
-        /// 
+        /// Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce.
         /// </summary>
         public List<string> FilesContainingMysql { get; } = new();
 
@@ -22,13 +22,13 @@ namespace php_upgrader
         private readonly string _webName;
 
         /// <summary>
-        /// 
+        /// Inicializace PHP upgraderu.
         /// </summary>
-        /// <param name="findWhat"></param>
-        /// <param name="replaceWith"></param>
-        /// <param name="baseFolder"></param>
-        /// <param name="webName"></param>
-        /// <param name="adminFolders"></param>
+        /// <param name="findWhat">Co nahradit.</param>
+        /// <param name="replaceWith">Čím to nahradit.</param>
+        /// <param name="baseFolder">Absolutní cesta základní složky (př. default C:\McRAI\), kde jsou složky 'weby' a 'important'.</param>
+        /// <param name="webName">Název webu ve složce 'weby'.</param>
+        /// <param name="adminFolders">Složky obsahující administraci RS Mona (default: 1 složka admin)</param>
         public PhpUpgrader(string[] findWhat, string[] replaceWith, string baseFolder, string webName, string[]? adminFolders)
         {
             _findWhat = findWhat;
@@ -39,9 +39,9 @@ namespace php_upgrader
         }
 
         /// <summary>
-        /// 
+        /// Upgrade všech .php souborů v jednom adresáři.
         /// </summary>
-        /// <param name="directoryName"></param>
+        /// <param name="directoryName">Cesta k adresáři, kde hledat .php soubory.</param>
         public void UpgradeFiles(string directoryName)
         {
             foreach (var fileName in Directory.GetFiles(directoryName, "*.php"))
@@ -74,9 +74,9 @@ namespace php_upgrader
         }
 
         /// <summary>
-        /// 
+        /// Rekurzivní upgrade .php souborů ve všech podadresářích.
         /// </summary>
-        /// <param name="directoryName"></param>
+        /// <param name="directoryName">Cesta k adresáři, kde hledat .php soubory.</param>
         public void UpgradeFilesInFolders(string directoryName)
         {
             foreach (var subdir in Directory.GetDirectories(directoryName))
