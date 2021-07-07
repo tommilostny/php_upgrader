@@ -47,7 +47,7 @@ namespace php_upgrader
             foreach (var fileName in Directory.GetFiles(directoryName, "*.php"))
             {
                 Console.WriteLine(fileName);
-                string fileContent = File.ReadAllText(fileName);
+                var fileContent = File.ReadAllText(fileName);
 
                 if (UpgradeTinyAjaxBehavior(fileName))
                     continue;
@@ -93,33 +93,35 @@ namespace php_upgrader
             if (fileName.Contains(@"\connect\connection.php"))
             {
                 using var sr = new StreamReader(fileName);
-                string connectHead = "";
-                bool inComment = false;
+                var connectHead = string.Empty;
+                var inComment = false;
+
                 while (!sr.EndOfStream)
                 {
-                    string line = sr.ReadLine() ?? "";
+                    string line = sr.ReadLine() ?? string.Empty;
 
                     if (line.Contains("/*")) inComment = true;
                     if (line.Contains("*/")) inComment = false;
 
                     connectHead += $"{line}\n";
+
                     if (line.Contains("$password_beta") && !inComment && !line.Contains("//$password_beta"))
                         break;
                 }
-                fileContent = connectHead + File.ReadAllText(_baseFolder + "important\\connection.txt");
+                fileContent = connectHead + File.ReadAllText($"{_baseFolder}important\\connection.txt");
             }
         }
 
         //predelat soubor (TinyAjaxBehavior.php) v adresari admin/include >>> prekopirovat soubor ze vzoru rs mona
         private bool UpgradeTinyAjaxBehavior(string fileName)
         {
-            bool foundTAB = false;
+            var foundTAB = false;
 
             foreach (var adminFolder in _adminFolders)
             {
                 if (fileName.Contains($@"\{adminFolder}\include\TinyAjaxBehavior.php"))
                 {
-                    File.Copy(_baseFolder + "important\\TinyAjaxBehavior.txt", fileName, overwrite: true);
+                    File.Copy($"{_baseFolder}important\\TinyAjaxBehavior.txt", fileName, overwrite: true);
                     foundTAB = true;
                 }
             }
@@ -131,17 +133,18 @@ namespace php_upgrader
         {
             if (fileContent.Contains("mysql_result"))
             {
-                string[] r = fileContent.Split('\n');
-                fileContent = "";
-                for (int i = 0; i < r.Length; i++)
+                var lines = fileContent.Split('\n');
+                fileContent = string.Empty;
+
+                for (var i = 0; i < lines.Length; i++)
                 {
-                    if (r[i].Contains("mysql_result"))
+                    if (lines[i].Contains("mysql_result"))
                     {
-                        r[i] = r[i].Replace("COUNT(*)", "*");
-                        r[i] = r[i].Replace(", 0", "");
-                        r[i] = r[i].Replace("mysql_result", "mysqli_num_rows");
+                        lines[i] = lines[i].Replace("COUNT(*)", "*");
+                        lines[i] = lines[i].Replace(", 0", string.Empty);
+                        lines[i] = lines[i].Replace("mysql_result", "mysqli_num_rows");
                     }
-                    fileContent += r[i] + "\n";
+                    fileContent += $"{lines[i]}\n";
                 }
             }
         }
@@ -151,15 +154,17 @@ namespace php_upgrader
         {
             if (fileContent.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"))
             {
-                string[] r = fileContent.Split('\n');
-                fileContent = "";
-                for (int i = 0; i < r.Length; i++)
+                var lines = fileContent.Split('\n');
+                fileContent = string.Empty;
+
+                for (var i = 0; i < lines.Length; i++)
                 {
-                    if (r[i].Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]") && !r[i - 1].Contains("$p_sf = array();"))
+                    if (lines[i].Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]")
+                        && !lines[i - 1].Contains("$p_sf = array();"))
                     {
                         fileContent += "        $p_sf = array();\n";
                     }
-                    fileContent += r[i] + "\n";
+                    fileContent += $"{lines[i]}\n";
                 }
             }
         }
@@ -167,7 +172,7 @@ namespace php_upgrader
         //predelat soubory nahrazenim viz. >>> část Hledat >>> Nahradit
         private void UpgradeFindReplace(ref string fileContent)
         {
-            for (int i = 0; i < _findWhat.Length; i++)
+            for (var i = 0; i < _findWhat.Length; i++)
             {
                 fileContent = fileContent.Replace(_findWhat[i], _replaceWith[i]);
             }
@@ -186,7 +191,7 @@ namespace php_upgrader
         //pridat mysqli_close($beta); do indexu nakonec
         private void UpgradeMysqliClose(string fileName, ref string fileContent)
         {
-            if (fileName.Contains(_webName + @"\index.php") && !fileContent.Contains("mysqli_close"))
+            if (fileName.Contains($@"{_webName}\index.php") && !fileContent.Contains("mysqli_close"))
             {
                 fileContent += "\n<?php mysqli_close($beta); ?>";
             }
@@ -246,22 +251,23 @@ namespace php_upgrader
                     && fileContent.Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))")
                     && !fileContent.Contains("if($query_text_all !== FALSE)"))
                 {
-                    string[] splitLine = fileContent.Split('\n');
-                    fileContent = "";
-                    bool sfBracket = false;
-                    for (int i = 0; i < splitLine.Length; i++)
+                    var lines = fileContent.Split('\n');
+                    var sfBracket = false;
+                    fileContent = string.Empty;
+
+                    for (var i = 0; i < lines.Length; i++)
                     {
-                        if (splitLine[i].Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))"))
+                        if (lines[i].Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))"))
                         {
                             fileContent += "          if($query_text_all !== FALSE)\n          {\n";
                             sfBracket = true;
                         }
-                        if (splitLine[i].Contains("}") && sfBracket)
+                        if (lines[i].Contains("}") && sfBracket)
                         {
-                            fileContent += "    " + splitLine[i] + "\n";
+                            fileContent += $"    {lines[i]}\n";
                             sfBracket = false;
                         }
-                        fileContent += splitLine[i] + "\n";
+                        fileContent += $"{lines[i]}\n";
                     }
                 }
             }
@@ -272,20 +278,21 @@ namespace php_upgrader
             //pro všechny funkce které v sobe mají dotaz na db pridat na zacatek - global $beta; >>> hledat v netbeans - (?s)^(?=.*?function )(?=.*?mysqli_) - regular
             if (Regex.IsMatch(fileContent, "(?s)^(?=.*?function )(?=.*?mysqli_)") && !fileContent.Contains("$this"))
             {
-                var splitLine = fileContent.Split('\n');
-                fileContent = "";
+                var lines = fileContent.Split('\n');
                 var javascript = false;
-                for (int i = 0; i < splitLine.Length; i++)
-                {
-                    if (splitLine[i].Contains("<script")) javascript = true;
-                    if (splitLine[i].Contains("</script")) javascript = false;
+                fileContent = string.Empty;
 
-                    fileContent += splitLine[i] + "\n";
-                    if (splitLine[i].Contains("function") && !javascript)
+                for (var i = 0; i < lines.Length; i++)
+                {
+                    if (lines[i].Contains("<script")) javascript = true;
+                    if (lines[i].Contains("</script")) javascript = false;
+
+                    fileContent += $"{lines[i]}\n";
+                    if (lines[i].Contains("function") && !javascript)
                     {
-                        if (CheckForMysqli_BeforeAnotherFunction(splitLine, i))
+                        if (CheckForMysqli_BeforeAnotherFunction(lines, i))
                         {
-                            fileContent += splitLine[++i] + "\n\n    global $beta;\n\n";
+                            fileContent += $"{lines[++i]}\n\n    global $beta;\n\n";
                             Console.WriteLine(" - global $beta; added");
                         }
                     }
@@ -294,24 +301,25 @@ namespace php_upgrader
         }
 
         //kontrola funkce zda obsahuje mysqli_ (pro přidávání global $beta;)
-        private static bool CheckForMysqli_BeforeAnotherFunction(string[] splitLine, int splitStartIndex)
+        private static bool CheckForMysqli_BeforeAnotherFunction(string[] lines, int splitStartIndex)
         {
-            bool javascript = false;
-            int bracketCount = 0;
-            for (int i = splitStartIndex; i < splitLine.Length; i++)
+            var javascript = false;
+            var bracketCount = 0;
+
+            for (var i = splitStartIndex; i < lines.Length; i++)
             {
-                if (splitLine[i].Contains("<script")) javascript = true;
-                if (splitLine[i].Contains("</script")) javascript = false;
+                if (lines[i].Contains("<script")) javascript = true;
+                if (lines[i].Contains("</script")) javascript = false;
 
                 if (!javascript)
                 {
-                    if (splitLine[i].Contains("mysqli_") && !splitLine[i].TrimStart(' ').StartsWith("//"))
+                    if (lines[i].Contains("mysqli_") && !lines[i].TrimStart(' ').StartsWith("//"))
                         return true;
 
-                    if (splitLine[i].Contains("{")) bracketCount++;
-                    if (splitLine[i].Contains("}")) bracketCount--;
+                    if (lines[i].Contains("{")) bracketCount++;
+                    if (lines[i].Contains("}")) bracketCount--;
 
-                    if ((splitLine[i].Contains("global $beta;") || bracketCount <= 0) && i > splitStartIndex)
+                    if ((lines[i].Contains("global $beta;") || bracketCount <= 0) && i > splitStartIndex)
                         break;
                 }
             }

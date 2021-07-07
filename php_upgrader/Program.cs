@@ -14,7 +14,7 @@ namespace php_upgrader
         /// <param name="baseFolder">Absolutní cesta základní složky, kde jsou složky 'weby' a 'important'.</param>
         static void Main(string webName, string[]? adminFolders = null, string baseFolder = @"C:\McRAI\")
         {
-            var dir = baseFolder + "weby\\" + webName;
+            var dir = $@"{baseFolder}weby\{webName}";
 
             if (webName == string.Empty)
             {
@@ -26,8 +26,8 @@ namespace php_upgrader
             }
             else
             {
-                var findWhat = File.ReadAllLines(baseFolder + @"\important\find_what.txt");
-                var replaceWith = File.ReadAllLines(baseFolder + @"\important\replace_with.txt");
+                var findWhat = File.ReadAllLines($@"{baseFolder}important\find_what.txt");
+                var replaceWith = File.ReadAllLines($@"{baseFolder}important\replace_with.txt");
                 
                 var upgrader = new PhpUpgrader(findWhat, replaceWith, baseFolder, webName, adminFolders);
                 
