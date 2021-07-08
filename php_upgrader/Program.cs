@@ -12,7 +12,12 @@ namespace php_upgrader
         /// <param name="webName">Název webu ve složce 'weby' (nesmí chybět).</param>
         /// <param name="adminFolders">Složky obsahující administraci RS Mona (default prázdné: 1 složka admin)</param>
         /// <param name="baseFolder">Absolutní cesta základní složky, kde jsou složky 'weby' a 'important'.</param>
-        static void Main(string webName, string[]? adminFolders = null, string baseFolder = @"C:\McRAI\")
+        /// <param name="db">Název nové databáze na mcrai2. (nechat prázdné pokud se používá stejná databáze, zkopíruje se ze souboru)</param>
+        /// <param name="user">Uživatelské jméno k nové databázi na mcrai2.</param>
+        /// <param name="password">Heslo k nové databázi na mcrai2.</param>
+        /// <param name="host">URL databázového serveru.</param>
+        static void Main(string webName, string[]? adminFolders = null, string baseFolder = @"C:\McRAI\",
+            string? db = null, string? user = null, string? password = null, string host = "mcrai2.vshosting.cz")
         {
             var dir = $@"{baseFolder}weby\{webName}";
 
@@ -29,7 +34,7 @@ namespace php_upgrader
                 var findWhat = File.ReadAllLines($@"{baseFolder}important\find_what.txt");
                 var replaceWith = File.ReadAllLines($@"{baseFolder}important\replace_with.txt");
                 
-                var upgrader = new PhpUpgrader(findWhat, replaceWith, baseFolder, webName, adminFolders);
+                var upgrader = new PhpUpgrader(findWhat, replaceWith, baseFolder, webName, adminFolders, db, user, password, host);
                 
                 Console.WriteLine("\nProcessed files:\n");
                 upgrader.UpgradeFilesInFolders(dir);

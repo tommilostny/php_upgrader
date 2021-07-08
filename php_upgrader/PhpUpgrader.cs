@@ -20,6 +20,11 @@ namespace php_upgrader
         private readonly string _baseFolder;
         private readonly string[] _adminFolders;
         private readonly string _webName;
+        
+        private readonly string? _hostname;
+        private readonly string? _database;
+        private readonly string? _username;
+        private readonly string? _password;
 
         /// <summary>
         /// Inicializace PHP upgraderu.
@@ -29,13 +34,23 @@ namespace php_upgrader
         /// <param name="baseFolder">Absolutní cesta základní složky (př. default C:\McRAI\), kde jsou složky 'weby' a 'important'.</param>
         /// <param name="webName">Název webu ve složce 'weby'.</param>
         /// <param name="adminFolders">Složky obsahující administraci RS Mona (default null => 1 složka admin)</param>
-        public PhpUpgrader(string[] findWhat, string[] replaceWith, string baseFolder, string webName, string[]? adminFolders)
+        /// <param name="database">Nová databáze na serveru hostname.</param>
+        /// <param name="username">Nové uživatelské jméno k databázi.</param>
+        /// <param name="password">Nové heslo k databázi.</param>
+        /// <param name="hostname">URL k databázovému serveru (př. default mcrai2.vshosting.cz)</param>
+        public PhpUpgrader(
+            string[] findWhat, string[] replaceWith, string baseFolder, string webName,
+            string[]? adminFolders, string? database, string? username, string? password, string? hostname)
         {
             _findWhat = findWhat;
             _replaceWith = replaceWith;
             _baseFolder = baseFolder;
             _webName = webName;
             _adminFolders = adminFolders ?? new string[] { "admin" };
+            _database = database;
+            _username = username;
+            _password = password;
+            _hostname = hostname;
         }
 
         /// <summary>
@@ -92,21 +107,31 @@ namespace php_upgrader
         {
             if (fileName.Contains(@"\connect\connection.php"))
             {
-                using var sr = new StreamReader(fileName);
-                var connectHead = string.Empty;
-                var inComment = false;
+                string connectHead;
 
-                while (!sr.EndOfStream)
+                //zkopírovat údaje ze starého souboru, pokud některý není zadán
+                if (_database is null || _username is null || _password is null || _hostname is null)
                 {
-                    string line = sr.ReadLine();
+                    using var sr = new StreamReader(fileName);
+                    var inComment = false;
+                    connectHead = string.Empty;
 
-                    if (line.Contains("/*")) inComment = true;
-                    if (line.Contains("*/")) inComment = false;
+                    while (!sr.EndOfStream)
+                    {
+                        string line = sr.ReadLine();
 
-                    connectHead += $"{line}\n";
+                        if (line.Contains("/*")) inComment = true;
+                        if (line.Contains("*/")) inComment = false;
 
-                    if (line.Contains("$password_beta") && !inComment && !line.Contains("//$password_beta"))
-                        break;
+                        connectHead += $"{line}\n";
+
+                        if (line.Contains("$password_beta") && !inComment && !line.Contains("//$password_beta"))
+                            break;
+                    }
+                }
+                else //změna databáze, generování nových údajů
+                {
+                    connectHead = $"<?php\n$hostname_beta = \"{_hostname}\";\n$database_beta = \"{_database}\";\n$username_beta = \"{_username}\";\n$password_beta = \"{_password}\";\n";
                 }
                 fileContent = connectHead + File.ReadAllText($"{_baseFolder}important\\connection.txt");
             }
