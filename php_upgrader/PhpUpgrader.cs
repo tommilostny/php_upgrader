@@ -54,10 +54,22 @@ namespace php_upgrader
         }
 
         /// <summary>
-        /// Upgrade všech .php souborů v jednom adresáři.
+        /// Rekurzivní upgrade .php souborů ve všech podadresářích.
         /// </summary>
         /// <param name="directoryName">Cesta k adresáři, kde hledat .php soubory.</param>
-        public void UpgradeFiles(string directoryName)
+        public void UpgradeAllFilesRecursively(string directoryName)
+        {
+            foreach (var subdir in Directory.GetDirectories(directoryName))
+            {
+                if (Directory.GetDirectories(subdir).Length > 0 && !subdir.Contains("tiny_mce"))
+                    UpgradeAllFilesRecursively(subdir);
+                UpgradeFiles(subdir);
+            }
+            UpgradeFiles(directoryName);
+        }
+
+        //Upgrade všech .php souborů v jednom adresáři.
+        private void UpgradeFiles(string directoryName)
         {
             foreach (var fileName in Directory.GetFiles(directoryName, "*.php"))
             {
@@ -85,20 +97,6 @@ namespace php_upgrader
                 //po dodelani nahrazeni nize projit na retezec - mysql_
                 if (fileContent.ToLower().Contains("mysql_"))
                     FilesContainingMysql.Add(fileName);
-            }
-        }
-
-        /// <summary>
-        /// Rekurzivní upgrade .php souborů ve všech podadresářích.
-        /// </summary>
-        /// <param name="directoryName">Cesta k adresáři, kde hledat .php soubory.</param>
-        public void UpgradeFilesInFolders(string directoryName)
-        {
-            foreach (var subdir in Directory.GetDirectories(directoryName))
-            {
-                if (Directory.GetDirectories(subdir).Length > 0 && !subdir.Contains("tiny_mce"))
-                    UpgradeFilesInFolders(subdir);
-                UpgradeFiles(subdir);
             }
         }
 

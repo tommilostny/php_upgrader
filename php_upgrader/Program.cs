@@ -37,8 +37,7 @@ namespace php_upgrader
                 var upgrader = new PhpUpgrader(findWhat, replaceWith, baseFolder, webName, adminFolders, db, user, password, host);
 
                 Console.WriteLine("\nProcessed files:\n");
-                upgrader.UpgradeFilesInFolders(dir);
-                upgrader.UpgradeFiles(dir);
+                upgrader.UpgradeAllFilesRecursively(dir);
 
                 Console.WriteLine($"\nAutomatic PHP upgrade of {webName} is complete!");
                 Console.WriteLine($"Files containing mysql_: {upgrader.FilesContainingMysql.Count}");
