@@ -322,12 +322,12 @@ namespace php_upgrader
         }
 
         //kontrola funkce zda obsahuje mysqli_ (pro přidávání global $beta;)
-        private static bool CheckForMysqli_BeforeAnotherFunction(string[] lines, int splitStartIndex)
+        private static bool CheckForMysqli_BeforeAnotherFunction(string[] lines, int startIndex)
         {
             var javascript = false;
             var bracketCount = 0;
 
-            for (var i = splitStartIndex; i < lines.Length; i++)
+            for (var i = startIndex; i < lines.Length; i++)
             {
                 if (lines[i].Contains("<script")) javascript = true;
                 if (lines[i].Contains("</script")) javascript = false;
@@ -340,7 +340,7 @@ namespace php_upgrader
                     if (lines[i].Contains("{")) bracketCount++;
                     if (lines[i].Contains("}")) bracketCount--;
 
-                    if ((lines[i].Contains("global $beta;") || bracketCount <= 0) && i > splitStartIndex)
+                    if ((lines[i].Contains("global $beta;") || bracketCount <= 0) && i > startIndex)
                         break;
                 }
             }
