@@ -12,11 +12,13 @@ Název webu odpovídá složce v adresáři *"C:\McRAI\weby\"*, kde **C:\McRAI\\
 
 Archiv rovněž obsahuje složku "important", kterou je třeba umístit jako *"C:\McRAI\important"*.
 
+---
+
 ### Příklady spuštění:
 
 - Zobrazení nápovědy:
   - ``dotnet run -- --help``
 - Další složky s administrací, údaje k databázi nezměněné:
-  - ``dotnet run -- --web-name kalimera-greece --admin-folders ajh-46AczA87rgf aox-42CdeC55sd aqs-17BenB93kp``
+  - ``dotnet run -- --web-name kalimera-greece --admin-folders slozka1 slozka2 slozka3``
 - Výchozí 1 nepřejmenovaná složka *admin* + nové údaje k databázi na serveru mcrai2:
   - ``dotnet run -- --web-name smluvniservis --db smluvniservis_n --user smluvniservis_u --password heslo``
