@@ -105,18 +105,13 @@ namespace php_upgrader
         {
             if (fileName.Contains(@"\connect\connection.php"))
             {
-                string connectHead;
-
-                //zkopírovat údaje ze starého souboru, pokud některý není zadán
-                if (_database is null || _username is null || _password is null || _hostname is null)
+                var connectHead = string.Empty;
+                using (var sr = new StreamReader(fileName))
                 {
-                    using var sr = new StreamReader(fileName);
                     var inComment = false;
-                    connectHead = string.Empty;
-
                     while (!sr.EndOfStream)
                     {
-                        string line = sr.ReadLine();
+                        var line = sr.ReadLine();
 
                         if (line.Contains("/*")) inComment = true;
                         if (line.Contains("*/")) inComment = false;
@@ -127,9 +122,12 @@ namespace php_upgrader
                             break;
                     }
                 }
-                else //změna databáze, generování nových údajů
+                //generování nových údajů k databázi, pokud jsou všechny zadány
+                if (_database is not null && _username is not null && _password is not null && _hostname is not null)
                 {
-                    connectHead = $"<?php\n$hostname_beta = \"{_hostname}\";\n$database_beta = \"{_database}\";\n$username_beta = \"{_username}\";\n$password_beta = \"{_password}\";\n";
+                    connectHead = connectHead.Replace("\n", "\n//");
+                    connectHead = connectHead.Replace("////", "//"); 
+                    connectHead += $"\n\n$hostname_beta = \"{_hostname}\";\n$database_beta = \"{_database}\";\n$username_beta = \"{_username}\";\n$password_beta = \"{_password}\";\n";
                 }
                 fileContent = connectHead + File.ReadAllText($"{_baseFolder}important\\connection.txt");
             }
