@@ -1,6 +1,6 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace php_upgrader
@@ -20,7 +20,7 @@ namespace php_upgrader
         private readonly string _baseFolder;
         private readonly string[] _adminFolders;
         private readonly string _webName;
-        
+
         private readonly string? _hostname;
         private readonly string? _database;
         private readonly string? _username;

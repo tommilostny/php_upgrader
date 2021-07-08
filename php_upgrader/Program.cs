@@ -33,16 +33,16 @@ namespace php_upgrader
             {
                 var findWhat = File.ReadAllLines($@"{baseFolder}important\find_what.txt");
                 var replaceWith = File.ReadAllLines($@"{baseFolder}important\replace_with.txt");
-                
+
                 var upgrader = new PhpUpgrader(findWhat, replaceWith, baseFolder, webName, adminFolders, db, user, password, host);
-                
+
                 Console.WriteLine("\nProcessed files:\n");
                 upgrader.UpgradeFilesInFolders(dir);
                 upgrader.UpgradeFiles(dir);
-                
+
                 Console.WriteLine($"\nAutomatic PHP upgrade of {webName} is complete!");
                 Console.WriteLine($"Files containing mysql_: {upgrader.FilesContainingMysql.Count}");
-                
+
                 foreach (var fileName in upgrader.FilesContainingMysql)
                     Console.WriteLine(fileName);
             }
