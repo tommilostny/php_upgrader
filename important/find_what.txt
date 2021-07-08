@@ -1,0 +1,25 @@
+=& new
+mysql_num_rows
+mysql_error()
+mysql_connect
+mysql_close
+MySQL_Close
+mysql_fetch_row
+mysql_Fetch_Row
+mysql_fetch_array
+mysql_fetch_assoc
+MYSQL_ASSOC
+mysql_select_db(DB_DATABASE, $this->db)
+mysql_select_db($database_beta, $beta)
+mysql_query(
+mysql_query (
+MySQL_Query(
+MySQL_Query (
+, $beta)
+eregi(
+eregi (
+preg_match('^<tr(.*){0,}</tr>$'
+unlink
+@@unlink
+mysql_data_seek
+mysql_real_escape_string

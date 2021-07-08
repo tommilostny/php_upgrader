@@ -1,0 +1,13 @@
+
+$beta = mysqli_connect($hostname_beta, $username_beta, $password_beta);
+
+mysqli_select_db($beta, $database_beta);
+
+if(mysqli_connect_errno())
+  {
+    printf("Nelze navázat spojení s databazí: %s\n", mysqli_connect_error());
+    exit();
+  }
+
+mysqli_query($beta, "SET CHARACTER SET utf8");
+?>

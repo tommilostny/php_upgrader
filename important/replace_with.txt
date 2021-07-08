@@ -1,0 +1,25 @@
+= new
+mysqli_num_rows
+mysqli_error($beta)
+mysqli_connect
+mysqli_close
+mysqli_close
+mysqli_fetch_row
+mysqli_fetch_row
+mysqli_fetch_array
+mysqli_fetch_assoc
+MYSQLI_ASSOC
+mysqli_select_db($this->db, DB_DATABASE)
+mysqli_select_db($beta, $database_beta)
+mysqli_query($beta, 
+mysqli_query($beta, 
+mysqli_query($beta, 
+mysqli_query($beta, 
+)
+preg_match(
+preg_match(
+preg_match('/^<tr(.*){0,}< \/tr>$/'
+@unlink
+@unlink
+mysqli_data_seek
+mysqli_real_escape_string

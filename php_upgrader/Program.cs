@@ -6,8 +6,8 @@ namespace php_upgrader
     class Program
     {
         /// <summary>
-        /// McRAI RS Mona PHP upgrader z verze 5 na verzi 7
-        /// autor: Tomáš Milostný
+        /// RS Mona PHP upgrader z verze 5 na verzi 7
+        /// Created for McRAI by Tomáš Milostný
         /// </summary>
         /// <param name="webName">Název webu ve složce 'weby' (nesmí chybět).</param>
         /// <param name="adminFolders">Složky obsahující administraci RS Mona (default prázdné: 1 složka admin)</param>
