@@ -87,7 +87,7 @@ namespace php_upgrader
                 UpgradeChdir(fileName, ref fileContent);
                 UpgradeTableAddEdit(fileName, ref fileContent);
                 UpgradeStrankovani(fileName, ref fileContent);
-                UpgraderXmlFeeds(fileName, ref fileContent);
+                UpgradeXmlFeeds(fileName, ref fileContent);
                 UpgradeSitemapSave(fileName, ref fileContent);
                 UpgradeGlobalBeta(ref fileContent);
 
@@ -294,6 +294,17 @@ namespace php_upgrader
         }
 
         /// <summary>
+        /// Xml_feeds_ if($query_podmenu_all["casovani"] == 1) -> if($data_podmenu_all["casovani"] == 1)
+        /// </summary>
+        private static void UpgradeXmlFeeds(string fileName, ref string fileContent)
+        {
+            if (fileName.Contains("xml_feeds_") && !fileName.Contains("xml_feeds_edit"))
+            {
+                fileContent = fileContent.Replace("if($query_podmenu_all[\"casovani\"] == 1)", "if($data_podmenu_all[\"casovani\"] == 1)");
+            }
+        }
+
+        /// <summary>
         /// upravit soubor admin/sitemap_save.php cca radek 84
         ///     - pridat podminku „if($query_text_all !== FALSE)“
         ///     a obalit ji „while($data_stranky_text_all = mysqli_fetch_array($query_text_all))“
@@ -325,17 +336,6 @@ namespace php_upgrader
                         fileContent += $"{lines[i]}\n";
                     }
                 }
-            }
-        }
-
-        /// <summary>
-        /// Xml_feeds_ if($query_podmenu_all["casovani"] == 1) -> if($data_podmenu_all["casovani"] == 1)
-        /// </summary>
-        private void UpgraderXmlFeeds(string fileName, ref string fileContent)
-        {
-            if (fileName.Contains("xml_feeds_") && !fileName.Contains("xml_feeds_edit"))
-            {
-                fileContent = fileContent.Replace("if($query_podmenu_all[\"casovani\"] == 1)", "if($data_podmenu_all[\"casovani\"] == 1)");
             }
         }
 
