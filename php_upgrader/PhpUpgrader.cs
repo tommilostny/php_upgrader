@@ -123,9 +123,11 @@ namespace php_upgrader
                 //generování nových údajů k databázi, pokud jsou všechny zadány
                 if (_database is not null && _username is not null && _password is not null && _hostname is not null)
                 {
-                    connectHead = connectHead.Replace("\n", "\n//");
-                    connectHead = connectHead.Replace("////", "//"); 
-                    connectHead += $"\n\n$hostname_beta = \"{_hostname}\";\n$database_beta = \"{_database}\";\n$username_beta = \"{_username}\";\n$password_beta = \"{_password}\";\n";
+                    connectHead = connectHead.Replace("\n", "\n//"); //zakomentovat původní řádky
+                    connectHead = connectHead.Replace("////", "//"); //smazat zbytečná lomítka
+                    connectHead += '\n';
+                    connectHead = connectHead.Replace("//\n", "\n");
+                    connectHead += $"$hostname_beta = \"{_hostname}\";\n$database_beta = \"{_database}\";\n$username_beta = \"{_username}\";\n$password_beta = \"{_password}\";\n";
                 }
                 fileContent = connectHead + File.ReadAllText($"{_baseFolder}important\\connection.txt");
             }
@@ -280,6 +282,7 @@ namespace php_upgrader
             if (fileName.Contains(@"\funkce\strankovani.php"))
             {
                 fileContent = fileContent.Replace("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)");
+                fileContent = fileContent.Replace("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext, $prenext_2)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null, $prenext_2 = null)");
             }
         }
 
