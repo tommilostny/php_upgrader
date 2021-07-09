@@ -87,6 +87,7 @@ namespace php_upgrader
                 UpgradeChdir(fileName, ref fileContent);
                 UpgradeTableAddEdit(fileName, ref fileContent);
                 UpgradeStrankovani(fileName, ref fileContent);
+                UpgraderXmlFeeds(fileName, ref fileContent);
                 UpgradeSitemapSave(fileName, ref fileContent);
                 UpgradeGlobalBeta(ref fileContent);
 
@@ -101,7 +102,7 @@ namespace php_upgrader
         /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
         private void UpgradeConnect(string fileName, ref string fileContent)
         {
-            if (fileName.Contains(@"\connect\connection.php"))
+            if (fileName.Contains(@"\connect\connection.php") || file.Contains(@"\system\connection.php"))
             {
                 var connectHead = string.Empty;
                 using (var sr = new StreamReader(fileName))
@@ -110,11 +111,18 @@ namespace php_upgrader
                     while (!sr.EndOfStream)
                     {
                         var line = sr.ReadLine();
-
-                        if (line.Contains("/*")) inComment = true;
-                        if (line.Contains("*/")) inComment = false;
-
                         connectHead += $"{line}\n";
+                        
+                        if (line.Contains("/*"))
+                        {
+                            inComment = true;
+                        }
+                        if (line.Contains("*/"))
+                        {
+                            inComment = false;
+                            if (line.TrimStart().StartsWith("$password_beta"))
+                                continue;
+                        }
 
                         if (line.Contains("$password_beta") && !inComment && !line.Contains("//$password_beta"))
                             break;
@@ -179,15 +187,14 @@ namespace php_upgrader
         /// </summary>
         private static void UpgradeClanekVypis(ref string fileContent)
         {
-            if (fileContent.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"))
+            if (fileContent.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]") && !fileContent.Contains("$p_sf = array();"))
             {
                 var lines = fileContent.Split('\n');
                 fileContent = string.Empty;
 
                 for (var i = 0; i < lines.Length; i++)
                 {
-                    if (lines[i].Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]")
-                        && !lines[i - 1].Contains("$p_sf = array();"))
+                    if (lines[i].Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"))
                     {
                         fileContent += "        $p_sf = array();\n";
                     }
@@ -264,9 +271,9 @@ namespace php_upgrader
         {
             foreach (var adminFolder in _adminFolders)
             {
-                if (fileName.Contains($@"\{adminFolder}\table_x_add.php")
-                    || fileName.Contains($@"\{adminFolder}\table_x_edit.php")
-                    && !fileContent.Contains("@pocet_text_all"))
+                if ((fileName.Contains($@"\{adminFolder}\table_x_add.php")
+                    || fileName.Contains($@"\{adminFolder}\table_x_edit.php"))
+                    && !fileContent.Contains("@$pocet_text_all"))
                 {
                     fileContent = fileContent.Replace("$pocet_text_all = mysqli_num_rows", "@$pocet_text_all = mysqli_num_rows");
                 }
@@ -322,6 +329,17 @@ namespace php_upgrader
         }
 
         /// <summary>
+        /// Xml_feeds_ if($query_podmenu_all["casovani"] == 1) -> if($data_podmenu_all["casovani"] == 1)
+        /// </summary>
+        private void UpgraderXmlFeeds(string fileName, ref string fileContent)
+        {
+            if (fileName.Contains("xml_feeds_") && !fileName.Contains("xml_feeds_edit"))
+            {
+                fileContent = fileContent.Replace("if($query_podmenu_all[\"casovani\"] == 1)", "if($data_podmenu_all[\"casovani\"] == 1)");
+            }
+        }
+
+        /// <summary>
         /// pro všechny funkce které v sobe mají dotaz na db pridat na zacatek
         ///     - global $beta; >>> hledat v netbeans - (?s)^(?=.*?function )(?=.*?mysqli_) - regular
         /// </summary>
@@ -355,6 +373,7 @@ namespace php_upgrader
         private static bool CheckForMysqli_BeforeAnotherFunction(string[] lines, int startIndex)
         {
             var javascript = false;
+            var inComment = false;
             var bracketCount = 0;
 
             for (var i = startIndex; i < lines.Length; i++)
@@ -364,7 +383,10 @@ namespace php_upgrader
 
                 if (!javascript)
                 {
-                    if (lines[i].Contains("mysqli_") && !lines[i].TrimStart(' ').StartsWith("//"))
+                    if (lines[i].Contains("/*")) inComment = true;
+                    if (lines[i].Contains("*/")) inComment = false;
+
+                    if (lines[i].Contains("mysqli_") && !inComment && !lines[i].TrimStart().StartsWith("//")) 
                         return true;
 
                     if (lines[i].Contains("{")) bracketCount++;

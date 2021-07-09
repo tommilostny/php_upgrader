@@ -14,9 +14,16 @@ namespace php_upgrader
         private static string[] find_what;
         private static string[] replace_with;
 
-        private static bool CheckForMysqli_BeforeAnotherFunction(string[] r, int i) //kontrola funkce zda obsahuje mysqli_ (pro přidávání global $beta;)
+        /// <summary>
+        /// Kontrola funkce zda obsahuje mysqli_ (pro přidávání global $beta;).
+        /// </summary>
+        /// <param name="r">Pole s řádky souboru</param>
+        /// <param name="i">Index řádku v poli</param>
+        /// <returns></returns>
+        private static bool CheckForMysqli_BeforeAnotherFunction(string[] r, int i)
         {
             bool javascript = false;
+            bool poznamka = false;
             int bracket_count = 0;
             for (int y = i; y < r.Count(); y++)
             {
@@ -25,7 +32,10 @@ namespace php_upgrader
 
                 if (!javascript)
                 {
-                    if (r[y].Contains("mysqli_") && !r[y].TrimStart(' ').StartsWith("//")) return true;
+                    if (r[y].Contains("/*")) poznamka = true;
+                    if (r[y].Contains("*/")) poznamka = false;
+
+                    if (r[y].Contains("mysqli_") && !poznamka && !r[y].TrimStart(' ').StartsWith("//")) return true;
 
                     if (r[y].Contains("{")) bracket_count++;
                     if (r[y].Contains("}")) bracket_count--;
@@ -36,6 +46,10 @@ namespace php_upgrader
             return false;
         }
 
+        /// <summary>
+        /// Update všech souborů složky podle instrukcí (mysql-mysqli, atd...).
+        /// </summary>
+        /// <param name="dir"></param>
         private static void UpgradeFiles(string dir)
         {
             foreach (string file in Directory.GetFiles(dir, "*.php"))
@@ -44,7 +58,7 @@ namespace php_upgrader
                 string up_cont = File.ReadAllText(file);
 
                 //predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona
-                if (file.Contains(@"\connect\connection.php"))
+                if (file.Contains(@"\connect\connection.php") || file.Contains(@"\system\connection.php"))
                 {
                     StreamReader sr = new StreamReader(file);
                     string connect_head = "";
@@ -52,11 +66,14 @@ namespace php_upgrader
                     while (!sr.EndOfStream)
                     {
                         string line = sr.ReadLine();
+                        connect_head += line + "\n";
 
                         if (line.Contains("/*")) poznamka = true;
-                        if (line.Contains("*/")) poznamka = false;
-
-                        connect_head += line + "\n";
+                        if (line.Contains("*/"))
+                        {
+                            poznamka = false;
+                            if (line.TrimStart(' ').StartsWith("$password_beta")) continue;
+                        }
                         if (line.Contains("$password_beta") && !poznamka && !line.Contains("//$password_beta")) break;
                     }
                     sr.Close();
@@ -86,13 +103,13 @@ namespace php_upgrader
                     }
                 }
                 //upravit soubory system/clanek.php a system/vypis.php - pokud je sdileni fotogalerii pridat nad podminku $vypis_table_clanek["sdileni_fotogalerii"] kod $p_sf = array();
-                if (up_cont.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"))
+                if (up_cont.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]") && !up_cont.Contains("$p_sf = array();"))
                 {
                     string[] r = up_cont.Split('\n');
                     up_cont = "";
                     for (int i = 0; i < r.Count(); i++)
                     {
-                        if (r[i].Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]") && !r[i - 1].Contains("$p_sf = array();"))
+                        if (r[i].Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"))
                         {
                             up_cont += "        $p_sf = array();\n";
                         }
@@ -127,12 +144,16 @@ namespace php_upgrader
 
                 //upravit soubor admin/table_x_add.php - potlacit chybova hlasku znakem „@“ na radku cca 47-55 - $pocet_text_all = mysqli_num_rows….
                 //upravit soubor admin/table_x_edit.php - potlacit chybova hlasku znakem „@“ na radku cca 53-80 - $pocet_text_all = mysqli_num_rows….
-                if (file.Contains(@"\admin\table_x_add.php") || file.Contains(@"\admin\table_x_edit.php") && !up_cont.Contains("@pocet_text_all"))
+                if ((file.Contains(@"\admin\table_x_add.php") || file.Contains(@"\admin\table_x_edit.php")) && !up_cont.Contains("@$pocet_text_all"))
                     up_cont = up_cont.Replace("$pocet_text_all = mysqli_num_rows", "@$pocet_text_all = mysqli_num_rows");
 
                 //Upravit soubor funkce/strankovani.php >>>  function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)
                 if (file.Contains(@"\funkce\strankovani.php"))
                     up_cont = up_cont.Replace("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)");
+
+                //Xml_feeds_ if($query_podmenu_all["casovani"] == 1) -> if($data_podmenu_all["casovani"] == 1)
+                if (file.Contains("xml_feeds_") && !file.Contains("xml_feeds_edit"))
+                    up_cont = up_cont.Replace("if($query_podmenu_all[\"casovani\"] == 1)", "if($data_podmenu_all[\"casovani\"] == 1)");
 
                 //upravit soubor admin/sitemap_save.php cca radek 84 - pridat podminku „if($query_text_all !== FALSE)“ a obalit ji „while($data_stranky_text_all = mysqli_fetch_array($query_text_all))“
                 if (file.Contains("admin\\sitemap_save.php") && up_cont.Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))") && !up_cont.Contains("if($query_text_all !== FALSE)"))
@@ -165,7 +186,7 @@ namespace php_upgrader
                     for (int i = 0; i < r.Count(); i++)
                     {
                         if (r[i].Contains("<script")) javascript = true;
-                        if (r[i].Contains("</script")) javascript = false;
+                        else if (r[i].Contains("</script")) javascript = false;
 
                         up_cont += r[i] + "\n";
                         if (r[i].Contains("function") && !javascript)
@@ -186,6 +207,10 @@ namespace php_upgrader
             }
         }
 
+        /// <summary>
+        /// Rekurzivní procházení podadresářů v adresáři.
+        /// </summary>
+        /// <param name="dir"></param>
         private static void GetFolders(string dir)
         {
             foreach (string subdir in Directory.GetDirectories(dir))
