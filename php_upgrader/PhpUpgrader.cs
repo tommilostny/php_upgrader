@@ -102,7 +102,7 @@ namespace php_upgrader
         /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
         private void UpgradeConnect(string fileName, ref string fileContent)
         {
-            if (fileName.Contains(@"\connect\connection.php") || file.Contains(@"\system\connection.php"))
+            if (fileName.Contains(@"\connect\connection.php") || fileName.Contains(@"\system\connection.php"))
             {
                 var connectHead = string.Empty;
                 using (var sr = new StreamReader(fileName))
