@@ -16,6 +16,7 @@ mysqli_query($beta,
 mysqli_query($beta, 
 mysqli_query($beta, 
 )
+)
 preg_match(
 preg_match(
 preg_match('/^<tr(.*){0,}< \/tr>$/'

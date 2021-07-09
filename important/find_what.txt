@@ -16,6 +16,7 @@ mysql_query (
 MySQL_Query(
 MySQL_Query (
 , $beta)
+,$beta)
 eregi(
 eregi (
 preg_match('^<tr(.*){0,}</tr>$'
