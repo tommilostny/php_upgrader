@@ -22,3 +22,5 @@ Archiv rovněž obsahuje složku "important", kterou je třeba umístit jako *"C
   - ``dotnet run -- --web-name kalimera-greece --admin-folders slozka1 slozka2 slozka3``
 - Výchozí 1 nepřejmenovaná složka *admin* + nové údaje k databázi na serveru mcrai2:
   - ``dotnet run -- --web-name smluvniservis --db smluvniservis_n --user smluvniservis_u --password heslo``
+
+Informace k ``dotnet run`` viz [https://docs.microsoft.com/cs-cz/dotnet/core/tools/dotnet-run](https://docs.microsoft.com/cs-cz/dotnet/core/tools/dotnet-run) (práce s ním a jak zadávat argumenty aplikace atd.).
