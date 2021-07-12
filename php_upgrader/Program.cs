@@ -16,8 +16,10 @@ namespace php_upgrader
         /// <param name="user">Uživatelské jméno k nové databázi na mcrai2.</param>
         /// <param name="password">Heslo k nové databázi na mcrai2.</param>
         /// <param name="host">URL databázového serveru.</param>
+        /// <param name="beta">Přejmenovat proměnnou $beta tímto názvem (null => nepřejmenovávat).</param>
         static void Main(string webName, string[]? adminFolders = null, string baseFolder = @"C:\McRAI\",
-            string? db = null, string? user = null, string? password = null, string host = "mcrai2.vshosting.cz")
+            string? db = null, string? user = null, string? password = null, string host = "mcrai2.vshosting.cz",
+            string? beta = null)
         {
             var workDir = $@"{baseFolder}weby\{webName}";
 
@@ -32,7 +34,7 @@ namespace php_upgrader
                 return;
             }
 
-            var upgrader = new PhpUpgrader(baseFolder, webName, adminFolders, db, user, password, host);
+            var upgrader = new PhpUpgrader(baseFolder, webName, adminFolders, db, user, password, host, beta);
 
             Console.WriteLine("\nProcessed files:\n");
             upgrader.UpgradeAllFilesRecursively(workDir);

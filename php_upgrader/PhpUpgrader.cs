@@ -23,6 +23,7 @@ namespace php_upgrader
         private readonly string? _database;
         private readonly string? _username;
         private readonly string? _password;
+        private readonly string? _replaceBetaWith;
 
         /// <summary>
         /// Inicializace PHP upgraderu.
@@ -34,7 +35,8 @@ namespace php_upgrader
         /// <param name="username">Nové uživatelské jméno k databázi.</param>
         /// <param name="password">Nové heslo k databázi.</param>
         /// <param name="hostname">URL k databázovému serveru (př. default mcrai2.vshosting.cz)</param>
-        public PhpUpgrader(string baseFolder, string webName, string[]? adminFolders, string? database, string? username, string? password, string? hostname)
+        /// <param name="replaceBetaWith"></param>
+        public PhpUpgrader(string baseFolder, string webName, string[]? adminFolders, string? database, string? username, string? password, string? hostname, string? replaceBetaWith)
         {
             _findWhat = File.ReadAllLines($@"{baseFolder}important\find_what.txt");
             _replaceWith = File.ReadAllLines($@"{baseFolder}important\replace_with.txt");
@@ -45,6 +47,7 @@ namespace php_upgrader
             _username = username;
             _password = password;
             _hostname = hostname;
+            _replaceBetaWith = replaceBetaWith;
         }
 
         /// <summary>
@@ -87,6 +90,7 @@ namespace php_upgrader
                 UpgradeSitemapSave(fileName, ref fileContent);
                 UpgradeGlobalBeta(ref fileContent);
 
+                RenameBeta(ref fileContent);
                 File.WriteAllText(fileName, fileContent);
 
                 //po dodelani nahrazeni nize projit na retezec - mysql_
@@ -393,6 +397,14 @@ namespace php_upgrader
                 }
             }
             return false;
+        }
+
+        private void RenameBeta(ref string fileContent)
+        {
+            if (_replaceBetaWith is not null)
+            {
+                fileContent = fileContent.Replace("$beta", $"${_replaceBetaWith}");
+            }
         }
     }
 }
