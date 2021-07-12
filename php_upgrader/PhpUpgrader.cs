@@ -27,8 +27,6 @@ namespace php_upgrader
         /// <summary>
         /// Inicializace PHP upgraderu.
         /// </summary>
-        /// <param name="findWhat">Co nahradit.</param>
-        /// <param name="replaceWith">Čím to nahradit.</param>
         /// <param name="baseFolder">Absolutní cesta základní složky (př. default C:\McRAI\), kde jsou složky 'weby' a 'important'.</param>
         /// <param name="webName">Název webu ve složce 'weby'.</param>
         /// <param name="adminFolders">Složky obsahující administraci RS Mona (default null => 1 složka admin)</param>
@@ -36,12 +34,10 @@ namespace php_upgrader
         /// <param name="username">Nové uživatelské jméno k databázi.</param>
         /// <param name="password">Nové heslo k databázi.</param>
         /// <param name="hostname">URL k databázovému serveru (př. default mcrai2.vshosting.cz)</param>
-        public PhpUpgrader(
-            string[] findWhat, string[] replaceWith, string baseFolder, string webName,
-            string[]? adminFolders, string? database, string? username, string? password, string? hostname)
+        public PhpUpgrader(string baseFolder, string webName, string[]? adminFolders, string? database, string? username, string? password, string? hostname)
         {
-            _findWhat = findWhat;
-            _replaceWith = replaceWith;
+            _findWhat = File.ReadAllLines($@"{baseFolder}important\find_what.txt");
+            _replaceWith = File.ReadAllLines($@"{baseFolder}important\replace_with.txt");
             _baseFolder = baseFolder;
             _webName = webName;
             _adminFolders = adminFolders ?? new string[] { "admin" };

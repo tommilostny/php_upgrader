@@ -19,32 +19,29 @@ namespace php_upgrader
         static void Main(string webName, string[]? adminFolders = null, string baseFolder = @"C:\McRAI\",
             string? db = null, string? user = null, string? password = null, string host = "mcrai2.vshosting.cz")
         {
-            var dir = $@"{baseFolder}weby\{webName}";
+            var workDir = $@"{baseFolder}weby\{webName}";
 
             if (webName == string.Empty)
             {
-                Console.Error.WriteLine($"Folder {dir} is invalid because parameter '--web-name' is empty.");
+                Console.Error.WriteLine($"Folder {workDir} is invalid because parameter '--web-name' is empty.");
+                return;
             }
-            else if (!Directory.Exists(dir))
+            else if (!Directory.Exists(workDir))
             {
-                Console.Error.WriteLine($"Folder {dir} does not exist.");
+                Console.Error.WriteLine($"Folder {workDir} does not exist.");
+                return;
             }
-            else
-            {
-                var findWhat = File.ReadAllLines($@"{baseFolder}important\find_what.txt");
-                var replaceWith = File.ReadAllLines($@"{baseFolder}important\replace_with.txt");
 
-                var upgrader = new PhpUpgrader(findWhat, replaceWith, baseFolder, webName, adminFolders, db, user, password, host);
+            var upgrader = new PhpUpgrader(baseFolder, webName, adminFolders, db, user, password, host);
 
-                Console.WriteLine("\nProcessed files:\n");
-                upgrader.UpgradeAllFilesRecursively(dir);
+            Console.WriteLine("\nProcessed files:\n");
+            upgrader.UpgradeAllFilesRecursively(workDir);
 
-                Console.WriteLine($"\nAutomatic PHP upgrade of {webName} is complete!");
-                Console.WriteLine($"Files containing mysql_: {upgrader.FilesContainingMysql.Count}");
+            Console.WriteLine($"\nAutomatic PHP upgrade of {webName} is complete!");
+            Console.WriteLine($"Files containing mysql_: {upgrader.FilesContainingMysql.Count}");
 
-                foreach (var fileName in upgrader.FilesContainingMysql)
-                    Console.WriteLine(fileName);
-            }
+            foreach (var fileName in upgrader.FilesContainingMysql)
+                Console.WriteLine(fileName);
         }
     }
 }
