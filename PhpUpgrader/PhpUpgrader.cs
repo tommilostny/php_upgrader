@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 
-namespace php_upgrader
+namespace PhpUpgrader
 {
     /// <summary> PHP upgrader pro RS Mona z verze 5 na verzi 7. </summary>
     public class PhpUpgrader
