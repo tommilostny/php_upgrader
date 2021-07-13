@@ -49,9 +49,9 @@ namespace FtpUpdateChecker
             var fileInfos = session.EnumerateRemoteFiles(path, null, options);
 
             Console.WriteLine($"Connection successful! Checking all files in {path} for updates after {displayDate}.\n");
-            int foundCount = 0;
-            int fileCount = 0;
-            int folderCount = 0;
+            uint foundCount = 0;
+            uint fileCount = 0;
+            uint folderCount = 0;
 
             foreach (var fileInfo in fileInfos)
             {
