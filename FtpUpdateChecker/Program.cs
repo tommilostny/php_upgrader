@@ -67,7 +67,7 @@ namespace FtpUpdateChecker
                         Console.Write(fileInfo.FullName);
 
                         for (int i = fileInfo.FullName.Length; i < 95; i++) Console.Write(" ");
-                        Console.Write("\n" + fileInfo.LastWriteTime + "\n");
+                        Console.Write($"\n{fileInfo.LastWriteTime}\n");
                     }
                     fileCount++;
                 }
