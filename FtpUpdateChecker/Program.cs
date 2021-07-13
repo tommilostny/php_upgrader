@@ -48,7 +48,7 @@ namespace FtpUpdateChecker
             var options = EnumerationOptions.EnumerateDirectories | EnumerationOptions.AllDirectories;
             var fileInfos = session.EnumerateRemoteFiles(path, null, options);
 
-            Console.WriteLine($"Connection successful! Checking all PHP files in {path} for updates after {displayDate}.\n");
+            Console.WriteLine($"Connection successful! Checking all files in {path} for updates after {displayDate}.\n");
             int foundCount = 0;
             int fileCount = 0;
             int folderCount = 0;
@@ -58,7 +58,7 @@ namespace FtpUpdateChecker
                 Console.Write("\r");
                 if (!fileInfo.IsDirectory)
                 {
-                    if (fileInfo.LastWriteTime >= date && fileInfo.Name.TrimEnd().EndsWith(".php"))
+                    if (fileInfo.LastWriteTime >= date)
                     {
                         Console.ForegroundColor = ConsoleColor.Yellow;
                         Console.Write($"{++foundCount}. ");
@@ -73,7 +73,7 @@ namespace FtpUpdateChecker
                 }
                 else folderCount++;
                 
-                Console.Write($"Checked {fileCount} file(s) in {folderCount} folder(s). Found {foundCount} PHP file(s) modified after {displayDate}.");
+                Console.Write($"Checked {fileCount} file(s) in {folderCount} folder(s). Found {foundCount} file(s) modified after {displayDate}.");
             }
             Console.WriteLine("\nProcess completed.");
         }
