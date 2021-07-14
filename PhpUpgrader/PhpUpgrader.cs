@@ -106,7 +106,7 @@ namespace PhpUpgrader
                 File.WriteAllText(fileName, fileContent);
 
                 //po dodelani nahrazeni nize projit na retezec - mysql_
-                if (fileContent.ToLower().Contains("mysql_"))
+                if (fileContent.ToLower().Contains("mysql_") && !FilesContainingMysql.Contains(fileName))
                     FilesContainingMysql.Add(fileName);
             }
         }
