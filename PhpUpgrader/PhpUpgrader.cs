@@ -49,8 +49,17 @@ namespace PhpUpgrader
             _username = username;
             _password = password;
             _hostname = hostname;
-            _replaceBetaWith = replaceBetaWith;
             _connectionFile = connectionFile;
+
+            _replaceBetaWith = replaceBetaWith;
+            if (replaceBetaWith is not null)
+            {
+                for (int i = 0; i < _findWhat.Length; i++)
+                {
+                    RenameBeta(ref _findWhat[i]);
+                    RenameBeta(ref _replaceWith[i]);
+                }
+            }
         }
 
         /// <summary>
