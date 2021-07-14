@@ -5,10 +5,8 @@ namespace PhpUpgrader
 {
     class Program
     {
-        /// <summary>
-        /// RS Mona PHP upgrader z verze 5 na verzi 7
-        /// Created for McRAI by Tomáš Milostný
-        /// </summary>
+        /// <summary>RS Mona PHP upgrader z verze 5 na verzi 7</summary>
+        /// <remarks>Created for McRAI by Tomáš Milostný</remarks>
         /// <param name="webName">Název webu ve složce 'weby' (nesmí chybět).</param>
         /// <param name="adminFolders">Složky obsahující administraci RS Mona (default prázdné: 1 složka admin)</param>
         /// <param name="baseFolder">Absolutní cesta základní složky, kde jsou složky 'weby' a 'important'.</param>
@@ -16,10 +14,11 @@ namespace PhpUpgrader
         /// <param name="user">Uživatelské jméno k nové databázi na mcrai2.</param>
         /// <param name="password">Heslo k nové databázi na mcrai2.</param>
         /// <param name="host">URL databázového serveru.</param>
-        /// <param name="beta">Přejmenovat proměnnou $beta tímto názvem (null => nepřejmenovávat).</param>
+        /// <param name="beta">Přejmenovat proměnnou $beta tímto názvem (nezadáno => nepřejmenovávat).</param>
+        /// <param name="connectionFile">Název souboru ve složce "/connect".</param>
         static void Main(string webName, string[]? adminFolders = null, string baseFolder = @"C:\McRAI\",
             string? db = null, string? user = null, string? password = null, string host = "mcrai2.vshosting.cz",
-            string? beta = null)
+            string? beta = null, string connectionFile = "connection.php")
         {
             var workDir = $@"{baseFolder}weby\{webName}";
 
@@ -34,7 +33,7 @@ namespace PhpUpgrader
                 return;
             }
 
-            var upgrader = new PhpUpgrader(baseFolder, webName, adminFolders, db, user, password, host, beta);
+            var upgrader = new PhpUpgrader(baseFolder, webName, adminFolders, db, user, password, host, beta, connectionFile);
 
             Console.WriteLine("\nProcessed files:\n");
             upgrader.UpgradeAllFilesRecursively(workDir);

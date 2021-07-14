@@ -24,6 +24,7 @@ namespace PhpUpgrader
         private readonly string? _username;
         private readonly string? _password;
         private readonly string? _replaceBetaWith;
+        private readonly string _connectionFile;
 
         /// <summary>
         /// Inicializace PHP upgraderu.
@@ -36,7 +37,8 @@ namespace PhpUpgrader
         /// <param name="password">Nové heslo k databázi.</param>
         /// <param name="hostname">URL k databázovému serveru (př. default mcrai2.vshosting.cz)</param>
         /// <param name="replaceBetaWith"></param>
-        public PhpUpgrader(string baseFolder, string webName, string[]? adminFolders, string? database, string? username, string? password, string? hostname, string? replaceBetaWith)
+        /// <param name="connectionFile"></param>
+        public PhpUpgrader(string baseFolder, string webName, string[]? adminFolders, string? database, string? username, string? password, string? hostname, string? replaceBetaWith, string connectionFile)
         {
             _findWhat = File.ReadAllLines($@"{baseFolder}important\find_what.txt");
             _replaceWith = File.ReadAllLines($@"{baseFolder}important\replace_with.txt");
@@ -48,6 +50,7 @@ namespace PhpUpgrader
             _password = password;
             _hostname = hostname;
             _replaceBetaWith = replaceBetaWith;
+            _connectionFile = connectionFile;
         }
 
         /// <summary>
@@ -102,7 +105,7 @@ namespace PhpUpgrader
         /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
         private void UpgradeConnect(string fileName, ref string fileContent)
         {
-            if (fileName.Contains(@"\connect\connection.php") || fileName.Contains(@"\system\connection.php"))
+            if (fileName.Contains($@"\connect\{_connectionFile}") || fileName.Contains($@"\system\{_connectionFile}"))
             {
                 var connectHead = string.Empty;
                 using (var sr = new StreamReader(fileName))
