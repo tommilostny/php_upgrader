@@ -124,7 +124,7 @@ namespace PhpUpgrader
                     {
                         var line = sr.ReadLine();
                         connectHead += $"{line}\n";
-                        
+
                         if (line.Contains("/*"))
                         {
                             inComment = true;
@@ -398,7 +398,7 @@ namespace PhpUpgrader
                     if (lines[i].Contains("/*")) inComment = true;
                     if (lines[i].Contains("*/")) inComment = false;
 
-                    if (lines[i].Contains("mysqli_") && !inComment && !lines[i].TrimStart().StartsWith("//")) 
+                    if (lines[i].Contains("mysqli_") && !inComment && !lines[i].TrimStart().StartsWith("//"))
                         return true;
 
                     if (lines[i].Contains("{")) bracketCount++;

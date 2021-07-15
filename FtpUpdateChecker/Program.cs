@@ -72,7 +72,7 @@ namespace FtpUpdateChecker
                     fileCount++;
                 }
                 else folderCount++;
-                
+
                 Console.Write($"Checked {fileCount} file(s) in {folderCount} folder(s). Found {foundCount} file(s) modified after {displayDate}.");
             }
             Console.WriteLine("\nProcess completed.");
