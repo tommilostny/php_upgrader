@@ -30,6 +30,14 @@ namespace FtpUpdateChecker
             Console.ForegroundColor = defaultColor;
         }
 
+        static void WriteErrorMessage(string message, ConsoleColor defaultColor)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine($"\n❌ {message}");
+            Console.ForegroundColor = defaultColor;
+            Console.Error.WriteLine("   Run with --help to display additional information.");
+        }
+
         static string LoadPasswordFromFile(string baseFolder, string username)
         {
             var lines = File.ReadAllLines($"{baseFolder}ftp_logins.txt");
@@ -59,29 +67,28 @@ namespace FtpUpdateChecker
         {
             var defaultColor = Console.ForegroundColor;
 
-            if (!useLoginsFile && (username is null || password is null))
-            {
-                Console.Error.WriteLine("Missing arguments --username or --password argument.");
-                Console.Error.WriteLine("Run with --help to display additional information.");
-                return;
-            }
-            if (useLoginsFile && username is null)
-            {
-                Console.Error.WriteLine("Argument --username is required while in --use-logins-file mode.");
-                return;
-            }
             if (useLoginsFile)
+            {
                 try
                 {
-                    password = LoadPasswordFromFile(baseFolder, username);
+                    password = LoadPasswordFromFile(baseFolder, username ?? throw new ArgumentNullException(nameof(username), "Argument is required while in --use-logins-file mode."));
                 }
                 catch (InvalidOperationException)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Error.WriteLine($"\n❌ Unable to load password from {baseFolder}ftp_logins.txt for user {username}.");
-                    Console.ForegroundColor = defaultColor;
+                    WriteErrorMessage($"Unable to load password from {baseFolder}ftp_logins.txt for user {username}.", defaultColor);
                     return;
-                }    
+                }
+                catch (ArgumentNullException exception)
+                {
+                    WriteErrorMessage(exception.Message, defaultColor);
+                    return;
+                }
+            }
+            else if (username is null || password is null)
+            {
+                WriteErrorMessage("Missing arguments --username or --password argument.", defaultColor);
+                return;
+            }
 
             var date = new DateTime(year, month, day);
             var displayDate = date.ToShortDateString();
@@ -103,9 +110,7 @@ namespace FtpUpdateChecker
             }
             catch (SessionRemoteException)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine("\n❌ Unable to open session with entered username and password.");
-                Console.ForegroundColor = defaultColor;
+                WriteErrorMessage("Unable to open session with entered username and password.", defaultColor);
                 return;
             }
 
@@ -137,9 +142,7 @@ namespace FtpUpdateChecker
             }
             catch (SessionRemoteException)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine($"❌ Entered path \"{path}\" doesn't exist on the server.");
-                Console.ForegroundColor = defaultColor;
+                WriteErrorMessage($"Entered path \"{path}\" doesn't exist on the server.", defaultColor);
                 return;
             }
             Console.ForegroundColor = ConsoleColor.Green;
