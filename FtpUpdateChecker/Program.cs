@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using WinSCP;
 
 namespace FtpUpdateChecker
@@ -19,11 +22,24 @@ namespace FtpUpdateChecker
             Console.ForegroundColor = defaultColor;
             Console.Write(fileInfo.FullName);
 
-            for (int i = fileInfo.FullName.Length; i < 95; i++) Console.Write(" ");
+            for (int i = fileInfo.FullName.Length; i < 95; i++)
+                Console.Write(" ");
 
             Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine($"\n\t{fileInfo.LastWriteTime}");
             Console.ForegroundColor = defaultColor;
+        }
+
+        static string LoadPasswordFromFile(string baseFolder, string username)
+        {
+            var lines = File.ReadAllLines($"{baseFolder}ftp_logins.txt");
+            var allLogins = new List<string[]>();
+
+            foreach (var line in lines)
+            {
+                allLogins.Add(line.Split(" : "));
+            }
+            return allLogins.First(l => l[0].Trim() == username)[1].Trim();
         }
 
         /// <summary>
@@ -36,15 +52,25 @@ namespace FtpUpdateChecker
         /// <param name="year">Soubory nad tímto rokem se zobrazí jako aktualizované.</param>
         /// <param name="month">Soubory nad tímto měsícem se zobrazí jako aktualizované.</param>
         /// <param name="day">Soubory nad tímto dnem se zobrazí jako aktualizované.</param>
+        /// <param name="useLoginsFile">Použít heslo ze souboru ftp_logins.txt k zadanému uživatelskému jménu.</param>
+        /// <param name="baseFolder">Kde je soubor ftp_logins.txt?</param>
         static void Main(string? username = null, string? password = null, string host = "mcrai.vshosting.cz",
-            string path = "/httpdocs", int year = 2021, int month = 7, int day = 8)
+            string path = "/httpdocs", int year = 2021, int month = 7, int day = 8, bool useLoginsFile = false, string baseFolder = @"C:\McRAI\")
         {
-            if (username is null || password is null)
+            if (!useLoginsFile && (username is null || password is null))
             {
                 Console.Error.WriteLine("Missing arguments --username or --password argument.");
                 Console.Error.WriteLine("Run with --help to display additional information.");
                 return;
             }
+            if (useLoginsFile && username is null)
+            {
+                Console.Error.WriteLine("Argument --username is required while in --use-logins-file mode.");
+                return;
+            }
+            if (useLoginsFile)
+                password = LoadPasswordFromFile(baseFolder, username);
+
             var defaultColor = Console.ForegroundColor;
             var date = new DateTime(year, month, day);
             var displayDate = date.ToShortDateString();
@@ -73,7 +99,7 @@ namespace FtpUpdateChecker
             }
 
             Console.WriteLine($"Connection successful! Checking all files in {path} for updates after {displayDate}.\n");
-            var enumerationOptions = EnumerationOptions.EnumerateDirectories | EnumerationOptions.AllDirectories;
+            var enumerationOptions = WinSCP.EnumerationOptions.EnumerateDirectories | WinSCP.EnumerationOptions.AllDirectories;
             var fileInfos = session.EnumerateRemoteFiles(path, null, enumerationOptions);
 
             uint foundCount = 0;
