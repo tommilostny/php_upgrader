@@ -45,9 +45,9 @@ namespace FtpUpdateChecker
 
             foreach (var line in lines)
             {
-                allLogins.Add(line.Split(" : "));
+                allLogins.Add(line.Split(" : ").Select(login => login.Trim()).ToArray());
             }
-            return allLogins.First(l => l[0].Trim() == username)[1].Trim();
+            return allLogins.First(login => login[0] == username)[1];
         }
 
         /// <summary>
