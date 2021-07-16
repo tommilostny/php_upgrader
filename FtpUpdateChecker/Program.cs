@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using WinSCP;
 
 namespace FtpUpdateChecker
@@ -22,7 +21,7 @@ namespace FtpUpdateChecker
 
             for (int i = fileInfo.FullName.Length; i < 95; i++) Console.Write(" ");
 
-            Console.ForegroundColor = ConsoleColor.Red;
+            Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine($"\n\t{fileInfo.LastWriteTime}");
             Console.ForegroundColor = defaultColor;
         }
@@ -68,36 +67,46 @@ namespace FtpUpdateChecker
             catch (SessionRemoteException)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine("❌ Unable to open session with entered username and password.");
+                Console.Error.WriteLine("\n❌ Unable to open session with entered username and password.");
                 Console.ForegroundColor = defaultColor;
                 return;
             }
 
+            Console.WriteLine($"Connection successful! Checking all files in {path} for updates after {displayDate}.\n");
             var enumerationOptions = EnumerationOptions.EnumerateDirectories | EnumerationOptions.AllDirectories;
             var fileInfos = session.EnumerateRemoteFiles(path, null, enumerationOptions);
 
-            Console.WriteLine($"Connection successful! Checking all files in {path} for updates after {displayDate}.\n");
             uint foundCount = 0;
             uint fileCount = 0;
             uint folderCount = 0;
 
-            foreach (var fileInfo in fileInfos)
+            try //Enumerate files
             {
-                Console.Write("\r");
+                foreach (var fileInfo in fileInfos)
+                {
+                    Console.Write("\r");
 
-                if (fileInfo.IsDirectory)
-                {
-                    WriteStatus(fileCount, ++folderCount, foundCount, displayDate);
-                    continue;
+                    if (fileInfo.IsDirectory)
+                    {
+                        WriteStatus(fileCount, ++folderCount, foundCount, displayDate);
+                        continue;
+                    }
+                    if (fileInfo.LastWriteTime >= date)
+                    {
+                        WriteFoundFile(fileInfo, ref foundCount, defaultColor);
+                    }
+                    WriteStatus(++fileCount, folderCount, foundCount, displayDate);
                 }
-                if (fileInfo.LastWriteTime >= date)
-                {
-                    WriteFoundFile(fileInfo, ref foundCount, defaultColor);
-                }
-                WriteStatus(++fileCount, folderCount, foundCount, displayDate);
+            }
+            catch (SessionRemoteException)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.WriteLine($"❌ Entered path \"{path}\" doesn't exist on the server.");
+                Console.ForegroundColor = defaultColor;
+                return;
             }
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("\n✔️ Process completed.");
+            Console.WriteLine("\n\n✔️ Process completed.");
             Console.ForegroundColor = defaultColor;
         }
     }
