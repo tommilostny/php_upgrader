@@ -5,6 +5,26 @@ namespace FtpUpdateChecker
 {
     class Program
     {
+        static void WriteStatus(uint fileCount, uint folderCount, uint foundCount, string displayDate)
+        {
+            Console.Write($"Checked {fileCount} file(s) in {folderCount} folder(s). ");
+            Console.Write($"Found {foundCount} file(s) modified after {displayDate}.");
+        }
+
+        static void WriteFoundFile(RemoteFileInfo fileInfo, ref uint foundCount)
+        {
+            var defaultColor = Console.ForegroundColor;
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($"{++foundCount}. ");
+
+            Console.ForegroundColor = defaultColor;
+            Console.Write(fileInfo.FullName);
+
+            for (int i = fileInfo.FullName.Length; i < 95; i++) Console.Write(" ");
+            Console.WriteLine($"\n{fileInfo.LastWriteTime}");
+        }
+
         /// <summary>
         /// Nástroj pro kontrolu nových souborů na FTP serveru po určitém datu.
         /// </summary>
@@ -24,8 +44,6 @@ namespace FtpUpdateChecker
                 Console.Error.WriteLine("Run with --help to display additional information.");
                 return;
             }
-
-            var defaultColor = Console.ForegroundColor;
             var date = new DateTime(year, month, day);
             var displayDate = date.ToShortDateString();
 
@@ -56,24 +74,17 @@ namespace FtpUpdateChecker
             foreach (var fileInfo in fileInfos)
             {
                 Console.Write("\r");
-                if (!fileInfo.IsDirectory)
+
+                if (fileInfo.IsDirectory)
                 {
-                    if (fileInfo.LastWriteTime >= date)
-                    {
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.Write($"{++foundCount}. ");
-
-                        Console.ForegroundColor = defaultColor;
-                        Console.Write(fileInfo.FullName);
-
-                        for (int i = fileInfo.FullName.Length; i < 95; i++) Console.Write(" ");
-                        Console.Write($"\n{fileInfo.LastWriteTime}\n");
-                    }
-                    fileCount++;
+                    WriteStatus(fileCount, ++folderCount, foundCount, displayDate);
+                    continue;
                 }
-                else folderCount++;
-
-                Console.Write($"Checked {fileCount} file(s) in {folderCount} folder(s). Found {foundCount} file(s) modified after {displayDate}.");
+                if (fileInfo.LastWriteTime >= date)
+                {
+                    WriteFoundFile(fileInfo, ref foundCount);
+                }
+                WriteStatus(++fileCount, folderCount, foundCount, displayDate);
             }
             Console.WriteLine("\nProcess completed.");
         }
