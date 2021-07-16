@@ -57,6 +57,8 @@ namespace FtpUpdateChecker
         static void Main(string? username = null, string? password = null, string host = "mcrai.vshosting.cz",
             string path = "/httpdocs", int year = 2021, int month = 7, int day = 8, bool useLoginsFile = false, string baseFolder = @"C:\McRAI\")
         {
+            var defaultColor = Console.ForegroundColor;
+
             if (!useLoginsFile && (username is null || password is null))
             {
                 Console.Error.WriteLine("Missing arguments --username or --password argument.");
@@ -69,9 +71,18 @@ namespace FtpUpdateChecker
                 return;
             }
             if (useLoginsFile)
-                password = LoadPasswordFromFile(baseFolder, username);
+                try
+                {
+                    password = LoadPasswordFromFile(baseFolder, username);
+                }
+                catch (InvalidOperationException)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Error.WriteLine($"\n❌ Unable to load password from {baseFolder}ftp_logins.txt for user {username}.");
+                    Console.ForegroundColor = defaultColor;
+                    return;
+                }    
 
-            var defaultColor = Console.ForegroundColor;
             var date = new DateTime(year, month, day);
             var displayDate = date.ToShortDateString();
 
