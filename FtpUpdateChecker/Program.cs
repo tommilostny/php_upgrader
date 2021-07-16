@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using WinSCP;
 
 namespace FtpUpdateChecker
@@ -11,10 +12,8 @@ namespace FtpUpdateChecker
             Console.Write($"Found {foundCount} file(s) modified after {displayDate}.");
         }
 
-        static void WriteFoundFile(RemoteFileInfo fileInfo, ref uint foundCount)
+        static void WriteFoundFile(RemoteFileInfo fileInfo, ref uint foundCount, ConsoleColor defaultColor)
         {
-            var defaultColor = Console.ForegroundColor;
-
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write($"{++foundCount}. ");
 
@@ -22,7 +21,10 @@ namespace FtpUpdateChecker
             Console.Write(fileInfo.FullName);
 
             for (int i = fileInfo.FullName.Length; i < 95; i++) Console.Write(" ");
-            Console.WriteLine($"\n{fileInfo.LastWriteTime}");
+
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"\n\t{fileInfo.LastWriteTime}");
+            Console.ForegroundColor = defaultColor;
         }
 
         /// <summary>
@@ -31,7 +33,7 @@ namespace FtpUpdateChecker
         /// <param name="username">Uživatelské jméno na FTP.</param>
         /// <param name="password">Heslo pro přístup na FTP.</param>
         /// <param name="host">Url serveru.</param>
-        /// <param name="path">Root složka skenovaného webu.</param>
+        /// <param name="path">Root složka skenovaného webu (musí být správně začínající lomítkem).</param>
         /// <param name="year">Soubory nad tímto rokem se zobrazí jako aktualizované.</param>
         /// <param name="month">Soubory nad tímto měsícem se zobrazí jako aktualizované.</param>
         /// <param name="day">Soubory nad tímto dnem se zobrazí jako aktualizované.</param>
@@ -44,6 +46,7 @@ namespace FtpUpdateChecker
                 Console.Error.WriteLine("Run with --help to display additional information.");
                 return;
             }
+            var defaultColor = Console.ForegroundColor;
             var date = new DateTime(year, month, day);
             var displayDate = date.ToShortDateString();
 
@@ -55,16 +58,23 @@ namespace FtpUpdateChecker
                 Password = password,
                 FtpSecure = FtpSecure.Explicit
             };
-
             using var session = new Session();
             Console.WriteLine($"Connecting to {username}@{host} ...");
 
-            //Connect
-            session.Open(sessionOptions);
+            try //Connect
+            {
+                session.Open(sessionOptions);
+            }
+            catch (SessionRemoteException)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.WriteLine("❌ Unable to open session with entered username and password.");
+                Console.ForegroundColor = defaultColor;
+                return;
+            }
 
-            //Enumerate files
-            var options = EnumerationOptions.EnumerateDirectories | EnumerationOptions.AllDirectories;
-            var fileInfos = session.EnumerateRemoteFiles(path, null, options);
+            var enumerationOptions = EnumerationOptions.EnumerateDirectories | EnumerationOptions.AllDirectories;
+            var fileInfos = session.EnumerateRemoteFiles(path, null, enumerationOptions);
 
             Console.WriteLine($"Connection successful! Checking all files in {path} for updates after {displayDate}.\n");
             uint foundCount = 0;
@@ -82,11 +92,13 @@ namespace FtpUpdateChecker
                 }
                 if (fileInfo.LastWriteTime >= date)
                 {
-                    WriteFoundFile(fileInfo, ref foundCount);
+                    WriteFoundFile(fileInfo, ref foundCount, defaultColor);
                 }
                 WriteStatus(++fileCount, folderCount, foundCount, displayDate);
             }
-            Console.WriteLine("\nProcess completed.");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\n✔️ Process completed.");
+            Console.ForegroundColor = defaultColor;
         }
     }
 }
