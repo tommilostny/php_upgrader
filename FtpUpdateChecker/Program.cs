@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using WinSCP;
 
 namespace FtpUpdateChecker
@@ -38,16 +36,21 @@ namespace FtpUpdateChecker
             Console.Error.WriteLine("   Run with --help to display additional information.");
         }
 
-        static string LoadPasswordFromFile(string baseFolder, string username)
+        static string LoadPasswordFromFile(string baseFolder, string? username)
         {
-            var lines = File.ReadAllLines($"{baseFolder}ftp_logins.txt");
-            var allLogins = new List<string[]>();
+            if (string.IsNullOrWhiteSpace(username))
+                throw new ArgumentNullException(nameof(username), "Argument is required while in --use-logins-file mode.");
 
-            foreach (var line in lines)
+            using var sr = new StreamReader($"{baseFolder}ftp_logins.txt");
+
+            while (!sr.EndOfStream)
             {
-                allLogins.Add(line.Split(" : ").Select(login => login.Trim()).ToArray());
+                var login = sr.ReadLine().Split(" : ");
+
+                if (login[0].Trim() == username)
+                    return login[1].Trim();
             }
-            return allLogins.First(login => login[0] == username)[1];
+            throw new InvalidOperationException($"Unable to load password from {baseFolder}ftp_logins.txt for user {username}.");
         }
 
         /// <summary>
@@ -71,11 +74,11 @@ namespace FtpUpdateChecker
             {
                 try
                 {
-                    password = LoadPasswordFromFile(baseFolder, username ?? throw new ArgumentNullException(nameof(username), "Argument is required while in --use-logins-file mode."));
+                    password = LoadPasswordFromFile(baseFolder, username);
                 }
-                catch (InvalidOperationException)
+                catch (InvalidOperationException exception)
                 {
-                    WriteErrorMessage($"Unable to load password from {baseFolder}ftp_logins.txt for user {username}.", defaultColor);
+                    WriteErrorMessage(exception.Message, defaultColor);
                     return;
                 }
                 catch (ArgumentNullException exception)
