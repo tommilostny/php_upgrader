@@ -369,14 +369,9 @@ namespace PhpUpgrader
                     if (lines[i].Contains("</script")) javascript = false;
 
                     fileContent += $"{lines[i]}\n";
-                    if (lines[i].Contains("function") && !javascript)
-                    {
-                        if (CheckForMysqli_BeforeAnotherFunction(lines, i))
-                        {
-                            fileContent += $"{lines[++i]}\n\n    global $beta;\n\n";
-                            Console.WriteLine(" - global $beta; added");
-                        }
-                    }
+
+                    if (lines[i].Contains("function") && !javascript && CheckForMysqli_BeforeAnotherFunction(lines, i))
+                        fileContent += $"{lines[++i]}\n\n    global $beta;\n\n";
                 }
             }
         }
