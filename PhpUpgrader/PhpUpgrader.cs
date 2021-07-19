@@ -114,43 +114,44 @@ namespace PhpUpgrader
         /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
         private void UpgradeConnect(string fileName, ref string fileContent)
         {
-            if (fileName.Contains($@"\connect\{_connectionFile}") || fileName.Contains($@"\system\{_connectionFile}"))
+            if (!fileName.Contains($@"\connect\{_connectionFile}") && !fileName.Contains($@"\system\{_connectionFile}"))
             {
-                var connectHead = string.Empty;
-                using (var sr = new StreamReader(fileName))
-                {
-                    var inComment = false;
-                    while (!sr.EndOfStream)
-                    {
-                        var line = sr.ReadLine();
-                        connectHead += $"{line}\n";
-
-                        if (line.Contains("/*"))
-                        {
-                            inComment = true;
-                        }
-                        if (line.Contains("*/"))
-                        {
-                            inComment = false;
-                            if (line.TrimStart().StartsWith("$password_beta"))
-                                continue;
-                        }
-
-                        if (line.Contains("$password_beta") && !inComment && !line.Contains("//$password_beta"))
-                            break;
-                    }
-                }
-                //generování nových údajů k databázi, pokud jsou všechny zadány
-                if (_database is not null && _username is not null && _password is not null && _hostname is not null)
-                {
-                    connectHead = connectHead.Replace("\n", "\n//"); //zakomentovat původní řádky
-                    connectHead = connectHead.Replace("////", "//"); //smazat zbytečná lomítka
-                    connectHead += '\n';
-                    connectHead = connectHead.Replace("//\n", "\n");
-                    connectHead += $"$hostname_beta = \"{_hostname}\";\n$database_beta = \"{_database}\";\n$username_beta = \"{_username}\";\n$password_beta = \"{_password}\";\n";
-                }
-                fileContent = connectHead + File.ReadAllText($"{_baseFolder}important\\connection.txt");
+                return;
             }
+            var connectHead = string.Empty;
+            using var sr = new StreamReader(fileName);
+            var inComment = false;
+
+            while (!sr.EndOfStream)
+            {
+                var line = sr.ReadLine();
+                connectHead += $"{line}\n";
+
+                if (line.Contains("/*"))
+                {
+                    inComment = true;
+                }
+                if (line.Contains("*/"))
+                {
+                    inComment = false;
+                    if (line.TrimStart().StartsWith("$password_beta"))
+                        continue;
+                }
+
+                if (line.Contains("$password_beta") && !inComment && !line.Contains("//$password_beta"))
+                    break;
+            }
+
+            //generování nových údajů k databázi, pokud jsou všechny zadány
+            if (_database is not null && _username is not null && _password is not null && _hostname is not null)
+            {
+                connectHead = connectHead.Replace("\n", "\n//"); //zakomentovat původní řádky
+                connectHead = connectHead.Replace("////", "//"); //smazat zbytečná lomítka
+                connectHead += '\n';
+                connectHead = connectHead.Replace("//\n", "\n");
+                connectHead += $"$hostname_beta = \"{_hostname}\";\n$database_beta = \"{_database}\";\n$username_beta = \"{_username}\";\n$password_beta = \"{_password}\";\n";
+            }
+            fileContent = connectHead + File.ReadAllText($"{_baseFolder}important\\connection.txt");
         }
 
         /// <summary>
@@ -176,21 +177,22 @@ namespace PhpUpgrader
         /// </summary>
         private static void UpgradeMysqlResult(ref string fileContent)
         {
-            if (fileContent.Contains("mysql_result"))
+            if (!fileContent.Contains("mysql_result"))
             {
-                var lines = fileContent.Split('\n');
-                fileContent = string.Empty;
+                return;
+            }
+            var lines = fileContent.Split('\n');
+            fileContent = string.Empty;
 
-                for (var i = 0; i < lines.Length; i++)
+            for (var i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].Contains("mysql_result"))
                 {
-                    if (lines[i].Contains("mysql_result"))
-                    {
-                        lines[i] = lines[i].Replace("COUNT(*)", "*");
-                        lines[i] = lines[i].Replace(", 0", string.Empty);
-                        lines[i] = lines[i].Replace("mysql_result", "mysqli_num_rows");
-                    }
-                    fileContent += $"{lines[i]}\n";
+                    lines[i] = lines[i].Replace("COUNT(*)", "*");
+                    lines[i] = lines[i].Replace(", 0", string.Empty);
+                    lines[i] = lines[i].Replace("mysql_result", "mysqli_num_rows");
                 }
+                fileContent += $"{lines[i]}\n";
             }
         }
 
@@ -199,19 +201,20 @@ namespace PhpUpgrader
         /// </summary>
         private static void UpgradeClanekVypis(ref string fileContent)
         {
-            if (fileContent.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]") && !fileContent.Contains("$p_sf = array();"))
+            if (!fileContent.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]") || fileContent.Contains("$p_sf = array();"))
             {
-                var lines = fileContent.Split('\n');
-                fileContent = string.Empty;
+                return;
+            }
+            var lines = fileContent.Split('\n');
+            fileContent = string.Empty;
 
-                for (var i = 0; i < lines.Length; i++)
+            for (var i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"))
                 {
-                    if (lines[i].Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"))
-                    {
-                        fileContent += "        $p_sf = array();\n";
-                    }
-                    fileContent += $"{lines[i]}\n";
+                    fileContent += "        $p_sf = array();\n";
                 }
+                fileContent += $"{lines[i]}\n";
             }
         }
 
@@ -325,28 +328,29 @@ namespace PhpUpgrader
         {
             foreach (var adminFolder in _adminFolders)
             {
-                if (fileName.Contains($"{adminFolder}\\sitemap_save.php")
-                    && fileContent.Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))")
-                    && !fileContent.Contains("if($query_text_all !== FALSE)"))
+                if (!fileName.Contains($"{adminFolder}\\sitemap_save.php")
+                    || !fileContent.Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))")
+                    || fileContent.Contains("if($query_text_all !== FALSE)"))
                 {
-                    var lines = fileContent.Split('\n');
-                    var sfBracket = false;
-                    fileContent = string.Empty;
+                    continue;
+                }
+                var lines = fileContent.Split('\n');
+                var sfBracket = false;
+                fileContent = string.Empty;
 
-                    for (var i = 0; i < lines.Length; i++)
+                for (var i = 0; i < lines.Length; i++)
+                {
+                    if (lines[i].Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))"))
                     {
-                        if (lines[i].Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))"))
-                        {
-                            fileContent += "          if($query_text_all !== FALSE)\n          {\n";
-                            sfBracket = true;
-                        }
-                        if (lines[i].Contains("}") && sfBracket)
-                        {
-                            fileContent += $"    {lines[i]}\n";
-                            sfBracket = false;
-                        }
-                        fileContent += $"{lines[i]}\n";
+                        fileContent += "          if($query_text_all !== FALSE)\n          {\n";
+                        sfBracket = true;
                     }
+                    if (lines[i].Contains("}") && sfBracket)
+                    {
+                        fileContent += $"    {lines[i]}\n";
+                        sfBracket = false;
+                    }
+                    fileContent += $"{lines[i]}\n";
                 }
             }
         }
@@ -357,22 +361,23 @@ namespace PhpUpgrader
         /// </summary>
         private static void UpgradeGlobalBeta(ref string fileContent)
         {
-            if (Regex.IsMatch(fileContent, "(?s)^(?=.*?function )(?=.*?mysqli_)") && !fileContent.Contains("$this"))
+            if (!Regex.IsMatch(fileContent, "(?s)^(?=.*?function )(?=.*?mysqli_)") || fileContent.Contains("$this"))
             {
-                var lines = fileContent.Split('\n');
-                var javascript = false;
-                fileContent = string.Empty;
+                return;
+            }
+            var lines = fileContent.Split('\n');
+            var javascript = false;
+            fileContent = string.Empty;
 
-                for (var i = 0; i < lines.Length; i++)
-                {
-                    if (lines[i].Contains("<script")) javascript = true;
-                    if (lines[i].Contains("</script")) javascript = false;
+            for (var i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].Contains("<script")) javascript = true;
+                if (lines[i].Contains("</script")) javascript = false;
 
-                    fileContent += $"{lines[i]}\n";
+                fileContent += $"{lines[i]}\n";
 
-                    if (lines[i].Contains("function") && !javascript && CheckForMysqli_BeforeAnotherFunction(lines, i))
-                        fileContent += $"{lines[++i]}\n\n    global $beta;\n\n";
-                }
+                if (lines[i].Contains("function") && !javascript && CheckForMysqli_BeforeAnotherFunction(lines, i))
+                    fileContent += $"{lines[++i]}\n\n    global $beta;\n\n";
             }
         }
 
@@ -388,20 +393,20 @@ namespace PhpUpgrader
                 if (lines[i].Contains("<script")) javascript = true;
                 if (lines[i].Contains("</script")) javascript = false;
 
-                if (!javascript)
-                {
-                    if (lines[i].Contains("/*")) inComment = true;
-                    if (lines[i].Contains("*/")) inComment = false;
+                if (javascript)
+                    continue;
 
-                    if (lines[i].Contains("mysqli_") && !inComment && !lines[i].TrimStart().StartsWith("//"))
-                        return true;
+                if (lines[i].Contains("/*")) inComment = true;
+                if (lines[i].Contains("*/")) inComment = false;
 
-                    if (lines[i].Contains("{")) bracketCount++;
-                    if (lines[i].Contains("}")) bracketCount--;
+                if (lines[i].Contains("mysqli_") && !inComment && !lines[i].TrimStart().StartsWith("//"))
+                    return true;
 
-                    if ((lines[i].Contains("global $beta;") || bracketCount <= 0) && i > startIndex)
-                        break;
-                }
+                if (lines[i].Contains("{")) bracketCount++;
+                if (lines[i].Contains("}")) bracketCount--;
+
+                if ((lines[i].Contains("global $beta;") || bracketCount <= 0) && i > startIndex)
+                    break;
             }
             return false;
         }
