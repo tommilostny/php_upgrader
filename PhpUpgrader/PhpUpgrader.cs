@@ -101,6 +101,7 @@ namespace PhpUpgrader
                 UpgradeXmlFeeds(fileName, ref fileContent);
                 UpgradeSitemapSave(fileName, ref fileContent);
                 UpgradeGlobalBeta(ref fileContent);
+                UpgradeEreg(ref fileContent);
 
                 RenameBeta(ref fileContent);
                 File.WriteAllText(fileName, fileContent);
@@ -417,6 +418,20 @@ namespace PhpUpgrader
             if (_replaceBetaWith is not null)
             {
                 fileContent = fileContent.Replace("$beta", $"${_replaceBetaWith}");
+            }
+        }
+
+        private void UpgradeEreg(ref string fileContent)
+        {
+            fileContent = Regex.Replace(fileContent, @"ereg\((""|').*(""|')", new MatchEvaluator(ReplaceEreg));
+
+            static string ReplaceEreg(Match match)
+            {
+                string insidePattern = match.Value[(match.Value.IndexOf('(') + 1)..];
+                insidePattern = insidePattern.Replace("\"", string.Empty);
+                insidePattern = insidePattern.Replace("'", string.Empty);
+
+                return $"preg_match('/{insidePattern}/'";
             }
         }
     }
