@@ -70,7 +70,7 @@ namespace PhpUpgrader
         {
             foreach (var subdir in Directory.GetDirectories(directoryName))
             {
-                if (Directory.GetDirectories(subdir).Length > 0 && !subdir.Contains("tiny_mce"))
+                if (Directory.GetDirectories(subdir).Length > 0)
                     UpgradeAllFilesRecursively(subdir);
                 UpgradeFiles(subdir);
             }
@@ -88,22 +88,25 @@ namespace PhpUpgrader
                 if (UpgradeTinyAjaxBehavior(fileName))
                     continue;
 
-                UpgradeConnect(fileName, ref fileContent);
-                UpgradeMysqlResult(ref fileContent);
-                UpgradeClanekVypis(ref fileContent);
-                UpgradeFindReplace(ref fileContent);
-                UpgradeMysqliQueries(ref fileContent);
-                UpgradeMysqliClose(fileName, ref fileContent);
-                UpgradeAnketa(fileName, ref fileContent);
-                UpgradeChdir(fileName, ref fileContent);
-                UpgradeTableAddEdit(fileName, ref fileContent);
-                UpgradeStrankovani(fileName, ref fileContent);
-                UpgradeXmlFeeds(fileName, ref fileContent);
-                UpgradeSitemapSave(fileName, ref fileContent);
-                UpgradeGlobalBeta(ref fileContent);
                 UpgradeEreg(ref fileContent);
 
-                RenameBeta(ref fileContent);
+                if (!fileName.Contains("tiny_mce"))
+                {
+                    UpgradeConnect(fileName, ref fileContent);
+                    UpgradeMysqlResult(ref fileContent);
+                    UpgradeClanekVypis(ref fileContent);
+                    UpgradeFindReplace(ref fileContent);
+                    UpgradeMysqliQueries(ref fileContent);
+                    UpgradeMysqliClose(fileName, ref fileContent);
+                    UpgradeAnketa(fileName, ref fileContent);
+                    UpgradeChdir(fileName, ref fileContent);
+                    UpgradeTableAddEdit(fileName, ref fileContent);
+                    UpgradeStrankovani(fileName, ref fileContent);
+                    UpgradeXmlFeeds(fileName, ref fileContent);
+                    UpgradeSitemapSave(fileName, ref fileContent);
+                    UpgradeGlobalBeta(ref fileContent);
+                    RenameBeta(ref fileContent);
+                }
                 File.WriteAllText(fileName, fileContent);
 
                 //po dodelani nahrazeni nize projit na retezec - mysql_
@@ -120,8 +123,8 @@ namespace PhpUpgrader
                 return;
             }
             var connectHead = string.Empty;
-            using var sr = new StreamReader(fileName);
             var inComment = false;
+            using var sr = new StreamReader(fileName);
 
             while (!sr.EndOfStream)
             {
@@ -381,36 +384,35 @@ namespace PhpUpgrader
                 if (lines[i].Contains("function") && !javascript && CheckForMysqli_BeforeAnotherFunction(lines, i))
                     fileContent += $"{lines[++i]}\n\n    global $beta;\n\n";
             }
-        }
 
-        /// <summary> Kontrola funkce zda obsahuje mysqli_ (pro přidávání global $beta;). </summary>
-        private static bool CheckForMysqli_BeforeAnotherFunction(string[] lines, int startIndex)
-        {
-            var javascript = false;
-            var inComment = false;
-            var bracketCount = 0;
-
-            for (var i = startIndex; i < lines.Length; i++)
+            static bool CheckForMysqli_BeforeAnotherFunction(string[] lines, int startIndex)
             {
-                if (lines[i].Contains("<script")) javascript = true;
-                if (lines[i].Contains("</script")) javascript = false;
+                var javascript = false;
+                var inComment = false;
+                var bracketCount = 0;
 
-                if (javascript)
-                    continue;
+                for (var i = startIndex; i < lines.Length; i++)
+                {
+                    if (lines[i].Contains("<script")) javascript = true;
+                    if (lines[i].Contains("</script")) javascript = false;
 
-                if (lines[i].Contains("/*")) inComment = true;
-                if (lines[i].Contains("*/")) inComment = false;
+                    if (javascript)
+                        continue;
 
-                if (lines[i].Contains("mysqli_") && !inComment && !lines[i].TrimStart().StartsWith("//"))
-                    return true;
+                    if (lines[i].Contains("/*")) inComment = true;
+                    if (lines[i].Contains("*/")) inComment = false;
 
-                if (lines[i].Contains("{")) bracketCount++;
-                if (lines[i].Contains("}")) bracketCount--;
+                    if (lines[i].Contains("mysqli_") && !inComment && !lines[i].TrimStart().StartsWith("//"))
+                        return true;
 
-                if ((lines[i].Contains("global $beta;") || bracketCount <= 0) && i > startIndex)
-                    break;
+                    if (lines[i].Contains("{")) bracketCount++;
+                    if (lines[i].Contains("}")) bracketCount--;
+
+                    if ((lines[i].Contains("global $beta;") || bracketCount <= 0) && i > startIndex)
+                        break;
+                }
+                return false;
             }
-            return false;
         }
 
         private void RenameBeta(ref string fileContent)
@@ -421,17 +423,32 @@ namespace PhpUpgrader
             }
         }
 
-        private void UpgradeEreg(ref string fileContent)
+        /// <summary>
+        /// - funkci ereg nebo ereg_replace doplnit do prvního parametru delimetr na začátek a nakonec (if(ereg('.+@.+..+', $retezec))
+        /// // puvodni, jiz nefunkcni >>> if(preg_match('#.+@.+..+#', $retezec)) // upravene - delimiter zvolen #)
+        /// </summary>
+        public static void UpgradeEreg(ref string fileContent)
         {
-            fileContent = Regex.Replace(fileContent, @"ereg\((""|').*(""|')", new MatchEvaluator(ReplaceEreg));
+            var evaluator = new MatchEvaluator(EregToPreg);
+            fileContent = Regex.Replace(fileContent, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator);
+            fileContent = Regex.Replace(fileContent, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator);
 
-            static string ReplaceEreg(Match match)
+            fileContent = Regex.Replace(fileContent, @"ereg ?\( ?\$", "preg_match($");
+            fileContent = Regex.Replace(fileContent, @"ereg_replace ?\( ?\$", "preg_replace($");
+
+            if (fileContent.Contains("ereg"))
+                Console.Error.WriteLine("- ereg alert!");
+
+            static string EregToPreg(Match match)
             {
-                string insidePattern = match.Value[(match.Value.IndexOf('(') + 1)..];
-                insidePattern = insidePattern.Replace("\"", string.Empty);
-                insidePattern = insidePattern.Replace("'", string.Empty);
+                int bracketIndex = match.Value.IndexOf('(');
+                char quote = match.Value[bracketIndex + 1];
 
-                return $"preg_match('/{insidePattern}/'";
+                string insidePattern = match.Value[(bracketIndex + 2)..(match.Value.Length - 1)];
+
+                string pregFunction = match.Value.StartsWith("ereg_replace") ? "preg_replace" : "preg_match";
+
+                return $"{pregFunction}({quote}#{insidePattern}#{quote}";
             }
         }
     }
