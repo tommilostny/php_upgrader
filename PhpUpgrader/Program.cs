@@ -33,7 +33,7 @@ namespace PhpUpgrader
                 return;
             }
 
-            var upgrader = new PhpUpgrader(baseFolder, webName, adminFolders, db, user, password, host, beta, connectionFile);
+            var upgrader = new MonaUpgrader(baseFolder, webName, adminFolders, db, user, password, host, beta, connectionFile);
 
             Console.WriteLine("\nProcessed files:\n");
             upgrader.UpgradeAllFilesRecursively(workDir);

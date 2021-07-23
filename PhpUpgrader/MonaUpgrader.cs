@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 namespace PhpUpgrader
 {
     /// <summary> PHP upgrader pro RS Mona z verze 5 na verzi 7. </summary>
-    public class PhpUpgrader
+    public class MonaUpgrader
     {
         /// <summary>
         /// Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce.
@@ -38,7 +38,7 @@ namespace PhpUpgrader
         /// <param name="hostname">URL k databázovému serveru (př. default mcrai2.vshosting.cz)</param>
         /// <param name="replaceBetaWith"></param>
         /// <param name="connectionFile"></param>
-        public PhpUpgrader(string baseFolder, string webName, string[]? adminFolders, string? database, string? username, string? password, string? hostname, string? replaceBetaWith, string connectionFile)
+        public MonaUpgrader(string baseFolder, string webName, string[]? adminFolders, string? database, string? username, string? password, string? hostname, string? replaceBetaWith, string connectionFile)
         {
             _findWhat = File.ReadAllLines($@"{baseFolder}important\find_what.txt");
             _replaceWith = File.ReadAllLines($@"{baseFolder}important\replace_with.txt");
@@ -84,6 +84,7 @@ namespace PhpUpgrader
             {
                 Console.WriteLine(fileName);
                 var fileContent = File.ReadAllText(fileName);
+                var originalContent = fileContent;
 
                 if (UpgradeTinyAjaxBehavior(fileName))
                     continue;
@@ -107,7 +108,9 @@ namespace PhpUpgrader
                     UpgradeGlobalBeta(ref fileContent);
                     RenameBeta(ref fileContent);
                 }
-                File.WriteAllText(fileName, fileContent);
+                //upraveno, zapsat do souboru
+                if (fileContent != originalContent)
+                    File.WriteAllText(fileName, fileContent);
 
                 //po dodelani nahrazeni nize projit na retezec - mysql_
                 if (fileContent.ToLower().Contains("mysql_") && !FilesContainingMysql.Contains(fileName))
@@ -448,7 +451,7 @@ namespace PhpUpgrader
 
                 string pregFunction = match.Value.StartsWith("ereg_replace") ? "preg_replace" : "preg_match";
 
-                return $"{pregFunction}({quote}#{insidePattern}#{quote}";
+                return $"{pregFunction}({quote}~{insidePattern}~{quote}";
             }
         }
     }
