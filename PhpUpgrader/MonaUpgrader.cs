@@ -89,8 +89,6 @@ namespace PhpUpgrader
                 if (UpgradeTinyAjaxBehavior(fileName))
                     continue;
 
-                UpgradeEreg(ref fileContent);
-
                 if (!fileName.Contains("tiny_mce"))
                 {
                     UpgradeConnect(fileName, ref fileContent);
@@ -108,6 +106,8 @@ namespace PhpUpgrader
                     UpgradeGlobalBeta(ref fileContent);
                     RenameBeta(ref fileContent);
                 }
+                UpgradeEreg(ref fileContent);
+
                 //upraveno, zapsat do souboru
                 if (fileContent != originalContent)
                     File.WriteAllText(fileName, fileContent);
