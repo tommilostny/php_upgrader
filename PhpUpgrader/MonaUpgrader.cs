@@ -51,8 +51,7 @@ namespace PhpUpgrader
             _hostname = hostname;
             _connectionFile = connectionFile;
 
-            _replaceBetaWith = replaceBetaWith;
-            if (replaceBetaWith is not null)
+            if ((_replaceBetaWith = replaceBetaWith) is not null)
             {
                 for (int i = 0; i < _findWhat.Length; i++)
                 {
@@ -83,8 +82,8 @@ namespace PhpUpgrader
             foreach (var fileName in Directory.GetFiles(directoryName, "*.php"))
             {
                 Console.WriteLine(fileName);
-                var fileContent = File.ReadAllText(fileName);
-                var originalContent = fileContent;
+                string fileContent = File.ReadAllText(fileName);
+                string originalContent = fileContent;
 
                 if (UpgradeTinyAjaxBehavior(fileName))
                     continue;
@@ -125,13 +124,13 @@ namespace PhpUpgrader
             {
                 return;
             }
-            var connectHead = string.Empty;
-            var inComment = false;
+            string connectHead = string.Empty;
+            bool inComment = false;
             using var sr = new StreamReader(fileName);
 
             while (!sr.EndOfStream)
             {
-                var line = sr.ReadLine();
+                string line = sr.ReadLine();
                 connectHead += $"{line}\n";
 
                 if (line.Contains("/*"))
@@ -166,8 +165,7 @@ namespace PhpUpgrader
         /// </summary>
         private bool UpgradeTinyAjaxBehavior(string fileName)
         {
-            var foundTAB = false;
-
+            bool foundTAB = false;
             foreach (var adminFolder in _adminFolders)
             {
                 if (fileName.Contains($@"\{adminFolder}\include\TinyAjaxBehavior.php"))
@@ -191,7 +189,7 @@ namespace PhpUpgrader
             var lines = fileContent.Split('\n');
             fileContent = string.Empty;
 
-            for (var i = 0; i < lines.Length; i++)
+            for (int i = 0; i < lines.Length; i++)
             {
                 if (lines[i].Contains("mysql_result"))
                 {
@@ -215,7 +213,7 @@ namespace PhpUpgrader
             var lines = fileContent.Split('\n');
             fileContent = string.Empty;
 
-            for (var i = 0; i < lines.Length; i++)
+            for (int i = 0; i < lines.Length; i++)
             {
                 if (lines[i].Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"))
                 {
@@ -230,7 +228,7 @@ namespace PhpUpgrader
         /// </summary>
         private void UpgradeFindReplace(ref string fileContent)
         {
-            for (var i = 0; i < _findWhat.Length; i++)
+            for (int i = 0; i < _findWhat.Length; i++)
             {
                 fileContent = fileContent.Replace(_findWhat[i], _replaceWith[i]);
             }
@@ -342,11 +340,11 @@ namespace PhpUpgrader
                 {
                     continue;
                 }
+                bool sfBracket = false;
                 var lines = fileContent.Split('\n');
-                var sfBracket = false;
                 fileContent = string.Empty;
 
-                for (var i = 0; i < lines.Length; i++)
+                for (int i = 0; i < lines.Length; i++)
                 {
                     if (lines[i].Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))"))
                     {
@@ -373,11 +371,11 @@ namespace PhpUpgrader
             {
                 return;
             }
+            bool javascript = false;
             var lines = fileContent.Split('\n');
-            var javascript = false;
             fileContent = string.Empty;
 
-            for (var i = 0; i < lines.Length; i++)
+            for (int i = 0; i < lines.Length; i++)
             {
                 if (lines[i].Contains("<script")) javascript = true;
                 if (lines[i].Contains("</script")) javascript = false;
@@ -385,16 +383,18 @@ namespace PhpUpgrader
                 fileContent += $"{lines[i]}\n";
 
                 if (lines[i].Contains("function") && !javascript && CheckForMysqli_BeforeAnotherFunction(lines, i))
+                {
                     fileContent += $"{lines[++i]}\n\n    global $beta;\n\n";
+                }
             }
 
             static bool CheckForMysqli_BeforeAnotherFunction(string[] lines, int startIndex)
             {
-                var javascript = false;
-                var inComment = false;
-                var bracketCount = 0;
+                bool javascript = false;
+                bool inComment = false;
+                int bracketCount = 0;
 
-                for (var i = startIndex; i < lines.Length; i++)
+                for (int i = startIndex; i < lines.Length; i++)
                 {
                     if (lines[i].Contains("<script")) javascript = true;
                     if (lines[i].Contains("</script")) javascript = false;
