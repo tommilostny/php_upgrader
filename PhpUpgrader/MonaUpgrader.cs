@@ -58,7 +58,7 @@ namespace PhpUpgrader
         public string? Password { get; init; }
 
         /// <summary> Přejmenovat proměnnou $beta tímto názvem (null => nepřejmenovávat). </summary>
-        public string? ReplaceBetaWith
+        public string? RenameBetaWith
         {
             get => _replaceBetaWith;
             init
@@ -255,12 +255,12 @@ namespace PhpUpgrader
         /// (napr. mysqli_query($beta, "SET CHARACTER SET utf8", $this->db);
         /// predelat na mysqli_query($this->db, "SET CHARACTER SET utf8"); …. atd .. )
         /// </summary>
-        public static void UpgradeMysqliQueries(ref string fileContent)
+        public void UpgradeMysqliQueries(ref string fileContent)
         {
             if (fileContent.Contains("$this->db"))
             {
                 fileContent = fileContent.Replace("mysqli_query($beta, \"SET CHARACTER SET utf8\", $this->db);", "mysqli_query($this->db, \"SET CHARACTER SET utf8\");");
-                fileContent = fileContent.Replace("$beta", "$this->db");
+                RenameBeta(ref fileContent, "this->db");
             }
         }
 
@@ -435,11 +435,11 @@ namespace PhpUpgrader
         }
 
         /// <summary> Přejmenuje proměnnou $beta na přednastavenou hodnotu. </summary>
-        public void RenameBeta(ref string fileContent)
+        public void RenameBeta(ref string fileContent, string? replacement = null)
         {
-            if (ReplaceBetaWith is not null)
+            if ((replacement ?? RenameBetaWith) is not null)
             {
-                fileContent = fileContent.Replace("$beta", $"${ReplaceBetaWith}");
+                fileContent = fileContent.Replace("$beta", $"${replacement ?? RenameBetaWith}");
             }
         }
 

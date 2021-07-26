@@ -42,7 +42,7 @@ namespace PhpUpgrader
                 Username = user,
                 Password = password,
                 Hostname = host,
-                ReplaceBetaWith = beta,
+                RenameBetaWith = beta,
                 ConnectionFile = connectionFile
             };
 
