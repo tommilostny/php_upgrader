@@ -11,13 +11,17 @@ namespace PhpUpgrader
         /// <summary> Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce. </summary>
         public HashSet<string> FilesContainingMysql { get; } = new();
 
-        /// <summary> Co nahradit? (načteno ze souboru "{BaseFolder}important/find_what.txt") </summary>
+        /// <summary>
+        /// Co nahradit? (načteno ze souboru '<seealso cref="BaseFolder">BaseFolder</seealso>important/find_what.txt').
+        /// </summary>
         public string[] FindWhat { get; private set; }
 
-        /// <summary> Čím to nahradit? (načteno ze souboru "{BaseFolder}important/replace_with.txt") </summary>
+        /// <summary>
+        /// Čím to nahradit? (načteno ze souboru '<seealso cref="BaseFolder">BaseFolder</seealso>important/replace_with.txt').
+        /// </summary>
         public string[] ReplaceWith { get; private set; }
 
-        /// <summary> Absolutní cesta základní složky (př. default C:\McRAI\), kde jsou složky 'weby' a 'important'. </summary>
+        /// <summary> Absolutní cesta základní složky, kde jsou složky 'weby' a 'important'. </summary>
         public string BaseFolder
         {
             get => _baseFolder;
@@ -33,7 +37,7 @@ namespace PhpUpgrader
         /// <summary> Název webu ve složce 'weby'. </summary>
         public string WebName { get; init; }
 
-        /// <summary> Složky obsahující administraci RS Mona (null => 1 složka admin) </summary>
+        /// <summary> Složky obsahující administraci RS Mona (null => 1 složka 'admin') </summary>
         public string[] AdminFolders
         {
             get => _adminFolders;
@@ -41,7 +45,7 @@ namespace PhpUpgrader
         }
         private string[] _adminFolders;
 
-        /// <summary> URL k databázovému serveru (př. default mcrai2.vshosting.cz). </summary>
+        /// <summary> URL k databázovému serveru. </summary>
         public string? Hostname { get; init; }
 
         /// <summary> Nová databáze na serveru hostname. </summary>
@@ -71,13 +75,11 @@ namespace PhpUpgrader
         }
         private string? _replaceBetaWith;
 
-        /// <summary> Název souboru ve složce "connect". </summary>
+        /// <summary> Název souboru ve složce 'connect'. </summary>
         public string ConnectionFile { get; init; }
 
 
-        /// <summary>
-        /// Rekurzivní upgrade .php souborů ve všech podadresářích.
-        /// </summary>
+        /// <summary> Rekurzivní upgrade .php souborů ve všech podadresářích. </summary>
         /// <param name="directoryPath">Cesta k adresáři, kde hledat .php soubory.</param>
         public void UpgradeAllFilesRecursively(string directoryPath)
         {
@@ -396,13 +398,13 @@ namespace PhpUpgrader
 
                 fileContent += $"{lines[i]}\n";
 
-                if (lines[i].Contains("function") && !javascript && CheckForMysqli_BeforeAnotherFunction(lines, i))
+                if (lines[i].Contains("function") && !javascript && _CheckForMysqliBeforeAnotherFunction(lines, i))
                 {
                     fileContent += $"{lines[++i]}\n\n    global $beta;\n\n";
                 }
             }
 
-            static bool CheckForMysqli_BeforeAnotherFunction(string[] lines, int startIndex)
+            static bool _CheckForMysqliBeforeAnotherFunction(string[] lines, int startIndex)
             {
                 bool javascript = false;
                 bool inComment = false;
@@ -447,7 +449,7 @@ namespace PhpUpgrader
         /// </summary>
         public static void UpgradeEreg(ref string fileContent)
         {
-            var evaluator = new MatchEvaluator(EregToPreg);
+            var evaluator = new MatchEvaluator(_EregToPreg);
             fileContent = Regex.Replace(fileContent, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator);
             fileContent = Regex.Replace(fileContent, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator);
 
@@ -457,7 +459,7 @@ namespace PhpUpgrader
             if (fileContent.Contains("ereg"))
                 Console.Error.WriteLine("- ereg alert!");
 
-            static string EregToPreg(Match match)
+            static string _EregToPreg(Match match)
             {
                 int bracketIndex = match.Value.IndexOf('(');
                 char quote = match.Value[bracketIndex + 1];
