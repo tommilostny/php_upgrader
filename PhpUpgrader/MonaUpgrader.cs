@@ -9,7 +9,7 @@ namespace PhpUpgrader
     public class MonaUpgrader
     {
         /// <summary> Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce. </summary>
-        public List<string> FilesContainingMysql { get; } = new();
+        public HashSet<string> FilesContainingMysql { get; } = new();
 
         /// <summary> Co nahradit? (načteno ze souboru "{BaseFolder}important/find_what.txt") </summary>
         public string[] FindWhat { get; private set; }
@@ -126,7 +126,7 @@ namespace PhpUpgrader
                     File.WriteAllText(filePath, fileContent);
 
                 //po dodelani nahrazeni nize projit na retezec - mysql_
-                if (fileContent.ToLower().Contains("mysql_") && !FilesContainingMysql.Contains(filePath))
+                if (fileContent.ToLower().Contains("mysql_"))
                     FilesContainingMysql.Add(filePath);
             }
         }
