@@ -34,10 +34,10 @@ namespace PhpUpgrader.Tests
         public void NotContainingEregShoulRemainTheSame()
         {
             var content = "mysqli_query($beta, $query);";
-            var check = content;
 
             MonaUpgrader.UpgradeEreg(ref content);
-            Assert.Equal(check, content);
+            
+            Assert.Equal("mysqli_query($beta, $query);", content);
         }
     }
 }

@@ -8,9 +8,7 @@ namespace PhpUpgrader
     /// <summary> PHP upgrader pro RS Mona z verze 5 na verzi 7. </summary>
     public class MonaUpgrader
     {
-        /// <summary>
-        /// Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce.
-        /// </summary>
+        /// <summary> Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce. </summary>
         public List<string> FilesContainingMysql { get; } = new();
 
         private readonly string[] _findWhat;
@@ -18,7 +16,6 @@ namespace PhpUpgrader
         private readonly string _baseFolder;
         private readonly string[] _adminFolders;
         private readonly string _webName;
-
         private readonly string? _hostname;
         private readonly string? _database;
         private readonly string? _username;
@@ -77,7 +74,7 @@ namespace PhpUpgrader
         }
 
         /// <summary> Upgrade všech .php souborů v jednom adresáři. </summary>
-        private void UpgradeFiles(string directoryName)
+        public void UpgradeFiles(string directoryName)
         {
             foreach (var fileName in Directory.GetFiles(directoryName, "*.php"))
             {
@@ -118,7 +115,7 @@ namespace PhpUpgrader
         }
 
         /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
-        private void UpgradeConnect(string fileName, ref string fileContent)
+        public void UpgradeConnect(string fileName, ref string fileContent)
         {
             if (!fileName.Contains($@"\connect\{_connectionFile}") && !fileName.Contains($@"\system\{_connectionFile}"))
             {
@@ -163,7 +160,7 @@ namespace PhpUpgrader
         /// <summary>
         /// predelat soubor (TinyAjaxBehavior.php) v adresari admin/include >>> prekopirovat soubor ze vzoru rs mona
         /// </summary>
-        private bool UpgradeTinyAjaxBehavior(string fileName)
+        public bool UpgradeTinyAjaxBehavior(string fileName)
         {
             bool foundTAB = false;
             foreach (var adminFolder in _adminFolders)
@@ -180,7 +177,7 @@ namespace PhpUpgrader
         /// <summary>
         /// mysql_result >>> mysqli_num_rows + odmazat druhy parametr (vetsinou - , 0) + predelat COUNT(*) na *
         /// </summary>
-        private static void UpgradeMysqlResult(ref string fileContent)
+        public static void UpgradeMysqlResult(ref string fileContent)
         {
             if (!fileContent.Contains("mysql_result"))
             {
@@ -204,7 +201,7 @@ namespace PhpUpgrader
         /// <summary>
         /// upravit soubory system/clanek.php a system/vypis.php - pokud je sdileni fotogalerii pridat nad podminku $vypis_table_clanek["sdileni_fotogalerii"] kod $p_sf = array();
         /// </summary>
-        private static void UpgradeClanekVypis(ref string fileContent)
+        public static void UpgradeClanekVypis(ref string fileContent)
         {
             if (!fileContent.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]") || fileContent.Contains("$p_sf = array();"))
             {
@@ -226,7 +223,7 @@ namespace PhpUpgrader
         /// <summary>
         /// predelat soubory nahrazenim viz. >>> část Hledat >>> Nahradit
         /// </summary>
-        private void UpgradeFindReplace(ref string fileContent)
+        public void UpgradeFindReplace(ref string fileContent)
         {
             for (int i = 0; i < _findWhat.Length; i++)
             {
@@ -239,7 +236,7 @@ namespace PhpUpgrader
         /// (napr. mysqli_query($beta, "SET CHARACTER SET utf8", $this->db);
         /// predelat na mysqli_query($this->db, "SET CHARACTER SET utf8"); …. atd .. )
         /// </summary>
-        private static void UpgradeMysqliQueries(ref string fileContent)
+        public static void UpgradeMysqliQueries(ref string fileContent)
         {
             if (fileContent.Contains("$this->db"))
             {
@@ -249,7 +246,7 @@ namespace PhpUpgrader
         }
 
         /// <summary> pridat mysqli_close($beta); do indexu nakonec </summary>
-        private void UpgradeMysqliClose(string fileName, ref string fileContent)
+        public void UpgradeMysqliClose(string fileName, ref string fileContent)
         {
             if (fileName.Contains($@"{_webName}\index.php") && !fileContent.Contains("mysqli_close"))
             {
@@ -261,7 +258,7 @@ namespace PhpUpgrader
         /// upravit soubor anketa/anketa.php - r.3 (odmazat ../)
         ///     - include_once "../setup.php"; na include_once "setup.php";
         /// </summary>
-        private static void UpgradeAnketa(string fileName, ref string fileContent)
+        public static void UpgradeAnketa(string fileName, ref string fileContent)
         {
             if (fileName.Contains(@"\anketa\anketa.php"))
             {
@@ -270,7 +267,7 @@ namespace PhpUpgrader
         }
 
         /// <summary> zakomentovat radky s funkci chdir v souboru admin/funkce/vytvoreni_adr.php </summary>
-        private void UpgradeChdir(string fileName, ref string fileContent)
+        public void UpgradeChdir(string fileName, ref string fileContent)
         {
             foreach (var adminFolder in _adminFolders)
             {
@@ -287,7 +284,7 @@ namespace PhpUpgrader
         /// upravit soubor admin/table_x_edit.php
         ///     - potlacit chybova hlasku znakem „@“ na radku cca 53-80 - $pocet_text_all = mysqli_num_rows….
         /// </summary>
-        private void UpgradeTableAddEdit(string fileName, ref string fileContent)
+        public void UpgradeTableAddEdit(string fileName, ref string fileContent)
         {
             foreach (var adminFolder in _adminFolders)
             {
@@ -304,7 +301,7 @@ namespace PhpUpgrader
         /// upravit soubor funkce/strankovani.php
         ///     >>>  function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)
         /// </summary>
-        private static void UpgradeStrankovani(string fileName, ref string fileContent)
+        public static void UpgradeStrankovani(string fileName, ref string fileContent)
         {
             if (fileName.Contains(@"\funkce\strankovani.php"))
             {
@@ -317,7 +314,7 @@ namespace PhpUpgrader
         /// <summary>
         /// Xml_feeds_ if($query_podmenu_all["casovani"] == 1) -> if($data_podmenu_all["casovani"] == 1)
         /// </summary>
-        private static void UpgradeXmlFeeds(string fileName, ref string fileContent)
+        public static void UpgradeXmlFeeds(string fileName, ref string fileContent)
         {
             if (fileName.Contains("xml_feeds_") && !fileName.Contains("xml_feeds_edit"))
             {
@@ -330,7 +327,7 @@ namespace PhpUpgrader
         ///     - pridat podminku „if($query_text_all !== FALSE)“
         ///     a obalit ji „while($data_stranky_text_all = mysqli_fetch_array($query_text_all))“
         /// </summary>
-        private void UpgradeSitemapSave(string fileName, ref string fileContent)
+        public void UpgradeSitemapSave(string fileName, ref string fileContent)
         {
             foreach (var adminFolder in _adminFolders)
             {
@@ -365,7 +362,7 @@ namespace PhpUpgrader
         /// pro všechny funkce které v sobe mají dotaz na db pridat na zacatek
         ///     - global $beta; >>> hledat v netbeans - (?s)^(?=.*?function )(?=.*?mysqli_) - regular
         /// </summary>
-        private static void UpgradeGlobalBeta(ref string fileContent)
+        public static void UpgradeGlobalBeta(ref string fileContent)
         {
             if (!Regex.IsMatch(fileContent, "(?s)^(?=.*?function )(?=.*?mysqli_)") || fileContent.Contains("$this"))
             {
@@ -418,7 +415,8 @@ namespace PhpUpgrader
             }
         }
 
-        private void RenameBeta(ref string fileContent)
+        /// <summary> Přejmenuje proměnnou $beta na přednastavenou hodnotu. </summary>
+        public void RenameBeta(ref string fileContent)
         {
             if (_replaceBetaWith is not null)
             {
