@@ -11,94 +11,111 @@ namespace PhpUpgrader
         /// <summary> Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce. </summary>
         public List<string> FilesContainingMysql { get; } = new();
 
-        private readonly string[] _findWhat;
-        private readonly string[] _replaceWith;
-        private readonly string _baseFolder;
-        private readonly string[] _adminFolders;
-        private readonly string _webName;
-        private readonly string? _hostname;
-        private readonly string? _database;
-        private readonly string? _username;
-        private readonly string? _password;
-        private readonly string? _replaceBetaWith;
-        private readonly string _connectionFile;
+        /// <summary> Co nahradit? (načteno ze souboru "{BaseFolder}important/find_what.txt") </summary>
+        public string[] FindWhat { get; private set; }
 
-        /// <summary>
-        /// Inicializace PHP upgraderu.
-        /// </summary>
-        /// <param name="baseFolder">Absolutní cesta základní složky (př. default C:\McRAI\), kde jsou složky 'weby' a 'important'.</param>
-        /// <param name="webName">Název webu ve složce 'weby'.</param>
-        /// <param name="adminFolders">Složky obsahující administraci RS Mona (default null => 1 složka admin)</param>
-        /// <param name="database">Nová databáze na serveru hostname.</param>
-        /// <param name="username">Nové uživatelské jméno k databázi.</param>
-        /// <param name="password">Nové heslo k databázi.</param>
-        /// <param name="hostname">URL k databázovému serveru (př. default mcrai2.vshosting.cz)</param>
-        /// <param name="replaceBetaWith"></param>
-        /// <param name="connectionFile"></param>
-        public MonaUpgrader(string baseFolder, string webName, string[]? adminFolders, string? database, string? username, string? password, string? hostname, string? replaceBetaWith, string connectionFile)
+        /// <summary> Čím to nahradit? (načteno ze souboru "{BaseFolder}important/replace_with.txt") </summary>
+        public string[] ReplaceWith { get; private set; }
+
+        /// <summary> Absolutní cesta základní složky (př. default C:\McRAI\), kde jsou složky 'weby' a 'important'. </summary>
+        public string BaseFolder
         {
-            _findWhat = File.ReadAllLines($@"{baseFolder}important\find_what.txt");
-            _replaceWith = File.ReadAllLines($@"{baseFolder}important\replace_with.txt");
-            _baseFolder = baseFolder;
-            _webName = webName;
-            _adminFolders = adminFolders ?? new string[] { "admin" };
-            _database = database;
-            _username = username;
-            _password = password;
-            _hostname = hostname;
-            _connectionFile = connectionFile;
-
-            if ((_replaceBetaWith = replaceBetaWith) is not null)
+            get => _baseFolder;
+            init
             {
-                for (int i = 0; i < _findWhat.Length; i++)
+                FindWhat = File.ReadAllLines($@"{value}important\find_what.txt");
+                ReplaceWith = File.ReadAllLines($@"{value}important\replace_with.txt");
+                _baseFolder = value;
+            }
+        }
+        private string _baseFolder;
+
+        /// <summary> Název webu ve složce 'weby'. </summary>
+        public string WebName { get; init; }
+
+        /// <summary> Složky obsahující administraci RS Mona (null => 1 složka admin) </summary>
+        public string[] AdminFolders
+        {
+            get => _adminFolders;
+            init => _adminFolders = value ?? new string[] { "admin" };
+        }
+        private string[] _adminFolders;
+
+        /// <summary> URL k databázovému serveru (př. default mcrai2.vshosting.cz). </summary>
+        public string? Hostname { get; init; }
+
+        /// <summary> Nová databáze na serveru hostname. </summary>
+        public string? Database { get; init; }
+
+        /// <summary> Nové uživatelské jméno k databázi. </summary>
+        public string? Username { get; init; }
+
+        /// <summary> Nové heslo k databázi. </summary>
+        public string? Password { get; init; }
+
+        /// <summary> Přejmenovat proměnnou $beta tímto názvem (null => nepřejmenovávat). </summary>
+        public string? ReplaceBetaWith
+        {
+            get => _replaceBetaWith;
+            init
+            {
+                if ((_replaceBetaWith = value) is not null)
                 {
-                    RenameBeta(ref _findWhat[i]);
-                    RenameBeta(ref _replaceWith[i]);
+                    for (int i = 0; i < FindWhat.Length; i++)
+                    {
+                        RenameBeta(ref FindWhat[i]);
+                        RenameBeta(ref ReplaceWith[i]);
+                    }
                 }
             }
         }
+        private string? _replaceBetaWith;
+
+        /// <summary> Název souboru ve složce "connect". </summary>
+        public string ConnectionFile { get; init; }
+
 
         /// <summary>
         /// Rekurzivní upgrade .php souborů ve všech podadresářích.
         /// </summary>
-        /// <param name="directoryName">Cesta k adresáři, kde hledat .php soubory.</param>
-        public void UpgradeAllFilesRecursively(string directoryName)
+        /// <param name="directoryPath">Cesta k adresáři, kde hledat .php soubory.</param>
+        public void UpgradeAllFilesRecursively(string directoryPath)
         {
-            foreach (var subdir in Directory.GetDirectories(directoryName))
+            foreach (var subdir in Directory.GetDirectories(directoryPath))
             {
                 if (Directory.GetDirectories(subdir).Length > 0)
                     UpgradeAllFilesRecursively(subdir);
                 UpgradeFiles(subdir);
             }
-            UpgradeFiles(directoryName);
+            UpgradeFiles(directoryPath);
         }
 
         /// <summary> Upgrade všech .php souborů v jednom adresáři. </summary>
-        public void UpgradeFiles(string directoryName)
+        public void UpgradeFiles(string directoryPath)
         {
-            foreach (var fileName in Directory.GetFiles(directoryName, "*.php"))
+            foreach (var filePath in Directory.GetFiles(directoryPath, "*.php"))
             {
-                Console.WriteLine(fileName);
-                string fileContent = File.ReadAllText(fileName);
+                Console.WriteLine(filePath);
+                string fileContent = File.ReadAllText(filePath);
                 string originalContent = fileContent;
 
-                if (UpgradeTinyAjaxBehavior(fileName))
+                if (UpgradeTinyAjaxBehavior(filePath))
                     continue;
 
-                if (!fileName.Contains("tiny_mce"))
+                if (!filePath.Contains("tiny_mce"))
                 {
-                    UpgradeConnect(fileName, ref fileContent);
+                    UpgradeConnect(filePath, ref fileContent);
                     UpgradeMysqlResult(ref fileContent);
                     UpgradeClanekVypis(ref fileContent);
                     UpgradeFindReplace(ref fileContent);
                     UpgradeMysqliQueries(ref fileContent);
-                    UpgradeMysqliClose(fileName, ref fileContent);
-                    UpgradeAnketa(fileName, ref fileContent);
-                    UpgradeChdir(fileName, ref fileContent);
-                    UpgradeTableAddEdit(fileName, ref fileContent);
-                    UpgradeStrankovani(fileName, ref fileContent);
-                    UpgradeXmlFeeds(fileName, ref fileContent);
-                    UpgradeSitemapSave(fileName, ref fileContent);
+                    UpgradeMysqliClose(filePath, ref fileContent);
+                    UpgradeAnketa(filePath, ref fileContent);
+                    UpgradeChdir(filePath, ref fileContent);
+                    UpgradeTableAddEdit(filePath, ref fileContent);
+                    UpgradeStrankovani(filePath, ref fileContent);
+                    UpgradeXmlFeeds(filePath, ref fileContent);
+                    UpgradeSitemapSave(filePath, ref fileContent);
                     UpgradeGlobalBeta(ref fileContent);
                     RenameBeta(ref fileContent);
                 }
@@ -106,24 +123,24 @@ namespace PhpUpgrader
 
                 //upraveno, zapsat do souboru
                 if (fileContent != originalContent)
-                    File.WriteAllText(fileName, fileContent);
+                    File.WriteAllText(filePath, fileContent);
 
                 //po dodelani nahrazeni nize projit na retezec - mysql_
-                if (fileContent.ToLower().Contains("mysql_") && !FilesContainingMysql.Contains(fileName))
-                    FilesContainingMysql.Add(fileName);
+                if (fileContent.ToLower().Contains("mysql_") && !FilesContainingMysql.Contains(filePath))
+                    FilesContainingMysql.Add(filePath);
             }
         }
 
         /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
-        public void UpgradeConnect(string fileName, ref string fileContent)
+        public void UpgradeConnect(string filePath, ref string fileContent)
         {
-            if (!fileName.Contains($@"\connect\{_connectionFile}") && !fileName.Contains($@"\system\{_connectionFile}"))
+            if (!filePath.Contains($@"\connect\{ConnectionFile}") && !filePath.Contains($@"\system\{ConnectionFile}"))
             {
                 return;
             }
             string connectHead = string.Empty;
             bool inComment = false;
-            using var sr = new StreamReader(fileName);
+            using var sr = new StreamReader(filePath);
 
             while (!sr.EndOfStream)
             {
@@ -146,28 +163,28 @@ namespace PhpUpgrader
             }
 
             //generování nových údajů k databázi, pokud jsou všechny zadány
-            if (_database is not null && _username is not null && _password is not null && _hostname is not null)
+            if (Database is not null && Username is not null && Password is not null && Hostname is not null)
             {
                 connectHead = connectHead.Replace("\n", "\n//"); //zakomentovat původní řádky
                 connectHead = connectHead.Replace("////", "//"); //smazat zbytečná lomítka
                 connectHead += '\n';
                 connectHead = connectHead.Replace("//\n", "\n");
-                connectHead += $"$hostname_beta = \"{_hostname}\";\n$database_beta = \"{_database}\";\n$username_beta = \"{_username}\";\n$password_beta = \"{_password}\";\n";
+                connectHead += $"$hostname_beta = \"{Hostname}\";\n$database_beta = \"{Database}\";\n$username_beta = \"{Username}\";\n$password_beta = \"{Password}\";\n";
             }
-            fileContent = connectHead + File.ReadAllText($"{_baseFolder}important\\connection.txt");
+            fileContent = connectHead + File.ReadAllText($"{BaseFolder}important\\connection.txt");
         }
 
         /// <summary>
         /// predelat soubor (TinyAjaxBehavior.php) v adresari admin/include >>> prekopirovat soubor ze vzoru rs mona
         /// </summary>
-        public bool UpgradeTinyAjaxBehavior(string fileName)
+        public bool UpgradeTinyAjaxBehavior(string filePath)
         {
             bool foundTAB = false;
-            foreach (var adminFolder in _adminFolders)
+            foreach (var adminFolder in AdminFolders)
             {
-                if (fileName.Contains($@"\{adminFolder}\include\TinyAjaxBehavior.php"))
+                if (filePath.Contains($@"\{adminFolder}\include\TinyAjaxBehavior.php"))
                 {
-                    File.Copy($"{_baseFolder}important\\TinyAjaxBehavior.txt", fileName, overwrite: true);
+                    File.Copy($"{BaseFolder}important\\TinyAjaxBehavior.txt", filePath, overwrite: true);
                     foundTAB = true;
                 }
             }
@@ -225,9 +242,9 @@ namespace PhpUpgrader
         /// </summary>
         public void UpgradeFindReplace(ref string fileContent)
         {
-            for (int i = 0; i < _findWhat.Length; i++)
+            for (int i = 0; i < FindWhat.Length; i++)
             {
-                fileContent = fileContent.Replace(_findWhat[i], _replaceWith[i]);
+                fileContent = fileContent.Replace(FindWhat[i], ReplaceWith[i]);
             }
         }
 
@@ -246,9 +263,9 @@ namespace PhpUpgrader
         }
 
         /// <summary> pridat mysqli_close($beta); do indexu nakonec </summary>
-        public void UpgradeMysqliClose(string fileName, ref string fileContent)
+        public void UpgradeMysqliClose(string filePath, ref string fileContent)
         {
-            if (fileName.Contains($@"{_webName}\index.php") && !fileContent.Contains("mysqli_close"))
+            if (filePath.Contains($@"{WebName}\index.php") && !fileContent.Contains("mysqli_close"))
             {
                 fileContent += "\n<?php mysqli_close($beta); ?>";
             }
@@ -258,20 +275,20 @@ namespace PhpUpgrader
         /// upravit soubor anketa/anketa.php - r.3 (odmazat ../)
         ///     - include_once "../setup.php"; na include_once "setup.php";
         /// </summary>
-        public static void UpgradeAnketa(string fileName, ref string fileContent)
+        public static void UpgradeAnketa(string filePath, ref string fileContent)
         {
-            if (fileName.Contains(@"\anketa\anketa.php"))
+            if (filePath.Contains(@"\anketa\anketa.php"))
             {
                 fileContent = fileContent.Replace("include_once(\"../setup.php\")", "include_once(\"setup.php\")");
             }
         }
 
         /// <summary> zakomentovat radky s funkci chdir v souboru admin/funkce/vytvoreni_adr.php </summary>
-        public void UpgradeChdir(string fileName, ref string fileContent)
+        public void UpgradeChdir(string filePath, ref string fileContent)
         {
-            foreach (var adminFolder in _adminFolders)
+            foreach (var adminFolder in AdminFolders)
             {
-                if (fileName.Contains($@"\{adminFolder}\funkce\vytvoreni_adr.php") && !fileContent.Contains("//chdir"))
+                if (filePath.Contains($@"\{adminFolder}\funkce\vytvoreni_adr.php") && !fileContent.Contains("//chdir"))
                 {
                     fileContent = fileContent.Replace("chdir", "//chdir");
                 }
@@ -284,12 +301,12 @@ namespace PhpUpgrader
         /// upravit soubor admin/table_x_edit.php
         ///     - potlacit chybova hlasku znakem „@“ na radku cca 53-80 - $pocet_text_all = mysqli_num_rows….
         /// </summary>
-        public void UpgradeTableAddEdit(string fileName, ref string fileContent)
+        public void UpgradeTableAddEdit(string filePath, ref string fileContent)
         {
-            foreach (var adminFolder in _adminFolders)
+            foreach (var adminFolder in AdminFolders)
             {
-                if ((fileName.Contains($@"\{adminFolder}\table_x_add.php")
-                    || fileName.Contains($@"\{adminFolder}\table_x_edit.php"))
+                if ((filePath.Contains($@"\{adminFolder}\table_x_add.php")
+                    || filePath.Contains($@"\{adminFolder}\table_x_edit.php"))
                     && !fileContent.Contains("@$pocet_text_all"))
                 {
                     fileContent = fileContent.Replace("$pocet_text_all = mysqli_num_rows", "@$pocet_text_all = mysqli_num_rows");
@@ -301,9 +318,9 @@ namespace PhpUpgrader
         /// upravit soubor funkce/strankovani.php
         ///     >>>  function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)
         /// </summary>
-        public static void UpgradeStrankovani(string fileName, ref string fileContent)
+        public static void UpgradeStrankovani(string filePath, ref string fileContent)
         {
-            if (fileName.Contains(@"\funkce\strankovani.php"))
+            if (filePath.Contains(@"\funkce\strankovani.php"))
             {
                 fileContent = fileContent.Replace("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)");
                 fileContent = fileContent.Replace("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext, $prenext_2)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null, $prenext_2 = null)");
@@ -314,9 +331,9 @@ namespace PhpUpgrader
         /// <summary>
         /// Xml_feeds_ if($query_podmenu_all["casovani"] == 1) -> if($data_podmenu_all["casovani"] == 1)
         /// </summary>
-        public static void UpgradeXmlFeeds(string fileName, ref string fileContent)
+        public static void UpgradeXmlFeeds(string filePath, ref string fileContent)
         {
-            if (fileName.Contains("xml_feeds_") && !fileName.Contains("xml_feeds_edit"))
+            if (filePath.Contains("xml_feeds_") && !filePath.Contains("xml_feeds_edit"))
             {
                 fileContent = fileContent.Replace("if($query_podmenu_all[\"casovani\"] == 1)", "if($data_podmenu_all[\"casovani\"] == 1)");
             }
@@ -327,11 +344,11 @@ namespace PhpUpgrader
         ///     - pridat podminku „if($query_text_all !== FALSE)“
         ///     a obalit ji „while($data_stranky_text_all = mysqli_fetch_array($query_text_all))“
         /// </summary>
-        public void UpgradeSitemapSave(string fileName, ref string fileContent)
+        public void UpgradeSitemapSave(string filePath, ref string fileContent)
         {
-            foreach (var adminFolder in _adminFolders)
+            foreach (var adminFolder in AdminFolders)
             {
-                if (!fileName.Contains($"{adminFolder}\\sitemap_save.php")
+                if (!filePath.Contains($"{adminFolder}\\sitemap_save.php")
                     || !fileContent.Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))")
                     || fileContent.Contains("if($query_text_all !== FALSE)"))
                 {
@@ -418,9 +435,9 @@ namespace PhpUpgrader
         /// <summary> Přejmenuje proměnnou $beta na přednastavenou hodnotu. </summary>
         public void RenameBeta(ref string fileContent)
         {
-            if (_replaceBetaWith is not null)
+            if (ReplaceBetaWith is not null)
             {
-                fileContent = fileContent.Replace("$beta", $"${_replaceBetaWith}");
+                fileContent = fileContent.Replace("$beta", $"${ReplaceBetaWith}");
             }
         }
 

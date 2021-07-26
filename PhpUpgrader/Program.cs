@@ -27,13 +27,24 @@ namespace PhpUpgrader
                 Console.Error.WriteLine($"Folder {workDir} is invalid because parameter '--web-name' is empty.");
                 return;
             }
-            else if (!Directory.Exists(workDir))
+            if (!Directory.Exists(workDir))
             {
                 Console.Error.WriteLine($"Folder {workDir} does not exist.");
                 return;
             }
 
-            var upgrader = new MonaUpgrader(baseFolder, webName, adminFolders, db, user, password, host, beta, connectionFile);
+            var upgrader = new MonaUpgrader
+            {
+                BaseFolder = baseFolder,
+                WebName = webName,
+                AdminFolders = adminFolders,
+                Database = db,
+                Username = user,
+                Password = password,
+                Hostname = host,
+                ReplaceBetaWith = beta,
+                ConnectionFile = connectionFile
+            };
 
             Console.WriteLine("\nProcessed files:\n");
             upgrader.UpgradeAllFilesRecursively(workDir);
