@@ -99,11 +99,12 @@ namespace PhpUpgrader
             foreach (var filePath in Directory.GetFiles(directoryPath, "*.php"))
             {
                 Console.WriteLine(filePath);
-                string fileContent = File.ReadAllText(filePath);
-                string originalContent = fileContent;
 
                 if (UpgradeTinyAjaxBehavior(filePath))
                     continue;
+
+                string fileContent = File.ReadAllText(filePath);
+                string originalContent = fileContent;
 
                 if (!filePath.Contains("tiny_mce"))
                 {
