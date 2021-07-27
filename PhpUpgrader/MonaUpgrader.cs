@@ -12,12 +12,12 @@ namespace PhpUpgrader
         public HashSet<string> FilesContainingMysql { get; } = new();
 
         /// <summary>
-        /// Co nahradit? (načteno ze souboru '<seealso cref="BaseFolder">BaseFolder</seealso>important/find_what.txt').
+        /// Co nahradit? (načteno ze souboru '{<see cref="BaseFolder"/>}important/find_what.txt').
         /// </summary>
         public string[] FindWhat { get; private set; }
 
         /// <summary>
-        /// Čím to nahradit? (načteno ze souboru '<seealso cref="BaseFolder">BaseFolder</seealso>important/replace_with.txt').
+        /// Čím to nahradit? (načteno ze souboru '{<see cref="BaseFolder"/>}important/replace_with.txt').
         /// </summary>
         public string[] ReplaceWith { get; private set; }
 
@@ -58,6 +58,7 @@ namespace PhpUpgrader
         public string? Password { get; init; }
 
         /// <summary> Přejmenovat proměnnou $beta tímto názvem (null => nepřejmenovávat). </summary>
+        /// <remarks> Mělo by být nastaveno po <see cref="BaseFolder"/>, která načte <see cref="FindWhat"/> a <see cref="ReplaceWith"/>, které můžou obsahovat proměnnou $beta. </remarks>
         public string? RenameBetaWith
         {
             get => _replaceBetaWith;
@@ -65,7 +66,7 @@ namespace PhpUpgrader
             {
                 if ((_replaceBetaWith = value) is not null)
                 {
-                    for (int i = 0; i < FindWhat.Length; i++)
+                    for (int i = 0; i < FindWhat?.Length; i++)
                     {
                         RenameBeta(ref FindWhat[i]);
                         RenameBeta(ref ReplaceWith[i]);
@@ -327,6 +328,10 @@ namespace PhpUpgrader
                 fileContent = fileContent.Replace("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)");
                 fileContent = fileContent.Replace("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext, $prenext_2)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null, $prenext_2 = null)");
                 fileContent = fileContent.Replace("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $pre, $next)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $pre = null, $next = null)");
+
+                //zahlásit chybu při nalezení další varianty funkce predchozi_dalsi
+                if (!fileContent.Contains("$texta = null") && fileContent.Contains("function predchozi_dalsi"))
+                    Console.Error.WriteLine("- predchozi_dalsi error!");
             }
         }
 
@@ -435,11 +440,13 @@ namespace PhpUpgrader
         }
 
         /// <summary> Přejmenuje proměnnou $beta na přednastavenou hodnotu. </summary>
+        /// <param name="replacement">null => použít vlastnost RenameBetaWith.</param>
+        /// <param name="fileContent"></param>
         public void RenameBeta(ref string fileContent, string? replacement = null)
         {
-            if ((replacement ?? RenameBetaWith) is not null)
+            if ((replacement ??= RenameBetaWith) is not null)
             {
-                fileContent = fileContent.Replace("$beta", $"${replacement ?? RenameBetaWith}");
+                fileContent = fileContent.Replace("$beta", $"${replacement}");
             }
         }
 
