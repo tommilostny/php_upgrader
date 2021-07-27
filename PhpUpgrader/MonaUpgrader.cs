@@ -122,7 +122,7 @@ namespace PhpUpgrader
                     UpgradeGlobalBeta(ref fileContent);
                     RenameBeta(ref fileContent);
                 }
-                UpgradeEreg(ref fileContent);
+                UpgradeRegexFunctions(ref fileContent);
 
                 //upraveno, zapsat do souboru
                 if (fileContent != originalContent)
@@ -454,9 +454,11 @@ namespace PhpUpgrader
         /// - funkci ereg nebo ereg_replace doplnit do prvního parametru delimetr na začátek a nakonec (if(ereg('.+@.+..+', $retezec))
         /// // puvodni, jiz nefunkcni >>> if(preg_match('#.+@.+..+#', $retezec)) // upravene - delimiter zvolen #)
         /// </summary>
-        public static void UpgradeEreg(ref string fileContent)
+        public static void UpgradeRegexFunctions(ref string fileContent)
         {
-            var evaluator = new MatchEvaluator(_EregToPreg);
+            var evaluator = new MatchEvaluator(_PregMatchEvaluator);
+
+            //funkce ereg
             fileContent = Regex.Replace(fileContent, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator);
             fileContent = Regex.Replace(fileContent, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator);
 
@@ -466,15 +468,35 @@ namespace PhpUpgrader
             if (fileContent.Contains("ereg"))
                 Console.Error.WriteLine("- ereg alert!");
 
-            static string _EregToPreg(Match match)
+            //funkce split
+            if (!fileContent.Contains("split"))
+                return;
+
+            if (fileContent.Contains("script") && fileContent.Contains(".split"))
+            {
+                //soubor obsahuje Javascript i funkci split, zkontrolovat manuálně
+                Console.Error.WriteLine("- split Javascript alert!");
+                return;
+            }
+            fileContent = Regex.Replace(fileContent, @"\bsplit ?\('(\\'|[^'])*'", evaluator);
+            fileContent = Regex.Replace(fileContent, @"\bsplit ?\(""(\\""|[^""])*""", evaluator);
+
+            if (Regex.IsMatch(fileContent, @"[^preg_]split ?\("))
+                Console.Error.WriteLine("- unmodified split alert!");
+
+            static string _PregMatchEvaluator(Match match)
             {
                 int bracketIndex = match.Value.IndexOf('(');
                 char quote = match.Value[bracketIndex + 1];
 
                 string insidePattern = match.Value[(bracketIndex + 2)..(match.Value.Length - 1)];
 
-                string pregFunction = match.Value.StartsWith("ereg_replace") ? "preg_replace" : "preg_match";
-
+                string pregFunction = match.Value[0..bracketIndex].TrimEnd() switch
+                {
+                    "ereg_replace" => "preg_replace",
+                    "split" => "preg_split",
+                    _ => "preg_match"
+                };
                 return $"{pregFunction}({quote}~{insidePattern}~{quote}";
             }
         }

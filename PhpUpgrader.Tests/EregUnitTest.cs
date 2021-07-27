@@ -24,7 +24,7 @@ namespace PhpUpgrader.Tests
             _output.WriteLine(content);
             _output.WriteLine(string.Empty);
 
-            MonaUpgrader.UpgradeEreg(ref content);
+            MonaUpgrader.UpgradeRegexFunctions(ref content);
 
             _output.WriteLine(content);
             Assert.DoesNotContain("ereg", content);
@@ -35,9 +35,42 @@ namespace PhpUpgrader.Tests
         {
             var content = "mysqli_query($beta, $query);";
 
-            MonaUpgrader.UpgradeEreg(ref content);
+            MonaUpgrader.UpgradeRegexFunctions(ref content);
             
             Assert.Equal("mysqli_query($beta, $query);", content);
+        }
+
+        [Fact]
+        public void ReplacesSplitFunction()
+        {
+            var content = "$var = split('pattern', $query);";
+
+            MonaUpgrader.UpgradeRegexFunctions(ref content);
+
+            _output.WriteLine(content);
+            Assert.Equal("$var = preg_split('~pattern~', $query);", content);
+        }
+
+        [Fact]
+        public void PregSplitShouldRemainTheSame()
+        {
+            var content = "preg_split('~pattern~', $query);";
+
+            MonaUpgrader.UpgradeRegexFunctions(ref content);
+
+            _output.WriteLine(content);
+            Assert.Equal("preg_split('~pattern~', $query);", content);
+        }
+
+        [Fact]
+        public void PregSplitShouldNotReplaceInJavascript()
+        {
+            var content = "<script language=\"javascript\" type=\"text / javascript\">var split_pomlcky = hodnota_polozky.split(\" - \");";
+
+            MonaUpgrader.UpgradeRegexFunctions(ref content);
+
+            _output.WriteLine(content);
+            Assert.Equal("<script language=\"javascript\" type=\"text / javascript\">var split_pomlcky = hodnota_polozky.split(\" - \");", content);
         }
     }
 }
