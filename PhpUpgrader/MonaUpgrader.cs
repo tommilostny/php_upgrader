@@ -79,57 +79,53 @@ namespace PhpUpgrader
         /// <summary> Název souboru ve složce 'connect'. </summary>
         public string ConnectionFile { get; init; }
 
+
         /// <summary> Rekurzivní upgrade .php souborů ve všech podadresářích. </summary>
         /// <param name="directoryPath">Cesta k adresáři, kde hledat .php soubory.</param>
         public void UpgradeAllFilesRecursively(string directoryPath)
         {
+            //rekurzivní aktualizace podsložek
             foreach (var subdir in Directory.GetDirectories(directoryPath))
             {
-                if (Directory.GetDirectories(subdir).Length > 0)
-                    UpgradeAllFilesRecursively(subdir);
-                _UpgradeFiles(subdir);
+                UpgradeAllFilesRecursively(subdir);
             }
-            _UpgradeFiles(directoryPath);
-
-            void _UpgradeFiles(string dirPath)
+            //aktualizace aktuální složky
+            foreach (var filePath in Directory.GetFiles(directoryPath, "*.php"))
             {
-                foreach (var filePath in Directory.GetFiles(dirPath, "*.php"))
+                Console.WriteLine(filePath);
+
+                if (UpgradeTinyAjaxBehavior(filePath))
+                    continue;
+
+                string fileContent = File.ReadAllText(filePath);
+                string originalContent = fileContent;
+
+                if (!filePath.Contains("tiny_mce"))
                 {
-                    Console.WriteLine(filePath);
-
-                    if (UpgradeTinyAjaxBehavior(filePath))
-                        continue;
-
-                    string fileContent = File.ReadAllText(filePath);
-                    string originalContent = fileContent;
-
-                    if (!filePath.Contains("tiny_mce"))
-                    {
-                        UpgradeConnect(filePath, ref fileContent);
-                        UpgradeMysqlResult(ref fileContent);
-                        UpgradeClanekVypis(ref fileContent);
-                        UpgradeFindReplace(ref fileContent);
-                        UpgradeMysqliQueries(ref fileContent);
-                        UpgradeMysqliClose(filePath, ref fileContent);
-                        UpgradeAnketa(filePath, ref fileContent);
-                        UpgradeChdir(filePath, ref fileContent);
-                        UpgradeTableAddEdit(filePath, ref fileContent);
-                        UpgradeStrankovani(filePath, ref fileContent);
-                        UpgradeXmlFeeds(filePath, ref fileContent);
-                        UpgradeSitemapSave(filePath, ref fileContent);
-                        UpgradeGlobalBeta(ref fileContent);
-                        RenameBeta(ref fileContent);
-                    }
-                    UpgradeRegexFunctions(ref fileContent);
-
-                    //upraveno, zapsat do souboru
-                    if (fileContent != originalContent)
-                        File.WriteAllText(filePath, fileContent);
-
-                    //po dodelani nahrazeni nize projit na retezec - mysql_
-                    if (fileContent.ToLower().Contains("mysql_"))
-                        FilesContainingMysql.Add(filePath);
+                    UpgradeConnect(filePath, ref fileContent);
+                    UpgradeMysqlResult(ref fileContent);
+                    UpgradeClanekVypis(ref fileContent);
+                    UpgradeFindReplace(ref fileContent);
+                    UpgradeMysqliQueries(ref fileContent);
+                    UpgradeMysqliClose(filePath, ref fileContent);
+                    UpgradeAnketa(filePath, ref fileContent);
+                    UpgradeChdir(filePath, ref fileContent);
+                    UpgradeTableAddEdit(filePath, ref fileContent);
+                    UpgradeStrankovani(filePath, ref fileContent);
+                    UpgradeXmlFeeds(filePath, ref fileContent);
+                    UpgradeSitemapSave(filePath, ref fileContent);
+                    UpgradeGlobalBeta(ref fileContent);
+                    RenameBeta(ref fileContent);
                 }
+                UpgradeRegexFunctions(ref fileContent);
+
+                //upraveno, zapsat do souboru
+                if (fileContent != originalContent)
+                    File.WriteAllText(filePath, fileContent);
+
+                //po dodelani nahrazeni nize projit na retezec - mysql_
+                if (fileContent.ToLower().Contains("mysql_"))
+                    FilesContainingMysql.Add(filePath);
             }
         }
 
