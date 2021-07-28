@@ -79,7 +79,6 @@ namespace PhpUpgrader
         /// <summary> Název souboru ve složce 'connect'. </summary>
         public string ConnectionFile { get; init; }
 
-
         /// <summary> Rekurzivní upgrade .php souborů ve všech podadresářích. </summary>
         /// <param name="directoryPath">Cesta k adresáři, kde hledat .php soubory.</param>
         public void UpgradeAllFilesRecursively(string directoryPath)
@@ -88,50 +87,49 @@ namespace PhpUpgrader
             {
                 if (Directory.GetDirectories(subdir).Length > 0)
                     UpgradeAllFilesRecursively(subdir);
-                UpgradeFiles(subdir);
+                _UpgradeFiles(subdir);
             }
-            UpgradeFiles(directoryPath);
-        }
+            _UpgradeFiles(directoryPath);
 
-        /// <summary> Upgrade všech .php souborů v jednom adresáři. </summary>
-        public void UpgradeFiles(string directoryPath)
-        {
-            foreach (var filePath in Directory.GetFiles(directoryPath, "*.php"))
+            void _UpgradeFiles(string dirPath)
             {
-                Console.WriteLine(filePath);
-
-                if (UpgradeTinyAjaxBehavior(filePath))
-                    continue;
-
-                string fileContent = File.ReadAllText(filePath);
-                string originalContent = fileContent;
-
-                if (!filePath.Contains("tiny_mce"))
+                foreach (var filePath in Directory.GetFiles(dirPath, "*.php"))
                 {
-                    UpgradeConnect(filePath, ref fileContent);
-                    UpgradeMysqlResult(ref fileContent);
-                    UpgradeClanekVypis(ref fileContent);
-                    UpgradeFindReplace(ref fileContent);
-                    UpgradeMysqliQueries(ref fileContent);
-                    UpgradeMysqliClose(filePath, ref fileContent);
-                    UpgradeAnketa(filePath, ref fileContent);
-                    UpgradeChdir(filePath, ref fileContent);
-                    UpgradeTableAddEdit(filePath, ref fileContent);
-                    UpgradeStrankovani(filePath, ref fileContent);
-                    UpgradeXmlFeeds(filePath, ref fileContent);
-                    UpgradeSitemapSave(filePath, ref fileContent);
-                    UpgradeGlobalBeta(ref fileContent);
-                    RenameBeta(ref fileContent);
+                    Console.WriteLine(filePath);
+
+                    if (UpgradeTinyAjaxBehavior(filePath))
+                        continue;
+
+                    string fileContent = File.ReadAllText(filePath);
+                    string originalContent = fileContent;
+
+                    if (!filePath.Contains("tiny_mce"))
+                    {
+                        UpgradeConnect(filePath, ref fileContent);
+                        UpgradeMysqlResult(ref fileContent);
+                        UpgradeClanekVypis(ref fileContent);
+                        UpgradeFindReplace(ref fileContent);
+                        UpgradeMysqliQueries(ref fileContent);
+                        UpgradeMysqliClose(filePath, ref fileContent);
+                        UpgradeAnketa(filePath, ref fileContent);
+                        UpgradeChdir(filePath, ref fileContent);
+                        UpgradeTableAddEdit(filePath, ref fileContent);
+                        UpgradeStrankovani(filePath, ref fileContent);
+                        UpgradeXmlFeeds(filePath, ref fileContent);
+                        UpgradeSitemapSave(filePath, ref fileContent);
+                        UpgradeGlobalBeta(ref fileContent);
+                        RenameBeta(ref fileContent);
+                    }
+                    UpgradeRegexFunctions(ref fileContent);
+
+                    //upraveno, zapsat do souboru
+                    if (fileContent != originalContent)
+                        File.WriteAllText(filePath, fileContent);
+
+                    //po dodelani nahrazeni nize projit na retezec - mysql_
+                    if (fileContent.ToLower().Contains("mysql_"))
+                        FilesContainingMysql.Add(filePath);
                 }
-                UpgradeRegexFunctions(ref fileContent);
-
-                //upraveno, zapsat do souboru
-                if (fileContent != originalContent)
-                    File.WriteAllText(filePath, fileContent);
-
-                //po dodelani nahrazeni nize projit na retezec - mysql_
-                if (fileContent.ToLower().Contains("mysql_"))
-                    FilesContainingMysql.Add(filePath);
             }
         }
 
@@ -458,32 +456,41 @@ namespace PhpUpgrader
         public static void UpgradeRegexFunctions(ref string fileContent)
         {
             var evaluator = new MatchEvaluator(_PregMatchEvaluator);
+            _UpgradeEreg(ref fileContent);
+            _UpgradeSplit(ref fileContent);
 
-            //funkce ereg
-            fileContent = Regex.Replace(fileContent, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator);
-            fileContent = Regex.Replace(fileContent, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator);
-
-            fileContent = Regex.Replace(fileContent, @"ereg ?\( ?\$", "preg_match($");
-            fileContent = Regex.Replace(fileContent, @"ereg_replace ?\( ?\$", "preg_replace($");
-
-            if (fileContent.Contains("ereg"))
-                Console.Error.WriteLine("- ereg alert!");
-
-            //funkce split
-            if (!fileContent.Contains("split"))
-                return;
-
-            if (fileContent.Contains("script") && fileContent.Contains(".split"))
+            void _UpgradeEreg(ref string fileContent)
             {
-                //soubor obsahuje Javascript i funkci split, zkontrolovat manuálně
-                Console.Error.WriteLine("- split Javascript alert!");
-                return;
-            }
-            fileContent = Regex.Replace(fileContent, @"\bsplit ?\('(\\'|[^'])*'", evaluator);
-            fileContent = Regex.Replace(fileContent, @"\bsplit ?\(""(\\""|[^""])*""", evaluator);
+                if (!fileContent.Contains("ereg"))
+                    return;
 
-            if (Regex.IsMatch(fileContent, @"[^preg_]split ?\("))
-                Console.Error.WriteLine("- unmodified split alert!");
+                fileContent = Regex.Replace(fileContent, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator);
+                fileContent = Regex.Replace(fileContent, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator);
+
+                fileContent = Regex.Replace(fileContent, @"ereg ?\( ?\$", "preg_match($");
+                fileContent = Regex.Replace(fileContent, @"ereg_replace ?\( ?\$", "preg_replace($");
+
+                if (fileContent.Contains("ereg"))
+                    Console.Error.WriteLine("- ereg alert!");
+            }
+
+            void _UpgradeSplit(ref string fileContent)
+            {
+                if (!fileContent.Contains("split") || fileContent.Contains("preg_split"))
+                    return;
+
+                if (fileContent.Contains("script") && fileContent.Contains(".split"))
+                {
+                    //soubor obsahuje Javascript i funkci split, zkontrolovat manuálně
+                    Console.Error.WriteLine("- split Javascript alert!");
+                    return;
+                }
+                fileContent = Regex.Replace(fileContent, @"\bsplit ?\('(\\'|[^'])*'", evaluator);
+                fileContent = Regex.Replace(fileContent, @"\bsplit ?\(""(\\""|[^""])*""", evaluator);
+
+                if (Regex.IsMatch(fileContent, @"[^preg_]split ?\("))
+                    Console.Error.WriteLine("- unmodified split alert!");
+            }
 
             static string _PregMatchEvaluator(Match match)
             {
