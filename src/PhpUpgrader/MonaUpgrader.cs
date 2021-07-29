@@ -318,16 +318,26 @@ namespace PhpUpgrader
         /// </summary>
         public static void UpgradeStrankovani(string filePath, ref string fileContent)
         {
-            if (filePath.Contains(@"\funkce\strankovani.php"))
+            if (!filePath.Contains(@"\funkce\strankovani.php") || !fileContent.Contains("function predchozi_dalsi"))
             {
-                fileContent = fileContent.Replace("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)");
-                fileContent = fileContent.Replace("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext, $prenext_2)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null, $prenext_2 = null)");
-                fileContent = fileContent.Replace("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $pre, $next)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $pre = null, $next = null)");
-
-                //zahlásit chybu při nalezení další varianty funkce predchozi_dalsi
-                if (!fileContent.Contains("$texta = null") && fileContent.Contains("function predchozi_dalsi"))
-                    Console.Error.WriteLine("- predchozi_dalsi error!");
+                return;
             }
+            //dvojice (co hledat?, čím to nahradit?)
+            var preddalVariants = new (string, string)[]
+            {
+                ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)"),
+                ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext, $prenext_2)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null, $prenext_2 = null)"),
+                ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $pre, $next)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $pre = null, $next = null)")
+            };
+            foreach (var variant in preddalVariants)
+            {
+                fileContent = fileContent.Replace(variant.Item1, variant.Item2);
+
+                if (fileContent.Contains(variant.Item2))
+                    return;
+            }
+            //zahlásit chybu při nalezení další varianty funkce predchozi_dalsi
+            Console.Error.WriteLine("- predchozi_dalsi error!");
         }
 
         /// <summary>
