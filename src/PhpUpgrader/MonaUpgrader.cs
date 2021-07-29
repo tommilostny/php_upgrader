@@ -92,7 +92,7 @@ namespace PhpUpgrader
             //aktualizace aktuální složky
             foreach (var filePath in Directory.GetFiles(directoryPath, "*.php"))
             {
-                Console.WriteLine(filePath);
+                Console.WriteLine(filePath.Replace($"{BaseFolder}weby\\", string.Empty));
 
                 if (UpgradeTinyAjaxBehavior(filePath))
                     continue;
