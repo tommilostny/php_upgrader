@@ -199,9 +199,8 @@ namespace PhpUpgrader
         public static void UpgradeMysqlResult(ref string fileContent)
         {
             if (!fileContent.Contains("mysql_result"))
-            {
                 return;
-            }
+
             var lines = fileContent.Split('\n');
             fileContent = string.Empty;
 
@@ -223,9 +222,8 @@ namespace PhpUpgrader
         public static void UpgradeClanekVypis(ref string fileContent)
         {
             if (!fileContent.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]") || fileContent.Contains("$p_sf = array();"))
-            {
                 return;
-            }
+
             var lines = fileContent.Split('\n');
             fileContent = string.Empty;
 
@@ -323,15 +321,17 @@ namespace PhpUpgrader
         public static void UpgradeStrankovani(string filePath, ref string fileContent)
         {
             if (!filePath.Contains(@"\funkce\strankovani.php") || !fileContent.Contains("function predchozi_dalsi"))
-            {
                 return;
-            }
+
             //dvojice (co hledat?, čím to nahradit?)
             var preddalVariants = new (string, string)[]
             {
-                ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)"),
-                ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext, $prenext_2)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null, $prenext_2 = null)"),
-                ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $pre, $next)", "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $pre = null, $next = null)")
+                ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)",
+                    "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)"),
+                ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext, $prenext_2)",
+                    "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null, $prenext_2 = null)"),
+                ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $pre, $next)",
+                    "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $pre = null, $next = null)")
             };
             foreach (var variant in preddalVariants)
             {
@@ -367,9 +367,8 @@ namespace PhpUpgrader
                 if (!filePath.Contains($"{adminFolder}\\sitemap_save.php")
                     || !fileContent.Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))")
                     || fileContent.Contains("if($query_text_all !== FALSE)"))
-                {
                     continue;
-                }
+
                 bool sfBracket = false;
                 var lines = fileContent.Split('\n');
                 fileContent = string.Empty;
@@ -398,9 +397,8 @@ namespace PhpUpgrader
         public static void UpgradeGlobalBeta(ref string fileContent)
         {
             if (!Regex.IsMatch(fileContent, "(?s)^(?=.*?function )(?=.*?mysqli_)") || fileContent.Contains("$this"))
-            {
                 return;
-            }
+
             bool javascript = false;
             var lines = fileContent.Split('\n');
             fileContent = string.Empty;
@@ -412,13 +410,13 @@ namespace PhpUpgrader
 
                 fileContent += $"{lines[i]}\n";
 
-                if (lines[i].Contains("function") && !javascript && _CheckForMysqliBeforeAnotherFunction(lines, i))
+                if (lines[i].Contains("function") && !javascript && _MysqliInFunction(i))
                 {
                     fileContent += $"{lines[++i]}\n\n    global $beta;\n\n";
                 }
             }
 
-            static bool _CheckForMysqliBeforeAnotherFunction(string[] lines, int startIndex)
+            bool _MysqliInFunction(int startIndex)
             {
                 bool javascript = false;
                 bool inComment = false;
