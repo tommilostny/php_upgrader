@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace PhpUpgrader
@@ -132,10 +133,13 @@ namespace PhpUpgrader
         /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
         public void UpgradeConnect(string filePath, ref string fileContent)
         {
-            if (!filePath.Contains($@"\connect\{ConnectionFile}") && !filePath.Contains($@"\system\{ConnectionFile}"))
+            var compatibleFiles = new string[]
             {
+                $@"\connect\{ConnectionFile}", $@"\system\{ConnectionFile}", $@"\Connections\{ConnectionFile}"
+            };
+            if (compatibleFiles.All(x => !filePath.Contains(x)))
                 return;
-            }
+
             string connectHead = string.Empty;
             bool inComment = false;
             using var sr = new StreamReader(filePath);
