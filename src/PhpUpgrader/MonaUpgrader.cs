@@ -80,7 +80,6 @@ namespace PhpUpgrader
         /// <summary> Název souboru ve složce 'connect'. </summary>
         public string ConnectionFile { get; init; }
 
-
         /// <summary> Rekurzivní upgrade .php souborů ve všech podadresářích. </summary>
         /// <param name="directoryPath">Cesta k adresáři, kde hledat .php soubory.</param>
         public void UpgradeAllFilesRecursively(string directoryPath)
@@ -154,7 +153,6 @@ namespace PhpUpgrader
                     if (line.TrimStart().StartsWith("$password_beta"))
                         continue;
                 }
-
                 if (line.Contains("$password_beta") && !inComment && !line.Contains("//$password_beta"))
                     break;
             }
@@ -517,9 +515,6 @@ namespace PhpUpgrader
             static string _PregMatchEvaluator(Match match)
             {
                 int bracketIndex = match.Value.IndexOf('(');
-                char quote = match.Value[bracketIndex + 1];
-
-                string insidePattern = match.Value[(bracketIndex + 2)..(match.Value.Length - 1)];
 
                 string pregFunction = match.Value[0..bracketIndex].TrimEnd() switch
                 {
@@ -527,6 +522,9 @@ namespace PhpUpgrader
                     "split" => "preg_split",
                     _ => "preg_match"
                 };
+                char quote = match.Value[++bracketIndex];
+                string insidePattern = match.Value[++bracketIndex..(match.Value.Length - 1)];
+
                 return $"{pregFunction}({quote}~{insidePattern}~{quote}";
             }
         }
