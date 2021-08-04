@@ -10,7 +10,7 @@ namespace PhpUpgrader
     public class MonaUpgrader
     {
         /// <summary> Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce. </summary>
-        public HashSet<string> FilesContainingMysql { get; } = new();
+        public List<string> FilesContainingMysql { get; } = new();
 
         /// <summary>
         /// Co nahradit? (načteno ze souboru '{<see cref="BaseFolder"/>}important/find_what.txt').
@@ -65,13 +65,13 @@ namespace PhpUpgrader
             get => _replaceBetaWith;
             init
             {
-                if ((_replaceBetaWith = value) is not null)
+                if ((_replaceBetaWith = value) is null)
+                    return;
+
+                for (int i = 0; i < FindWhat?.Length; i++)
                 {
-                    for (int i = 0; i < FindWhat?.Length; i++)
-                    {
-                        RenameBeta(ref FindWhat[i]);
-                        RenameBeta(ref ReplaceWith[i]);
-                    }
+                    FindWhat[i] = RenameBeta(FindWhat[i], value);
+                    ReplaceWith[i] = RenameBeta(ReplaceWith[i], value);
                 }
             }
         }
@@ -98,51 +98,46 @@ namespace PhpUpgrader
                 if (UpgradeTinyAjaxBehavior(filePath))
                     continue;
 
-                string fileContent = File.ReadAllText(filePath);
-                string originalContent = fileContent;
+                var file = new FileWrapper(filePath);
 
                 if (!filePath.Contains("tiny_mce"))
                 {
-                    UpgradeConnect(filePath, ref fileContent);
-                    UpgradeMysqlResult(ref fileContent);
-                    UpgradeClanekVypis(ref fileContent);
-                    UpgradeFindReplace(ref fileContent);
-                    UpgradeMysqliQueries(ref fileContent);
-                    UpgradeMysqliClose(filePath, ref fileContent);
-                    UpgradeAnketa(filePath, ref fileContent);
-                    UpgradeChdir(filePath, ref fileContent);
-                    UpgradeTableAddEdit(filePath, ref fileContent);
-                    UpgradeStrankovani(filePath, ref fileContent);
-                    UpgradeXmlFeeds(filePath, ref fileContent);
-                    UpgradeSitemapSave(filePath, ref fileContent);
-                    UpgradeGlobalBeta(ref fileContent);
-                    RenameBeta(ref fileContent);
+                    UpgradeConnect(file);
+                    UpgradeMysqlResult(file);
+                    UpgradeClanekVypis(file);
+                    UpgradeFindReplace(file);
+                    UpgradeMysqliQueries(file);
+                    UpgradeMysqliClose(file);
+                    UpgradeAnketa(file);
+                    UpgradeChdir(file);
+                    UpgradeTableAddEdit(file);
+                    UpgradeStrankovani(file);
+                    UpgradeXmlFeeds(file);
+                    UpgradeSitemapSave(file);
+                    UpgradeGlobalBeta(file);
+                    RenameBeta(file);
                 }
-                UpgradeRegexFunctions(ref fileContent);
+                UpgradeRegexFunctions(file);
 
                 //upraveno, zapsat do souboru
-                if (fileContent != originalContent)
-                    File.WriteAllText(filePath, fileContent);
+                file.Save();
 
                 //po dodelani nahrazeni nize projit na retezec - mysql_
-                if (fileContent.ToLower().Contains("mysql_"))
+                if (Regex.IsMatch(file.Content, "mysql_", RegexOptions.IgnoreCase))
                     FilesContainingMysql.Add(filePath);
             }
         }
 
         /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
-        public void UpgradeConnect(string filePath, ref string fileContent)
+        public void UpgradeConnect(FileWrapper file)
         {
-            var compatibleFiles = new string[]
-            {
-                $@"\connect\{ConnectionFile}", $@"\system\{ConnectionFile}", $@"\Connections\{ConnectionFile}"
-            };
-            if (compatibleFiles.All(x => !filePath.Contains(x)))
+            //konec, pokud aktuální soubor nepatří mezi validní connection soubory
+            if (_ValidConnectionFiles().All(f => !file.Path.Contains(f)))
                 return;
 
             string connectHead = string.Empty;
             bool inComment = false;
-            using var sr = new StreamReader(filePath);
+            using var sr = new StreamReader(file.Path);
 
             while (!sr.EndOfStream)
             {
@@ -163,7 +158,6 @@ namespace PhpUpgrader
                 if (line.Contains("$password_beta") && !inComment && !line.Contains("//$password_beta"))
                     break;
             }
-
             //generování nových údajů k databázi, pokud jsou všechny zadány
             if (Database is not null && Username is not null && Password is not null && Hostname is not null)
             {
@@ -173,7 +167,15 @@ namespace PhpUpgrader
                 connectHead = connectHead.Replace("//\n", "\n");
                 connectHead += $"$hostname_beta = \"{Hostname}\";\n$database_beta = \"{Database}\";\n$username_beta = \"{Username}\";\n$password_beta = \"{Password}\";\n";
             }
-            fileContent = connectHead + File.ReadAllText($"{BaseFolder}important\\connection.txt");
+            file.Content = connectHead + File.ReadAllText($"{BaseFolder}important\\connection.txt");
+
+            //iterátor validních connection souborů
+            IEnumerable<string> _ValidConnectionFiles()
+            {
+                yield return $@"\connect\{ConnectionFile}";
+                yield return $@"\system\{ConnectionFile}";
+                yield return $@"\Connections\{ConnectionFile}";
+            }
         }
 
         /// <summary>
@@ -196,13 +198,13 @@ namespace PhpUpgrader
         /// <summary>
         /// mysql_result >>> mysqli_num_rows + odmazat druhy parametr (vetsinou - , 0) + predelat COUNT(*) na *
         /// </summary>
-        public static void UpgradeMysqlResult(ref string fileContent)
+        public static void UpgradeMysqlResult(FileWrapper file)
         {
-            if (!fileContent.Contains("mysql_result"))
+            if (!file.Content.Contains("mysql_result"))
                 return;
 
-            var lines = fileContent.Split('\n');
-            fileContent = string.Empty;
+            var lines = file.Content.Split('\n');
+            var newContent = string.Empty;
 
             for (int i = 0; i < lines.Length; i++)
             {
@@ -212,39 +214,41 @@ namespace PhpUpgrader
                     lines[i] = lines[i].Replace(", 0", string.Empty);
                     lines[i] = lines[i].Replace("mysql_result", "mysqli_num_rows");
                 }
-                fileContent += $"{lines[i]}\n";
+                newContent += $"{lines[i]}\n";
             }
+            file.Content = newContent;
         }
 
         /// <summary>
         /// upravit soubory system/clanek.php a system/vypis.php - pokud je sdileni fotogalerii pridat nad podminku $vypis_table_clanek["sdileni_fotogalerii"] kod $p_sf = array();
         /// </summary>
-        public static void UpgradeClanekVypis(ref string fileContent)
+        public static void UpgradeClanekVypis(FileWrapper file)
         {
-            if (!fileContent.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]") || fileContent.Contains("$p_sf = array();"))
+            if (!file.Content.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]") || file.Content.Contains("$p_sf = array();"))
                 return;
 
-            var lines = fileContent.Split('\n');
-            fileContent = string.Empty;
+            var lines = file.Content.Split('\n');
+            var newContent = string.Empty;
 
             for (int i = 0; i < lines.Length; i++)
             {
                 if (lines[i].Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"))
                 {
-                    fileContent += "        $p_sf = array();\n";
+                    newContent += "        $p_sf = array();\n";
                 }
-                fileContent += $"{lines[i]}\n";
+                newContent += $"{lines[i]}\n";
             }
+            file.Content = newContent;
         }
 
         /// <summary>
         /// predelat soubory nahrazenim viz. >>> část Hledat >>> Nahradit
         /// </summary>
-        public void UpgradeFindReplace(ref string fileContent)
+        public void UpgradeFindReplace(FileWrapper file)
         {
-            for (int i = 0; i < FindWhat.Length; i++)
+            for (int i = 0; i < FindWhat?.Length; i++)
             {
-                fileContent = fileContent.Replace(FindWhat[i], ReplaceWith[i]);
+                file.Content = file.Content.Replace(FindWhat[i], ReplaceWith[i]);
             }
         }
 
@@ -253,21 +257,21 @@ namespace PhpUpgrader
         /// (napr. mysqli_query($beta, "SET CHARACTER SET utf8", $this->db);
         /// predelat na mysqli_query($this->db, "SET CHARACTER SET utf8"); …. atd .. )
         /// </summary>
-        public void UpgradeMysqliQueries(ref string fileContent)
+        public void UpgradeMysqliQueries(FileWrapper file)
         {
-            if (fileContent.Contains("$this->db"))
+            if (file.Content.Contains("$this->db"))
             {
-                fileContent = fileContent.Replace("mysqli_query($beta, \"SET CHARACTER SET utf8\", $this->db);", "mysqli_query($this->db, \"SET CHARACTER SET utf8\");");
-                RenameBeta(ref fileContent, "this->db");
+                file.Content = file.Content.Replace("mysqli_query($beta, \"SET CHARACTER SET utf8\", $this->db);", "mysqli_query($this->db, \"SET CHARACTER SET utf8\");");
+                file.Content = RenameBeta(file.Content, "this->db");
             }
         }
 
         /// <summary> pridat mysqli_close($beta); do indexu nakonec </summary>
-        public void UpgradeMysqliClose(string filePath, ref string fileContent)
+        public void UpgradeMysqliClose(FileWrapper file)
         {
-            if (filePath.Contains($@"{WebName}\index.php") && !fileContent.Contains("mysqli_close"))
+            if (file.Path.Contains($@"{WebName}\index.php") && !file.Content.Contains("mysqli_close"))
             {
-                fileContent += "\n<?php mysqli_close($beta); ?>";
+                file.Content += "\n<?php mysqli_close($beta); ?>";
             }
         }
 
@@ -275,22 +279,22 @@ namespace PhpUpgrader
         /// upravit soubor anketa/anketa.php - r.3 (odmazat ../)
         ///     - include_once "../setup.php"; na include_once "setup.php";
         /// </summary>
-        public static void UpgradeAnketa(string filePath, ref string fileContent)
+        public static void UpgradeAnketa(FileWrapper file)
         {
-            if (filePath.Contains(@"\anketa\anketa.php"))
+            if (file.Path.Contains(@"\anketa\anketa.php"))
             {
-                fileContent = fileContent.Replace("include_once(\"../setup.php\")", "include_once(\"setup.php\")");
+                file.Content = file.Content.Replace("include_once(\"../setup.php\")", "include_once(\"setup.php\")");
             }
         }
 
         /// <summary> zakomentovat radky s funkci chdir v souboru admin/funkce/vytvoreni_adr.php </summary>
-        public void UpgradeChdir(string filePath, ref string fileContent)
+        public void UpgradeChdir(FileWrapper file)
         {
             foreach (var adminFolder in AdminFolders)
             {
-                if (filePath.Contains($@"\{adminFolder}\funkce\vytvoreni_adr.php") && !fileContent.Contains("//chdir"))
+                if (file.Path.Contains($@"\{adminFolder}\funkce\vytvoreni_adr.php") && !file.Content.Contains("//chdir"))
                 {
-                    fileContent = fileContent.Replace("chdir", "//chdir");
+                    file.Content = file.Content.Replace("chdir", "//chdir");
                 }
             }
         }
@@ -301,15 +305,15 @@ namespace PhpUpgrader
         /// upravit soubor admin/table_x_edit.php
         ///     - potlacit chybova hlasku znakem „@“ na radku cca 53-80 - $pocet_text_all = mysqli_num_rows….
         /// </summary>
-        public void UpgradeTableAddEdit(string filePath, ref string fileContent)
+        public void UpgradeTableAddEdit(FileWrapper file)
         {
             foreach (var adminFolder in AdminFolders)
             {
-                if ((filePath.Contains($@"\{adminFolder}\table_x_add.php")
-                    || filePath.Contains($@"\{adminFolder}\table_x_edit.php"))
-                    && !fileContent.Contains("@$pocet_text_all"))
+                if ((file.Path.Contains($@"\{adminFolder}\table_x_add.php")
+                    || file.Path.Contains($@"\{adminFolder}\table_x_edit.php"))
+                    && !file.Content.Contains("@$pocet_text_all"))
                 {
-                    fileContent = fileContent.Replace("$pocet_text_all = mysqli_num_rows", "@$pocet_text_all = mysqli_num_rows");
+                    file.Content = file.Content.Replace("$pocet_text_all = mysqli_num_rows", "@$pocet_text_all = mysqli_num_rows");
                 }
             }
         }
@@ -318,40 +322,44 @@ namespace PhpUpgrader
         /// upravit soubor funkce/strankovani.php
         ///     >>>  function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)
         /// </summary>
-        public static void UpgradeStrankovani(string filePath, ref string fileContent)
+        public static void UpgradeStrankovani(FileWrapper file)
         {
-            if (!filePath.Contains(@"\funkce\strankovani.php") || !fileContent.Contains("function predchozi_dalsi"))
+            if (!file.Path.Contains(@"\funkce\strankovani.php") || !file.Content.Contains("function predchozi_dalsi"))
                 return;
 
-            //dvojice (co hledat?, čím to nahradit?)
-            var preddalVariants = new (string, string)[]
+            foreach (var variant in _PredchoziDalsiVariants())
             {
-                ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)",
-                    "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)"),
-                ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext, $prenext_2)",
-                    "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null, $prenext_2 = null)"),
-                ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $pre, $next)",
-                    "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $pre = null, $next = null)")
-            };
-            foreach (var variant in preddalVariants)
-            {
-                fileContent = fileContent.Replace(variant.Item1, variant.Item2);
+                file.Content = file.Content.Replace(variant.Item1, variant.Item2);
 
-                if (fileContent.Contains(variant.Item2))
+                if (file.Content.Contains(variant.Item2))
                     return;
             }
             //zahlásit chybu při nalezení další varianty funkce predchozi_dalsi
             Console.Error.WriteLine("- predchozi_dalsi error!");
+
+            //iterátor dvojic 'co hledat?', 'čím to nahradit?' pro varianty funkce predchozi_dalsi
+            static IEnumerable<(string, string)> _PredchoziDalsiVariants()
+            {
+                yield return ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)",
+                              "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)"
+                );
+                yield return ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext, $prenext_2)",
+                              "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null, $prenext_2 = null)"
+                );
+                yield return ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $pre, $next)",
+                              "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $pre = null, $next = null)"
+                );
+            }
         }
 
         /// <summary>
         /// Xml_feeds_ if($query_podmenu_all["casovani"] == 1) -> if($data_podmenu_all["casovani"] == 1)
         /// </summary>
-        public static void UpgradeXmlFeeds(string filePath, ref string fileContent)
+        public static void UpgradeXmlFeeds(FileWrapper file)
         {
-            if (filePath.Contains("xml_feeds_") && !filePath.Contains("xml_feeds_edit"))
+            if (file.Path.Contains("xml_feeds_") && !file.Path.Contains("xml_feeds_edit"))
             {
-                fileContent = fileContent.Replace("if($query_podmenu_all[\"casovani\"] == 1)", "if($data_podmenu_all[\"casovani\"] == 1)");
+                file.Content = file.Content.Replace("if($query_podmenu_all[\"casovani\"] == 1)", "if($data_podmenu_all[\"casovani\"] == 1)");
             }
         }
 
@@ -360,33 +368,34 @@ namespace PhpUpgrader
         ///     - pridat podminku „if($query_text_all !== FALSE)“
         ///     a obalit ji „while($data_stranky_text_all = mysqli_fetch_array($query_text_all))“
         /// </summary>
-        public void UpgradeSitemapSave(string filePath, ref string fileContent)
+        public void UpgradeSitemapSave(FileWrapper file)
         {
             foreach (var adminFolder in AdminFolders)
             {
-                if (!filePath.Contains($"{adminFolder}\\sitemap_save.php")
-                    || !fileContent.Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))")
-                    || fileContent.Contains("if($query_text_all !== FALSE)"))
+                if (!file.Path.Contains($"{adminFolder}\\sitemap_save.php")
+                    || !file.Content.Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))")
+                    || file.Content.Contains("if($query_text_all !== FALSE)"))
                     continue;
 
                 bool sfBracket = false;
-                var lines = fileContent.Split('\n');
-                fileContent = string.Empty;
+                var lines = file.Content.Split('\n');
+                var newContent = string.Empty;
 
                 for (int i = 0; i < lines.Length; i++)
                 {
                     if (lines[i].Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))"))
                     {
-                        fileContent += "          if($query_text_all !== FALSE)\n          {\n";
+                        newContent += "          if($query_text_all !== FALSE)\n          {\n";
                         sfBracket = true;
                     }
                     if (lines[i].Contains("}") && sfBracket)
                     {
-                        fileContent += $"    {lines[i]}\n";
+                        newContent += $"    {lines[i]}\n";
                         sfBracket = false;
                     }
-                    fileContent += $"{lines[i]}\n";
+                    newContent += $"{lines[i]}\n";
                 }
+                file.Content = newContent;
             }
         }
 
@@ -394,27 +403,28 @@ namespace PhpUpgrader
         /// pro všechny funkce které v sobe mají dotaz na db pridat na zacatek
         ///     - global $beta; >>> hledat v netbeans - (?s)^(?=.*?function )(?=.*?mysqli_) - regular
         /// </summary>
-        public static void UpgradeGlobalBeta(ref string fileContent)
+        public static void UpgradeGlobalBeta(FileWrapper file)
         {
-            if (!Regex.IsMatch(fileContent, "(?s)^(?=.*?function )(?=.*?mysqli_)") || fileContent.Contains("$this"))
+            if (!Regex.IsMatch(file.Content, "(?s)^(?=.*?function )(?=.*?mysqli_)") || file.Content.Contains("$this"))
                 return;
 
             bool javascript = false;
-            var lines = fileContent.Split('\n');
-            fileContent = string.Empty;
+            var lines = file.Content.Split('\n');
+            var newContent = string.Empty;
 
             for (int i = 0; i < lines.Length; i++)
             {
                 if (lines[i].Contains("<script")) javascript = true;
                 if (lines[i].Contains("</script")) javascript = false;
 
-                fileContent += $"{lines[i]}\n";
+                newContent += $"{lines[i]}\n";
 
                 if (lines[i].Contains("function") && !javascript && _MysqliInFunction(i))
                 {
-                    fileContent += $"{lines[++i]}\n\n    global $beta;\n\n";
+                    newContent += $"{lines[++i]}\n\n    global $beta;\n\n";
                 }
             }
+            file.Content = newContent;
 
             bool _MysqliInFunction(int startIndex)
             {
@@ -448,55 +458,59 @@ namespace PhpUpgrader
 
         /// <summary> Přejmenuje proměnnou $beta na přednastavenou hodnotu. </summary>
         /// <param name="replacement">null => použít vlastnost RenameBetaWith.</param>
-        /// <param name="fileContent"></param>
-        public void RenameBeta(ref string fileContent, string? replacement = null)
+        /// <param name="content"></param>
+        public string RenameBeta(string content, string? replacement = null)
         {
             if ((replacement ??= RenameBetaWith) is not null)
             {
-                fileContent = fileContent.Replace("$beta", $"${replacement}");
+                content = content.Replace("$beta", $"${replacement}");
             }
+            return content;
         }
+
+        /// <summary> Přejmenovat proměnnou $beta v souboru. </summary>
+        public void RenameBeta(FileWrapper file) => file.Content = RenameBeta(file.Content);
 
         /// <summary>
         /// - funkci ereg nebo ereg_replace doplnit do prvního parametru delimetr na začátek a nakonec (if(ereg('.+@.+..+', $retezec))
         /// // puvodni, jiz nefunkcni >>> if(preg_match('#.+@.+..+#', $retezec)) // upravene - delimiter zvolen #)
         /// </summary>
-        public static void UpgradeRegexFunctions(ref string fileContent)
+        public static void UpgradeRegexFunctions(FileWrapper file)
         {
             var evaluator = new MatchEvaluator(_PregMatchEvaluator);
-            _UpgradeEreg(ref fileContent);
-            _UpgradeSplit(ref fileContent);
+            _UpgradeEreg();
+            _UpgradeSplit();
 
-            void _UpgradeEreg(ref string fileContent)
+            void _UpgradeEreg()
             {
-                if (!fileContent.Contains("ereg"))
+                if (!file.Content.Contains("ereg"))
                     return;
 
-                fileContent = Regex.Replace(fileContent, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator);
-                fileContent = Regex.Replace(fileContent, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator);
+                file.Content = Regex.Replace(file.Content, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator);
+                file.Content = Regex.Replace(file.Content, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator);
 
-                fileContent = Regex.Replace(fileContent, @"ereg ?\( ?\$", "preg_match($");
-                fileContent = Regex.Replace(fileContent, @"ereg_replace ?\( ?\$", "preg_replace($");
+                file.Content = Regex.Replace(file.Content, @"ereg ?\( ?\$", "preg_match($");
+                file.Content = Regex.Replace(file.Content, @"ereg_replace ?\( ?\$", "preg_replace($");
 
-                if (fileContent.Contains("ereg"))
+                if (file.Content.Contains("ereg"))
                     Console.Error.WriteLine("- ereg alert!");
             }
 
-            void _UpgradeSplit(ref string fileContent)
+            void _UpgradeSplit()
             {
-                if (!fileContent.Contains("split") || fileContent.Contains("preg_split"))
+                if (!file.Content.Contains("split") || file.Content.Contains("preg_split"))
                     return;
 
-                if (fileContent.Contains("script") && fileContent.Contains(".split"))
+                if (file.Content.Contains("script") && file.Content.Contains(".split"))
                 {
                     //soubor obsahuje Javascript i funkci split, zkontrolovat manuálně
                     Console.Error.WriteLine("- split Javascript alert!");
                     return;
                 }
-                fileContent = Regex.Replace(fileContent, @"\bsplit ?\('(\\'|[^'])*'", evaluator);
-                fileContent = Regex.Replace(fileContent, @"\bsplit ?\(""(\\""|[^""])*""", evaluator);
+                file.Content = Regex.Replace(file.Content, @"\bsplit ?\('(\\'|[^'])*'", evaluator);
+                file.Content = Regex.Replace(file.Content, @"\bsplit ?\(""(\\""|[^""])*""", evaluator);
 
-                if (Regex.IsMatch(fileContent, @"[^preg_]split ?\("))
+                if (Regex.IsMatch(file.Content, @"[^preg_]split ?\("))
                     Console.Error.WriteLine("- unmodified split alert!");
             }
 

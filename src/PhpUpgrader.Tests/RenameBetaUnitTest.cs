@@ -20,7 +20,7 @@ namespace PhpUpgrader.Tests
             var upgrader = new MonaUpgrader();
 
             //Act
-            upgrader.RenameBeta(ref content, "gama");
+            content = upgrader.RenameBeta(content, "gama");
 
             //Assert
             var expected = "mysqli_query($gama, $query);";
@@ -37,7 +37,7 @@ namespace PhpUpgrader.Tests
             var upgrader = new MonaUpgrader { RenameBetaWith = "gama" };
 
             //Act
-            upgrader.RenameBeta(ref content);
+            content = upgrader.RenameBeta(content);
 
             //Assert
             var expected = "mysqli_query($gama, $query);";
@@ -54,7 +54,7 @@ namespace PhpUpgrader.Tests
             var upgrader = new MonaUpgrader();
 
             //Act
-            upgrader.RenameBeta(ref content);
+            content = upgrader.RenameBeta(content);
 
             //Assert
             Assert.Equal("mysqli_query($beta, $query);", content);
@@ -68,7 +68,7 @@ namespace PhpUpgrader.Tests
             var upgrader = new MonaUpgrader { RenameBetaWith = "gama" };
 
             //Act
-            upgrader.RenameBeta(ref content, "alfa");
+            content = upgrader.RenameBeta(content, "alfa");
 
             //Assert
             var expected = "mysqli_query($alfa, $query);";

@@ -21,56 +21,62 @@ namespace PhpUpgrader.Tests
         [InlineData(@"ereg (""p\""att'ern"", ""target""); ereg_replace('patt""e\'rn', 'target');")]
         public void PregShouldReplaceEreg(string content)
         {
+            var file = new FileWrapper(string.Empty, content);
             _output.WriteLine(content);
             _output.WriteLine(string.Empty);
 
-            MonaUpgrader.UpgradeRegexFunctions(ref content);
+            MonaUpgrader.UpgradeRegexFunctions(file);
 
-            _output.WriteLine(content);
-            Assert.DoesNotContain("ereg", content);
+            _output.WriteLine(file.Content);
+            Assert.True(file.IsModified);
+            Assert.DoesNotContain("ereg", file.Content);
         }
 
         [Fact]
         public void NotContainingEregShoulRemainTheSame()
         {
-            var content = "mysqli_query($beta, $query);";
+            var file = new FileWrapper(string.Empty, "mysqli_query($beta, $query);");
 
-            MonaUpgrader.UpgradeRegexFunctions(ref content);
-            
-            Assert.Equal("mysqli_query($beta, $query);", content);
+            MonaUpgrader.UpgradeRegexFunctions(file);
+
+            Assert.False(file.IsModified);
+            Assert.Equal("mysqli_query($beta, $query);", file.Content);
         }
 
         [Fact]
         public void ReplacesSplitFunction()
         {
-            var content = "$var = split('pattern', $query);";
+            var file = new FileWrapper(string.Empty, "$var = split('pattern', $query);");
 
-            MonaUpgrader.UpgradeRegexFunctions(ref content);
+            MonaUpgrader.UpgradeRegexFunctions(file);
 
-            _output.WriteLine(content);
-            Assert.Equal("$var = preg_split('~pattern~', $query);", content);
+            _output.WriteLine(file.Content);
+            Assert.True(file.IsModified);
+            Assert.Equal("$var = preg_split('~pattern~', $query);", file.Content);
         }
 
         [Fact]
         public void PregSplitShouldRemainTheSame()
         {
-            var content = "preg_split('~pattern~', $query);";
+            var file = new FileWrapper(string.Empty, "preg_split('~pattern~', $query);");
 
-            MonaUpgrader.UpgradeRegexFunctions(ref content);
+            MonaUpgrader.UpgradeRegexFunctions(file);
 
-            _output.WriteLine(content);
-            Assert.Equal("preg_split('~pattern~', $query);", content);
+            _output.WriteLine(file.Content);
+            Assert.False(file.IsModified);
+            Assert.Equal("preg_split('~pattern~', $query);", file.Content);
         }
 
         [Fact]
         public void PregSplitShouldNotReplaceInJavascript()
         {
-            var content = "<script language=\"javascript\" type=\"text / javascript\">var split_pomlcky = hodnota_polozky.split(\" - \");";
-
-            MonaUpgrader.UpgradeRegexFunctions(ref content);
-
-            _output.WriteLine(content);
-            Assert.Equal("<script language=\"javascript\" type=\"text / javascript\">var split_pomlcky = hodnota_polozky.split(\" - \");", content);
+            var file = new FileWrapper(string.Empty, "<script language=\"javascript\" type=\"text / javascript\">var split_pomlcky = hodnota_polozky.split(\" - \");");
+            
+            MonaUpgrader.UpgradeRegexFunctions(file);
+            
+            _output.WriteLine(file.Content);
+            Assert.False(file.IsModified);
+            Assert.Equal("<script language=\"javascript\" type=\"text / javascript\">var split_pomlcky = hodnota_polozky.split(\" - \");", file.Content);
         }
     }
 }
