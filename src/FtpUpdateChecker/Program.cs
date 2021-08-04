@@ -6,10 +6,10 @@ namespace FtpUpdateChecker
 {
     class Program
     {
-        static void WriteStatus(uint fileCount, uint folderCount, uint foundCount, string displayDate)
+        static void WriteStatus(uint fileCount, uint folderCount, uint foundCount, string displayDate, uint phpFilesCount)
         {
-            Console.Write($"Checked {fileCount} file(s) in {folderCount} folder(s). ");
-            Console.Write($"Found {foundCount} file(s) modified after {displayDate}.");
+            Console.Write($"Checked {fileCount} file(s) in {folderCount} folder(s). " +
+                $"Found {foundCount} file(s) modified after {displayDate} ({phpFilesCount} of them are PHP).");
         }
 
         static void WriteFoundFile(RemoteFileInfo fileInfo, ref uint foundCount, ConsoleColor defaultColor)
@@ -20,7 +20,7 @@ namespace FtpUpdateChecker
             Console.ForegroundColor = defaultColor;
             Console.Write(fileInfo.FullName);
 
-            for (int i = fileInfo.FullName.Length; i < 95; i++)
+            for (int i = fileInfo.FullName.Length; i < 110; i++)
                 Console.Write(" ");
 
             Console.ForegroundColor = ConsoleColor.DarkGray;
@@ -65,8 +65,10 @@ namespace FtpUpdateChecker
         /// <param name="day">Soubory nad tímto dnem se zobrazí jako aktualizované.</param>
         /// <param name="useLoginsFile">Použít heslo ze souboru ftp_logins.txt k zadanému uživatelskému jménu.</param>
         /// <param name="baseFolder">Kde je soubor ftp_logins.txt?</param>
+        /// <param name="webName">Název složky v '{baseFolder}\weby'. Získá datum vytvoření.</param>
         static void Main(string? username = null, string? password = null, string host = "mcrai.vshosting.cz",
-            string path = "/httpdocs", int year = 2021, int month = 7, int day = 8, bool useLoginsFile = false, string baseFolder = @"C:\McRAI\")
+            string path = "/httpdocs", int year = 2021, int month = 7, int day = 8, bool useLoginsFile = false,
+            string baseFolder = @"C:\McRAI\", string? webName = null)
         {
             var defaultColor = Console.ForegroundColor;
 
@@ -93,8 +95,8 @@ namespace FtpUpdateChecker
                 return;
             }
 
-            var date = new DateTime(year, month, day);
-            var displayDate = date.ToShortDateString();
+            var date = webName is null ? new(year, month, day) : Directory.GetCreationTime($@"{baseFolder}\weby\{webName}");
+            var displayDate = $"{date.ToShortDateString()}, {date.ToShortTimeString()}";
 
             var sessionOptions = new SessionOptions //Setup session options
             {
@@ -124,6 +126,7 @@ namespace FtpUpdateChecker
             uint foundCount = 0;
             uint fileCount = 0;
             uint folderCount = 0;
+            uint phpFilesCount = 0;
 
             try //Enumerate files
             {
@@ -133,14 +136,15 @@ namespace FtpUpdateChecker
 
                     if (fileInfo.IsDirectory)
                     {
-                        WriteStatus(fileCount, ++folderCount, foundCount, displayDate);
+                        WriteStatus(fileCount, ++folderCount, foundCount, displayDate, phpFilesCount);
                         continue;
                     }
                     if (fileInfo.LastWriteTime >= date)
                     {
+                        phpFilesCount += Convert.ToUInt32(fileInfo.FullName.Contains(".php"));
                         WriteFoundFile(fileInfo, ref foundCount, defaultColor);
                     }
-                    WriteStatus(++fileCount, folderCount, foundCount, displayDate);
+                    WriteStatus(++fileCount, folderCount, foundCount, displayDate, phpFilesCount);
                 }
             }
             catch (SessionRemoteException)
