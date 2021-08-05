@@ -26,14 +26,20 @@ namespace PhpUpgrader
         /// <summary> Příznak modifikace obsahu souboru. </summary>
         public bool IsModified { get; private set; }
 
-        /// <summary> Inicializace, načtení obsahu souboru. </summary>
+        /// <summary> Obsah souboru je zadán parametrem. </summary>
         /// <param name="path"> Cesta k souboru. </param>
-        /// <param name="content"> Obsah souboru (prázdné => načíst ze souboru zadaného cestou). </param>
-        public FileWrapper(string path, string? content = null)
+        /// <param name="content"> Obsah souboru. </param>
+        public FileWrapper(string path, string content)
         {
-            Content = content ?? File.ReadAllText(path);
-            IsModified = false;
             Path = path;
+            Content = content;
+            IsModified = false;
+        }
+
+        /// <summary> Obsah souboru je načten z disku na zadané cestě. </summary>
+        /// <param name="path"> Cesta k souboru. </param>
+        public FileWrapper(string path) : this(path, File.ReadAllText(path))
+        {
         }
 
         /// <summary> Uložit modifikovaný obsah souboru. </summary>
