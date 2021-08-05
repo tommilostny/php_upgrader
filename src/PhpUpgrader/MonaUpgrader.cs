@@ -41,7 +41,7 @@ namespace PhpUpgrader
         /// <summary> Složky obsahující administraci RS Mona (null => 1 složka 'admin') </summary>
         public string[] AdminFolders
         {
-            get => _adminFolders;
+            get => _adminFolders ??= new string[] { "admin" };
             init => _adminFolders = value ?? new string[] { "admin" };
         }
         private string[] _adminFolders;
@@ -131,9 +131,14 @@ namespace PhpUpgrader
         public void UpgradeConnect(FileWrapper file)
         {
             //konec, pokud aktuální soubor nepatří mezi validní connection soubory
-            if (_ValidConnectionFiles().All(f => !file.Path.Contains(f)))
-                return;
-
+            switch (file.Path)
+            {
+                case var p0 when p0.Contains($@"\connect\{ConnectionFile}"):
+                case var p1 when p1.Contains($@"\system\{ConnectionFile}"):
+                case var p2 when p2.Contains($@"\Connections\{ConnectionFile}"):
+                    break;
+                default: return;
+            }
             string connectHead = string.Empty;
             bool inComment = false;
             using var sr = new StreamReader(file.Path);
@@ -144,9 +149,8 @@ namespace PhpUpgrader
                 connectHead += $"{line}\n";
 
                 if (line.Contains("/*"))
-                {
                     inComment = true;
-                }
+
                 if (line.Contains("*/"))
                 {
                     inComment = false;
@@ -166,14 +170,6 @@ namespace PhpUpgrader
                 connectHead += $"$hostname_beta = \"{Hostname}\";\n$database_beta = \"{Database}\";\n$username_beta = \"{Username}\";\n$password_beta = \"{Password}\";\n";
             }
             file.Content = connectHead + File.ReadAllText($"{BaseFolder}important\\connection.txt");
-
-            //iterátor validních connection souborů
-            IEnumerable<string> _ValidConnectionFiles()
-            {
-                yield return $@"\connect\{ConnectionFile}";
-                yield return $@"\system\{ConnectionFile}";
-                yield return $@"\Connections\{ConnectionFile}";
-            }
         }
 
         /// <summary>
@@ -181,16 +177,11 @@ namespace PhpUpgrader
         /// </summary>
         public bool UpgradeTinyAjaxBehavior(string filePath)
         {
-            bool foundTAB = false;
-            foreach (var adminFolder in AdminFolders)
-            {
-                if (filePath.Contains($@"\{adminFolder}\include\TinyAjaxBehavior.php"))
-                {
-                    File.Copy($"{BaseFolder}important\\TinyAjaxBehavior.txt", filePath, overwrite: true);
-                    foundTAB = true;
-                }
-            }
-            return foundTAB;
+            if (!AdminFolders.Any(af => filePath.Contains($@"\{af}\include\TinyAjaxBehavior.php")))
+                return false;
+
+            File.Copy($"{BaseFolder}important\\TinyAjaxBehavior.txt", filePath, overwrite: true);
+            return true;
         }
 
         /// <summary>
@@ -222,9 +213,12 @@ namespace PhpUpgrader
         /// </summary>
         public static void UpgradeClanekVypis(FileWrapper file)
         {
-            if (!file.Content.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]") || file.Content.Contains("$p_sf = array();"))
-                return;
-
+            switch (file.Content)
+            {
+                case var c0 when !c0.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"):
+                case var c1 when c1.Contains("$p_sf = array();"):
+                    return;
+            }
             var lines = file.Content.Split('\n');
             var newContent = string.Empty;
 
@@ -288,13 +282,11 @@ namespace PhpUpgrader
         /// <summary> zakomentovat radky s funkci chdir v souboru admin/funkce/vytvoreni_adr.php </summary>
         public void UpgradeChdir(FileWrapper file)
         {
-            foreach (var adminFolder in AdminFolders)
-            {
-                if (file.Path.Contains($@"\{adminFolder}\funkce\vytvoreni_adr.php") && !file.Content.Contains("//chdir"))
-                {
-                    file.Content = file.Content.Replace("chdir", "//chdir");
-                }
-            }
+            if (!AdminFolders.Any(af => file.Path.Contains($@"\{af}\funkce\vytvoreni_adr.php")))
+                return;
+
+            if (!file.Content.Contains("//chdir"))
+                file.Content = file.Content.Replace("chdir", "//chdir");
         }
 
         /// <summary>
@@ -305,15 +297,15 @@ namespace PhpUpgrader
         /// </summary>
         public void UpgradeTableAddEdit(FileWrapper file)
         {
-            foreach (var adminFolder in AdminFolders)
+            switch (AdminFolders)
             {
-                if ((file.Path.Contains($@"\{adminFolder}\table_x_add.php")
-                    || file.Path.Contains($@"\{adminFolder}\table_x_edit.php"))
-                    && !file.Content.Contains("@$pocet_text_all"))
-                {
-                    file.Content = file.Content.Replace("$pocet_text_all = mysqli_num_rows", "@$pocet_text_all = mysqli_num_rows");
-                }
+                case var afs0 when afs0.Any(af => file.Path.Contains($@"\{af}\table_x_add.php")):
+                case var afs1 when afs1.Any(af => file.Path.Contains($@"\{af}\table_x_edit.php")):
+                    break;
+                default: return;
             }
+            if (!file.Content.Contains("@$pocet_text_all"))
+                file.Content = file.Content.Replace("$pocet_text_all = mysqli_num_rows", "@$pocet_text_all = mysqli_num_rows");
         }
 
         /// <summary>
@@ -322,9 +314,12 @@ namespace PhpUpgrader
         /// </summary>
         public static void UpgradeStrankovani(FileWrapper file)
         {
-            if (!file.Path.Contains(@"\funkce\strankovani.php") || !file.Content.Contains("function predchozi_dalsi"))
-                return;
-
+            switch (file)
+            {
+                case { Path: var p } when !p.Contains(@"\funkce\strankovani.php"):
+                case { Content: var c } when !c.Contains("function predchozi_dalsi"):
+                    return;
+            }
             foreach (var variant in _PredchoziDalsiVariants())
             {
                 file.Content = file.Content.Replace(variant.Item1, variant.Item2);
@@ -355,7 +350,7 @@ namespace PhpUpgrader
         /// </summary>
         public static void UpgradeXmlFeeds(FileWrapper file)
         {
-            if (file.Path.Contains("xml_feeds_") && !file.Path.Contains("xml_feeds_edit"))
+            if (Regex.IsMatch(file.Path, "xml_feeds_[^edit]"))
             {
                 file.Content = file.Content.Replace("if($query_podmenu_all[\"casovani\"] == 1)", "if($data_podmenu_all[\"casovani\"] == 1)");
             }
@@ -368,33 +363,34 @@ namespace PhpUpgrader
         /// </summary>
         public void UpgradeSitemapSave(FileWrapper file)
         {
-            foreach (var adminFolder in AdminFolders)
+            if (!AdminFolders.Any(af => file.Path.Contains($@"\{af}\sitemap_save.php")))
+                return;
+
+            switch (file.Content)
             {
-                if (!file.Path.Contains($"{adminFolder}\\sitemap_save.php")
-                    || !file.Content.Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))")
-                    || file.Content.Contains("if($query_text_all !== FALSE)"))
-                    continue;
-
-                bool sfBracket = false;
-                var lines = file.Content.Split('\n');
-                var newContent = string.Empty;
-
-                for (int i = 0; i < lines.Length; i++)
-                {
-                    if (lines[i].Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))"))
-                    {
-                        newContent += "          if($query_text_all !== FALSE)\n          {\n";
-                        sfBracket = true;
-                    }
-                    if (lines[i].Contains("}") && sfBracket)
-                    {
-                        newContent += $"    {lines[i]}\n";
-                        sfBracket = false;
-                    }
-                    newContent += $"{lines[i]}\n";
-                }
-                file.Content = newContent;
+                case var c0 when !c0.Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))"):
+                case var c1 when c1.Contains("if($query_text_all !== FALSE)"):
+                    return;
             }
+            bool sfBracket = false;
+            var lines = file.Content.Split('\n');
+            var newContent = string.Empty;
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))"))
+                {
+                    newContent += "          if($query_text_all !== FALSE)\n          {\n";
+                    sfBracket = true;
+                }
+                if (lines[i].Contains("}") && sfBracket)
+                {
+                    newContent += $"    {lines[i]}\n";
+                    sfBracket = false;
+                }
+                newContent += $"{lines[i]}\n";
+            }
+            file.Content = newContent;
         }
 
         /// <summary>
@@ -403,9 +399,12 @@ namespace PhpUpgrader
         /// </summary>
         public static void UpgradeGlobalBeta(FileWrapper file)
         {
-            if (!Regex.IsMatch(file.Content, "(?s)^(?=.*?function )(?=.*?mysqli_)") || file.Content.Contains("$this"))
-                return;
-
+            switch (file.Content)
+            {
+                case var c0 when !Regex.IsMatch(c0, "(?s)^(?=.*?function )(?=.*?mysqli_)"):
+                case var c1 when c1.Contains("$this"):
+                    return;
+            }
             bool javascript = false;
             var lines = file.Content.Split('\n');
             var newContent = string.Empty;
