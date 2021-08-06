@@ -50,12 +50,19 @@ namespace PhpUpgrader
         }
 
         /// <summary> Uložit modifikovaný obsah souboru. </summary>
-        public void Save(string displayName)
+        public void Save()
         {
-            string symbol = IsModified ? ModifiedSymbol : UnmodifiedSymbol;
-            Console.WriteLine($"\r{symbol} {displayName}");
-
             if (IsModified) File.WriteAllText(Path, Content);
+        }
+
+        /// <summary> Vypíše název souboru a stav modifikace. </summary>
+        public void WriteStatus()
+        {
+            string displayName = Path.Contains(@"\weby\") ? Path[(Path.IndexOf(@"\weby\") + 6)..] : Path;
+
+            string symbol = IsModified ? ModifiedSymbol : UnmodifiedSymbol;
+
+            Console.WriteLine($"\r{symbol} {displayName}");
         }
     }
 }

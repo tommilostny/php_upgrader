@@ -117,7 +117,8 @@ namespace PhpUpgrader
                 UpgradeRegexFunctions(file);
 
                 //upraveno, zapsat do souboru
-                file.Save(filePath.Replace($"{BaseFolder}weby\\", string.Empty));
+                file.WriteStatus();
+                file.Save();
 
                 //po dodelani nahrazeni nize projit na retezec - mysql_
                 if (Regex.IsMatch(file.Content, "mysql_", RegexOptions.IgnoreCase))
