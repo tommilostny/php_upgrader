@@ -12,31 +12,11 @@ namespace PhpUpgrader
         /// <summary> Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce. </summary>
         public List<string> FilesContainingMysql { get; } = new();
 
-        /// <summary>
-        /// Co nahradit? (načteno ze souboru '{<see cref="BaseFolder"/>}important/find_what.txt').
-        /// </summary>
-        public string[] FindWhat { get; private set; }
-
-        /// <summary>
-        /// Čím to nahradit? (načteno ze souboru '{<see cref="BaseFolder"/>}important/replace_with.txt').
-        /// </summary>
-        public string[] ReplaceWith { get; private set; }
-
         /// <summary> Absolutní cesta základní složky, kde jsou složky 'weby' a 'important'. </summary>
-        public string BaseFolder
-        {
-            get => _baseFolder;
-            init
-            {
-                FindWhat = File.ReadAllLines($@"{value}important\find_what.txt");
-                ReplaceWith = File.ReadAllLines($@"{value}important\replace_with.txt");
-                _baseFolder = value;
-            }
-        }
-        private string _baseFolder;
+        public string BaseFolder { get; }
 
         /// <summary> Název webu ve složce 'weby'. </summary>
-        public string WebName { get; init; }
+        public string WebName { get; }
 
         /// <summary> Složky obsahující administraci RS Mona (null => 1 složka 'admin') </summary>
         public string[] AdminFolders
@@ -59,7 +39,6 @@ namespace PhpUpgrader
         public string? Password { get; init; }
 
         /// <summary> Přejmenovat proměnnou $beta tímto názvem (null => nepřejmenovávat). </summary>
-        /// <remarks> Mělo by být nastaveno po <see cref="BaseFolder"/>, která načte <see cref="FindWhat"/> a <see cref="ReplaceWith"/>, které můžou obsahovat proměnnou $beta. </remarks>
         public string? RenameBetaWith
         {
             get => _replaceBetaWith;
@@ -79,6 +58,28 @@ namespace PhpUpgrader
 
         /// <summary> Název souboru ve složce 'connect'. </summary>
         public string ConnectionFile { get; init; }
+
+        /// <summary>
+        /// Co nahradit? (načteno ze souboru '{<see cref="BaseFolder"/>}important/find_what.txt').
+        /// </summary>
+        private string[] FindWhat { get; set; }
+
+        /// <summary>
+        /// Čím to nahradit? (načteno ze souboru '{<see cref="BaseFolder"/>}important/replace_with.txt').
+        /// </summary>
+        private string[] ReplaceWith { get; set; }
+
+        /// <summary> Inicializace povinných atributů. </summary>
+        public MonaUpgrader(string baseFolder, string webName)
+        { 
+            if (!string.IsNullOrEmpty(baseFolder))
+            {
+                FindWhat = File.ReadAllLines($@"{baseFolder}important\find_what.txt");
+                ReplaceWith = File.ReadAllLines($@"{baseFolder}important\replace_with.txt");
+            }
+            BaseFolder = baseFolder;
+            WebName = webName;
+        }
 
         /// <summary> Rekurzivní upgrade .php souborů ve všech podadresářích. </summary>
         /// <param name="directoryPath">Cesta k adresáři, kde hledat .php soubory.</param>
@@ -183,8 +184,8 @@ namespace PhpUpgrader
             if (file.IsModified)
             {
                 File.Copy($"{BaseFolder}important\\TinyAjaxBehavior.txt", file.Path, overwrite: true);
+                file.WriteStatus();
             }
-            file.WriteStatus();
             return file.IsModified;
         }
 

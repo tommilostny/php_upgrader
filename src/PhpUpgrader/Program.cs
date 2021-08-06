@@ -34,10 +34,8 @@ namespace PhpUpgrader
             }
 
             Console.WriteLine($"Starting PHP upgrader for {webName}...\n");
-            var upgrader = new MonaUpgrader
+            var upgrader = new MonaUpgrader(baseFolder, webName)
             {
-                BaseFolder = baseFolder,
-                WebName = webName,
                 AdminFolders = adminFolders,
                 Database = db,
                 Username = user,

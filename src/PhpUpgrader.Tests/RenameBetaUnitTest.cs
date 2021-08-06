@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using PhpUpgrader.Tests.Fixtures;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace PhpUpgrader.Tests
@@ -17,7 +18,7 @@ namespace PhpUpgrader.Tests
         {
             //Arrange
             var content = "mysqli_query($beta, $query);";
-            var upgrader = new MonaUpgrader();
+            var upgrader = new MonaUpgraderFixture();
 
             //Act
             content = upgrader.RenameBeta(content, "gama");
@@ -34,7 +35,7 @@ namespace PhpUpgrader.Tests
         {
             //Arrange
             var content = "mysqli_query($beta, $query);";
-            var upgrader = new MonaUpgrader { RenameBetaWith = "gama" };
+            var upgrader = new MonaUpgraderFixture { RenameBetaWith = "gama" };
 
             //Act
             content = upgrader.RenameBeta(content);
@@ -51,7 +52,7 @@ namespace PhpUpgrader.Tests
         {
             //Arrange
             var content = "mysqli_query($beta, $query);";
-            var upgrader = new MonaUpgrader();
+            var upgrader = new MonaUpgraderFixture();
 
             //Act
             content = upgrader.RenameBeta(content);
@@ -65,7 +66,7 @@ namespace PhpUpgrader.Tests
         {
             //Arrange
             var content = "mysqli_query($beta, $query);";
-            var upgrader = new MonaUpgrader { RenameBetaWith = "gama" };
+            var upgrader = new MonaUpgraderFixture { RenameBetaWith = "gama" };
 
             //Act
             content = upgrader.RenameBeta(content, "alfa");
