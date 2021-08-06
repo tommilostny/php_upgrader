@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -333,7 +332,7 @@ namespace PhpUpgrader
                     return;
             }
             //zahlásit chybu při nalezení další varianty funkce predchozi_dalsi
-            Console.Error.WriteLine("- predchozi_dalsi error!");
+            file.Warnings.Add("predchozi_dalsi error!");
 
             //iterátor dvojic 'co hledat?', 'čím to nahradit?' pro varianty funkce predchozi_dalsi
             static IEnumerable<(string, string)> _PredchoziDalsiVariants()
@@ -495,7 +494,7 @@ namespace PhpUpgrader
                 file.Content = Regex.Replace(file.Content, @"ereg_replace ?\( ?\$", "preg_replace($");
 
                 if (file.Content.Contains("ereg"))
-                    Console.Error.WriteLine("- ereg alert!");
+                    file.Warnings.Add("ereg alert!");
             }
 
             void _UpgradeSplit()
@@ -506,14 +505,14 @@ namespace PhpUpgrader
                 if (file.Content.Contains("script") && file.Content.Contains(".split"))
                 {
                     //soubor obsahuje Javascript i funkci split, zkontrolovat manuálně
-                    Console.Error.WriteLine("- split Javascript alert!");
+                    file.Warnings.Add("split Javascript alert!");
                     return;
                 }
                 file.Content = Regex.Replace(file.Content, @"\bsplit ?\('(\\'|[^'])*'", evaluator);
                 file.Content = Regex.Replace(file.Content, @"\bsplit ?\(""(\\""|[^""])*""", evaluator);
 
                 if (Regex.IsMatch(file.Content, @"[^preg_]split ?\("))
-                    Console.Error.WriteLine("- unmodified split alert!");
+                    file.Warnings.Add("unmodified split alert!");
             }
 
             static string _PregMatchEvaluator(Match match)

@@ -47,6 +47,8 @@ namespace PhpUpgrader
 
             Console.WriteLine($"Modified:   {FileWrapper.ModifiedSymbol}");
             Console.WriteLine($"Unmodified: {FileWrapper.UnmodifiedSymbol}");
+            Console.WriteLine($"Warning:    {FileWrapper.WarningSymbol}");
+
             Console.WriteLine("\nProcessed files:");
             upgrader.UpgradeAllFilesRecursively(workDir);
 

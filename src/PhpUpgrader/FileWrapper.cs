@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace PhpUpgrader
@@ -30,8 +31,14 @@ namespace PhpUpgrader
         /// <summary> Symbol značící nemodifikovaný soubor (černá). </summary>
         public const string UnmodifiedSymbol = "⚫";
 
-        /// <summary> Symbol značící modifikovaný soubor (žlutá). </summary>
-        public const string ModifiedSymbol = "🟡";
+        /// <summary> Symbol značící modifikovaný soubor (modrá). </summary>
+        public const string ModifiedSymbol = "🔵";
+
+        /// <summary> Symbol varování o možné chybě. </summary>
+        public const string WarningSymbol = "⚠️";
+
+        /// <summary> Seznam varování o možných chybách. Zobrazí se za výpisem stavu o souboru. </summary>
+        public List<string> Warnings { get; } = new();
 
         /// <summary> Obsah souboru je zadán parametrem. </summary>
         /// <param name="path"> Cesta k souboru. </param>
@@ -63,6 +70,13 @@ namespace PhpUpgrader
             string symbol = IsModified ? ModifiedSymbol : UnmodifiedSymbol;
 
             Console.WriteLine($"\r{symbol} {displayName}");
+            foreach (var warning in Warnings)
+            {
+                var defaultColor = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.Error.WriteLine($"{WarningSymbol} {warning}");
+                Console.ForegroundColor = defaultColor;
+            }
         }
     }
 }
