@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace PhpUpgrader
 {
@@ -36,6 +37,12 @@ namespace PhpUpgrader
             IsModified = false;
         }
 
+        /// <summary> Symbol značící nemodifikovaný soubor (černá). </summary>
+        public const string UnmodifiedSymbol = "⚫";
+
+        /// <summary> Symbol značící modifikovaný soubor (žlutá). </summary>
+        public const string ModifiedSymbol = "🟡";
+
         /// <summary> Obsah souboru je načten z disku na zadané cestě. </summary>
         /// <param name="path"> Cesta k souboru. </param>
         public FileWrapper(string path) : this(path, File.ReadAllText(path))
@@ -43,9 +50,12 @@ namespace PhpUpgrader
         }
 
         /// <summary> Uložit modifikovaný obsah souboru. </summary>
-        public void Save()
+        public void Save(string displayName)
         {
-            if (IsModified) File.WriteAllText(Path, Content);
+            string symbol = IsModified ? ModifiedSymbol : UnmodifiedSymbol;
+            Console.WriteLine($"\r{symbol} {displayName}");
+
+            //if (IsModified) File.WriteAllText(Path, Content);
         }
     }
 }

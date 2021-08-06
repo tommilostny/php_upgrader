@@ -33,6 +33,7 @@ namespace PhpUpgrader
                 return;
             }
 
+            Console.WriteLine($"Starting PHP upgrader for {webName}...\n");
             var upgrader = new MonaUpgrader
             {
                 BaseFolder = baseFolder,
@@ -46,7 +47,9 @@ namespace PhpUpgrader
                 ConnectionFile = connectionFile
             };
 
-            Console.WriteLine("\nProcessed files:\n");
+            Console.WriteLine($"Modified:   {FileWrapper.ModifiedSymbol}");
+            Console.WriteLine($"Unmodified: {FileWrapper.UnmodifiedSymbol}");
+            Console.WriteLine("\nProcessed files:");
             upgrader.UpgradeAllFilesRecursively(workDir);
 
             Console.WriteLine($"\nAutomatic PHP upgrade of {webName} is complete!");

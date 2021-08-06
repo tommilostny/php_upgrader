@@ -92,8 +92,6 @@ namespace PhpUpgrader
             //aktualizace aktuální složky
             foreach (var filePath in Directory.GetFiles(directoryPath, "*.php"))
             {
-                Console.WriteLine(filePath.Replace($"{BaseFolder}weby\\", string.Empty));
-
                 if (UpgradeTinyAjaxBehavior(filePath))
                     continue;
 
@@ -119,7 +117,7 @@ namespace PhpUpgrader
                 UpgradeRegexFunctions(file);
 
                 //upraveno, zapsat do souboru
-                file.Save();
+                file.Save(filePath.Replace($"{BaseFolder}weby\\", string.Empty));
 
                 //po dodelani nahrazeni nize projit na retezec - mysql_
                 if (Regex.IsMatch(file.Content, "mysql_", RegexOptions.IgnoreCase))
