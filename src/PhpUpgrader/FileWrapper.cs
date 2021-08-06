@@ -55,7 +55,7 @@ namespace PhpUpgrader
             string symbol = IsModified ? ModifiedSymbol : UnmodifiedSymbol;
             Console.WriteLine($"\r{symbol} {displayName}");
 
-            //if (IsModified) File.WriteAllText(Path, Content);
+            if (IsModified) File.WriteAllText(Path, Content);
         }
     }
 }
