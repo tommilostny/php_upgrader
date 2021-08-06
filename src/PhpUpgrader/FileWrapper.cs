@@ -25,7 +25,7 @@ namespace PhpUpgrader
         private string _content;
 
         /// <summary> Příznak modifikace obsahu souboru. </summary>
-        public bool IsModified { get; private set; }
+        public bool IsModified { get; set; }
 
         /// <summary> Obsah souboru je zadán parametrem. </summary>
         /// <param name="path"> Cesta k souboru. </param>
