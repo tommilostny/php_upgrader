@@ -27,6 +27,12 @@ namespace PhpUpgrader
         /// <summary> Příznak modifikace obsahu souboru. </summary>
         public bool IsModified { get; set; }
 
+        /// <summary> Symbol značící nemodifikovaný soubor (černá). </summary>
+        public const string UnmodifiedSymbol = "⚫";
+
+        /// <summary> Symbol značící modifikovaný soubor (žlutá). </summary>
+        public const string ModifiedSymbol = "🟡";
+
         /// <summary> Obsah souboru je zadán parametrem. </summary>
         /// <param name="path"> Cesta k souboru. </param>
         /// <param name="content"> Obsah souboru. </param>
@@ -36,12 +42,6 @@ namespace PhpUpgrader
             Content = content;
             IsModified = false;
         }
-
-        /// <summary> Symbol značící nemodifikovaný soubor (černá). </summary>
-        public const string UnmodifiedSymbol = "⚫";
-
-        /// <summary> Symbol značící modifikovaný soubor (žlutá). </summary>
-        public const string ModifiedSymbol = "🟡";
 
         /// <summary> Obsah souboru je načten z disku na zadané cestě. </summary>
         /// <param name="path"> Cesta k souboru. </param>

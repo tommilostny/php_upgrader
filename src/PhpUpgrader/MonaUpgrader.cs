@@ -181,8 +181,9 @@ namespace PhpUpgrader
                 IsModified = AdminFolders.Any(af => filePath.Contains($@"\{af}\include\TinyAjaxBehavior.php"))
             };
             if (file.IsModified)
+            {
                 File.Copy($"{BaseFolder}important\\TinyAjaxBehavior.txt", file.Path, overwrite: true);
-
+            }
             file.WriteStatus();
             return file.IsModified;
         }
