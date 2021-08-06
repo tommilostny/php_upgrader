@@ -69,7 +69,7 @@ namespace PhpUpgrader
 
             string symbol = IsModified ? ModifiedSymbol : UnmodifiedSymbol;
 
-            Console.WriteLine($"\r{symbol} {displayName}");
+            Console.WriteLine($"{symbol} {displayName}");
             foreach (var warning in Warnings)
             {
                 var defaultColor = Console.ForegroundColor;

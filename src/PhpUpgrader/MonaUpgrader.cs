@@ -494,7 +494,9 @@ namespace PhpUpgrader
                 file.Content = Regex.Replace(file.Content, @"ereg_replace ?\( ?\$", "preg_replace($");
 
                 if (file.Content.Contains("ereg"))
+                {
                     file.Warnings.Add("ereg alert!");
+                }
             }
 
             void _UpgradeSplit()
@@ -512,7 +514,9 @@ namespace PhpUpgrader
                 file.Content = Regex.Replace(file.Content, @"\bsplit ?\(""(\\""|[^""])*""", evaluator);
 
                 if (Regex.IsMatch(file.Content, @"[^preg_]split ?\("))
+                {
                     file.Warnings.Add("unmodified split alert!");
+                }
             }
 
             static string _PregMatchEvaluator(Match match)
