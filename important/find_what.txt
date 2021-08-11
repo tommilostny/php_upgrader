@@ -24,3 +24,4 @@ unlink
 @@unlink
 mysql_data_seek
 mysql_real_escape_string
+mysql_free_result

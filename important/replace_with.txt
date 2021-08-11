@@ -24,3 +24,4 @@ preg_match('/^<tr(.*){0,}< \/tr>$/'
 @unlink
 mysqli_data_seek
 mysqli_real_escape_string
+mysqli_free_result
