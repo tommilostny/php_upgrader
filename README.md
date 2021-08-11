@@ -6,7 +6,7 @@ Vytvořeno pro *McRAI* Tomášem Milostným jako nástroj aktualizace webových 
 
 1. Ke spuštění je potřeba nainstalovat [.NET 5.0 SDK](https://dotnet.microsoft.com/download). 
 2. Skript se spouští přes příkazovou řádku (viz **příklady spuštění**) a pracuje s následujícími argumenty:
-  - **``--web-name``**, ``--admin-folders``, ``--base-folder``, ``--db``, ``--user``, ``--password`` a ``--host`` (pro podrobé informace spusťte s argumentem **``--help``**).
+  - **``--web-name``**, ``--admin-folders``, ``--base-folder``, ``--db``, ``--user``, ``--password``, ``--host``, ``--beta`` a ``--connection-file`` (pro podrobé informace spusťte s argumentem **``--help``**).
 
 Název webu odpovídá složce v adresáři *"C:\McRAI\weby\"*, kde **C:\McRAI\\** je výchozím nastavením parametru *--base-folder* a **weby** je podadresářem *C:\McRAI\\*.
 
@@ -24,3 +24,22 @@ Archiv rovněž obsahuje složku "important", kterou je třeba umístit jako *"C
   - ``dotnet run -- --web-name smluvniservis --db smluvniservis_n --user smluvniservis_u --password heslo``
 
 Informace k ``dotnet run`` viz [https://docs.microsoft.com/cs-cz/dotnet/core/tools/dotnet-run](https://docs.microsoft.com/cs-cz/dotnet/core/tools/dotnet-run) (práce s ním a jak zadávat argumenty aplikace atd.).
+
+---
+
+# FTP update checker tool
+
+Nástroj pro kontrolu nových souborů na FTP serveru po určitém datu.
+
+Skript se spouští přes příkazovou řádku (**dotnet cli** stejně jako PhpUpgrader) a pracuje s následujícími argumenty:
+  - **``--username``**, **``--password``**, ``--host``, ``--path``, ``--year``, ``--month``, ``--day``, ``--use-logins-file``, ``--base-folder`` a ``--web-name`` (pro podrobé informace spusťte s argumentem **``--help``**).
+
+Pokud je zadán argument ``--web-name``, odpovídající složce v *C:\McRAI\weby\\* stejně jako u PhpUpgraderu, jako referenční datum bude použito datum vytvoření zadané složky.
+
+### ftp_logins.txt
+
+Soubor využívaný bezparametrovým argumentem **``--use-logins-file``** k načtení hesla dle jména zadaného argumentem ``--username``.
+
+Nachází se ve složce zadané argumentem ``--base-folder`` (výchozí *C:\McRAI\ftp_logins.txt*).
+
+Formát řádku: ``jméno : heslo``
