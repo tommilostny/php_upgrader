@@ -176,11 +176,9 @@ namespace PhpUpgrader
         /// </summary>
         public bool UpgradeTinyAjaxBehavior(string filePath)
         {
-            var file = new FileWrapper(filePath, string.Empty)
-            {
-                IsModified = AdminFolders.Any(af => filePath.Contains($@"\{af}\include\TinyAjaxBehavior.php"))
-            };
-            if (file.IsModified)
+            var file = new FileWrapper(filePath, string.Empty);
+
+            if (file.OverwriteModificationFlag(AdminFolders.Any(af => filePath.Contains($@"\{af}\include\TinyAjaxBehavior.php"))))
             {
                 File.Copy($"{BaseFolder}important\\TinyAjaxBehavior.txt", file.Path, overwrite: true);
                 file.WriteStatus();

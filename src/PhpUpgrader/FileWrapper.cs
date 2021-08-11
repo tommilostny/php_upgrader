@@ -26,7 +26,7 @@ namespace PhpUpgrader
         private string _content;
 
         /// <summary> Příznak modifikace obsahu souboru. </summary>
-        public bool IsModified { get; set; }
+        public bool IsModified { get; private set; }
 
         /// <summary> Symbol značící nemodifikovaný soubor (černá). </summary>
         public const string UnmodifiedSymbol = "⚫";
@@ -78,5 +78,7 @@ namespace PhpUpgrader
                 Console.ForegroundColor = defaultColor;
             }
         }
+
+        internal bool OverwriteModificationFlag(bool newValue) => IsModified = newValue;
     }
 }
