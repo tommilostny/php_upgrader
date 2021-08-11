@@ -166,7 +166,7 @@ namespace PhpUpgrader
                 connectHead = connectHead.Replace("////", "//"); //smazat zbytečná lomítka
                 connectHead += '\n';
                 connectHead = connectHead.Replace("//\n", "\n");
-                connectHead += $"$hostname_beta = \"{Hostname}\";\n$database_beta = \"{Database}\";\n$username_beta = \"{Username}\";\n$password_beta = \"{Password}\";\n";
+                connectHead += $"$hostname_beta = '{Hostname}';\n$database_beta = '{Database}';'$username_beta = '{Username}';\n$password_beta = '{Password}';\n";
             }
             file.Content = connectHead + File.ReadAllText($"{BaseFolder}important\\connection.txt");
         }
