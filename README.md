@@ -42,4 +42,4 @@ Soubor využívaný bezparametrovým argumentem **``--use-logins-file``** k nač
 
 Nachází se ve složce zadané argumentem ``--base-folder`` (výchozí *C:\McRAI\ftp_logins.txt*).
 
-Formát řádku: ``jméno : heslo``
+Formát řádku: ``jméno : heslo : /složky_v_ftp_root,/oddělené,/čárkou``
