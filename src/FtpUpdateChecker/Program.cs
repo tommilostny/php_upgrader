@@ -1,56 +1,64 @@
 ﻿using System;
 using System.IO;
-using WinSCP;
 
 namespace FtpUpdateChecker
 {
     class Program
     {
-        static void WriteStatus(uint fileCount, uint folderCount, uint foundCount, string displayDate, uint phpFilesCount)
+        static void WriteErrorMessage(string message)
         {
-            Console.Write($"Checked {fileCount} file(s) in {folderCount} folder(s). " +
-                $"Found {foundCount} file(s) modified after {displayDate} ({phpFilesCount} of them are PHP).");
-        }
-
-        static void WriteFoundFile(RemoteFileInfo fileInfo, ref uint foundCount, ConsoleColor defaultColor)
-        {
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write($"{++foundCount}. ");
-
-            Console.ForegroundColor = defaultColor;
-            Console.Write(fileInfo.FullName);
-
-            for (int i = fileInfo.FullName.Length; i < 110; i++)
-                Console.Write(" ");
-
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.WriteLine($"\n\t{fileInfo.LastWriteTime}");
-            Console.ForegroundColor = defaultColor;
-        }
-
-        static void WriteErrorMessage(string message, ConsoleColor defaultColor)
-        {
+            var defaultColor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Error.WriteLine($"\n❌ {message}");
             Console.ForegroundColor = defaultColor;
             Console.Error.WriteLine("   Run with --help to display additional information.");
         }
 
-        static string LoadPasswordFromFile(string baseFolder, string? username)
+        static void WriteCompletedMessage()
         {
-            if (string.IsNullOrWhiteSpace(username))
-                throw new ArgumentNullException(nameof(username), "Argument is required while in --use-logins-file mode.");
+            var defaultColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\n\n✔️ Process completed.");
+            Console.ForegroundColor = defaultColor;
+        }
 
-            using var sr = new StreamReader($"{baseFolder}ftp_logins.txt");
-
-            while (!sr.EndOfStream)
+        static bool LoadLoginInfo(string username, ref string password, bool useLoginsFile, string baseFolder)
+        {
+            if (useLoginsFile)
             {
-                var login = sr.ReadLine().Split(" : ");
-
-                if (login[0].Trim() == username)
-                    return login[1].Trim();
+                try
+                {
+                    password = _LoadPasswordFromFile(baseFolder, username);
+                }
+                catch (Exception exception)
+                {
+                    WriteErrorMessage(exception.Message);
+                    return false;
+                }
             }
-            throw new InvalidOperationException($"Unable to load password from {baseFolder}ftp_logins.txt for user {username}.");
+            else if (username is null || password is null)
+            {
+                WriteErrorMessage("Missing arguments --username or --password argument.");
+                return false;
+            }
+            return true;
+
+            static string _LoadPasswordFromFile(string baseFolder, string? username)
+            {
+                if (string.IsNullOrWhiteSpace(username))
+                    throw new ArgumentNullException(nameof(username), "Argument is required while in --use-logins-file mode.");
+
+                using var sr = new StreamReader($"{baseFolder}ftp_logins.txt");
+
+                while (!sr.EndOfStream)
+                {
+                    var login = sr.ReadLine().Split(" : ");
+
+                    if (login[0].Trim() == username)
+                        return login[1].Trim();
+                }
+                throw new InvalidOperationException($"Unable to load password from {baseFolder}ftp_logins.txt for user {username}.");
+            }
         }
 
         /// <summary>
@@ -70,91 +78,26 @@ namespace FtpUpdateChecker
             string path = "/httpdocs", int year = 2021, int month = 7, int day = 8, bool useLoginsFile = false,
             string baseFolder = @"C:\McRAI\", string? webName = null)
         {
-            var defaultColor = Console.ForegroundColor;
-
-            if (useLoginsFile)
-            {
-                try
-                {
-                    password = LoadPasswordFromFile(baseFolder, username);
-                }
-                catch (InvalidOperationException exception)
-                {
-                    WriteErrorMessage(exception.Message, defaultColor);
-                    return;
-                }
-                catch (ArgumentNullException exception)
-                {
-                    WriteErrorMessage(exception.Message, defaultColor);
-                    return;
-                }
-            }
-            else if (username is null || password is null)
-            {
-                WriteErrorMessage("Missing arguments --username or --password argument.", defaultColor);
+            if (!LoadLoginInfo(username, ref password, useLoginsFile, baseFolder))
                 return;
-            }
 
-            var date = webName is null ? new(year, month, day) : Directory.GetCreationTime($@"{baseFolder}\weby\{webName}");
-            var displayDate = $"{date.ToShortDateString()}, {date.ToShortTimeString()}";
-
-            var sessionOptions = new SessionOptions //Setup session options
+            var date = webName switch
             {
-                Protocol = Protocol.Ftp,
-                HostName = host,
-                UserName = username,
-                Password = password,
-                FtpSecure = FtpSecure.Explicit
+                null => new(year, month, day),
+                _ => Directory.GetCreationTime($@"{baseFolder}\weby\{webName}")
             };
-            using var session = new Session();
-            Console.WriteLine($"Connecting to {username}@{host} ...");
+            var checker = new FtpChecker(username, password, host, date);
 
-            try //Connect
+            try //Run update check
             {
-                session.Open(sessionOptions);
+                checker.Run(path);
             }
-            catch (SessionRemoteException)
+            catch (InvalidOperationException exc)
             {
-                WriteErrorMessage("Unable to open session with entered username and password.", defaultColor);
+                WriteErrorMessage(exc.Message);
                 return;
             }
-
-            Console.WriteLine($"Connection successful! Checking all files in {path} for updates after {displayDate}.\n");
-            var enumerationOptions = WinSCP.EnumerationOptions.EnumerateDirectories | WinSCP.EnumerationOptions.AllDirectories;
-            var fileInfos = session.EnumerateRemoteFiles(path, null, enumerationOptions);
-
-            uint foundCount = 0;
-            uint fileCount = 0;
-            uint folderCount = 0;
-            uint phpFilesCount = 0;
-
-            try //Enumerate files
-            {
-                foreach (var fileInfo in fileInfos)
-                {
-                    Console.Write("\r");
-
-                    if (fileInfo.IsDirectory)
-                    {
-                        WriteStatus(fileCount, ++folderCount, foundCount, displayDate, phpFilesCount);
-                        continue;
-                    }
-                    if (fileInfo.LastWriteTime >= date)
-                    {
-                        phpFilesCount += Convert.ToUInt32(fileInfo.FullName.Contains(".php"));
-                        WriteFoundFile(fileInfo, ref foundCount, defaultColor);
-                    }
-                    WriteStatus(++fileCount, folderCount, foundCount, displayDate, phpFilesCount);
-                }
-            }
-            catch (SessionRemoteException)
-            {
-                WriteErrorMessage($"Entered path \"{path}\" doesn't exist on the server.", defaultColor);
-                return;
-            }
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("\n\n✔️ Process completed.");
-            Console.ForegroundColor = defaultColor;
+            WriteCompletedMessage();
         }
     }
 }
