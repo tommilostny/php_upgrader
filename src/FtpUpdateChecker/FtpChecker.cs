@@ -3,32 +3,34 @@ using WinSCP;
 
 namespace FtpUpdateChecker
 {
-    /// <summary>  </summary>
-    public class FtpChecker
+    /// <summary> Třída nad knihovnou WinSCP kontrolující soubory na FTP po určitém datu. </summary>
+    public class FtpChecker : IDisposable
     {
-        /// <summary>  </summary>
+        /// <summary> Datum, od kterého hlásit změnu. </summary>
         public DateTime FromDate { get; }
 
-        /// <summary>  </summary>
+        /// <summary> Datum k zobrazení v textu. </summary>
         public string DisplayDate { get => $"{FromDate.ToShortDateString()}, {FromDate.ToShortTimeString()}"; }
 
-        /// <summary>  </summary>
+        /// <summary> Celkový počet souborů. </summary>
         public uint FileCount { get; private set; }
 
-        /// <summary>  </summary>
+        /// <summary> Celkový počet složek. </summary>
         public uint FolderCount { get; private set; }
 
-        /// <summary>  </summary>
+        /// <summary> Počet souborů přidaných po datu <see cref="FromDate"/>. </summary>
         public uint FoundCount { get; private set; }
 
-        /// <summary>  </summary>
-        public uint PhpFilesCount { get; private set; }
+        /// <summary> Počet PHP souborů přidaných po datu <see cref="FromDate"/>. </summary>
+        public uint PhpFoundCount { get; private set; }
 
         private ConsoleColor DefaultColor { get; } = Console.ForegroundColor;
 
         private SessionOptions SessionOptions { get; }
 
-        /// <summary>  </summary>
+        private Session Session { get; } = new();
+
+        /// <summary> Inicializace sezení spojení WinSCP, nastavení data. </summary>
         public FtpChecker(string username, string password, string hostname, DateTime fromDate)
         {
             SessionOptions = new SessionOptions
@@ -42,26 +44,31 @@ namespace FtpUpdateChecker
             FromDate = fromDate;
         }
 
-        /// <summary>  </summary>
-        /// <exception cref="InvalidOperationException" />
+        /// <summary> Spustit procházení všech souborů na FTP serveru v zadané cestě. </summary>
         public void Run(string path)
         {
-            Console.WriteLine($"Connecting to {SessionOptions.UserName}@{SessionOptions.HostName} ...");
-            using var session = new Session();
-
-            try //Connect
+            if (!Session.Opened)
             {
-                session.Open(SessionOptions);
+                Console.WriteLine($"Connecting to {SessionOptions.UserName}@{SessionOptions.HostName} ...");
+                try //Connect
+                {
+                    Session.Open(SessionOptions);
+                    Console.Write("Connection successful! ");
+                }
+                catch (SessionRemoteException)
+                {
+                    ConsoleOutput.WriteErrorMessage("Unable to open session with entered username and password.");
+                    return;
+                }
             }
-            catch (SessionRemoteException exc)
-            {
-                throw new InvalidOperationException("Unable to open session with entered username and password.", exc);
-            }
+            else Console.WriteLine();
 
-            Console.WriteLine($"Connection successful! Checking all files in {path} for updates after {DisplayDate}.\n");
+            Console.WriteLine($"Checking all files in {path} for updates after {DisplayDate}.");
             var enumerationOptions = EnumerationOptions.EnumerateDirectories | EnumerationOptions.AllDirectories;
-            var fileInfos = session.EnumerateRemoteFiles(path, null, enumerationOptions);
+            var fileInfos = Session.EnumerateRemoteFiles(path, null, enumerationOptions);
 
+            FileCount = FolderCount = PhpFoundCount = FoundCount = 0;
+            WriteStatus();
             try //Enumerate files
             {
                 foreach (var fileInfo in fileInfos)
@@ -76,31 +83,31 @@ namespace FtpUpdateChecker
                     }
                     if (fileInfo.LastWriteTime >= FromDate)
                     {
-                        PhpFilesCount += Convert.ToUInt32(fileInfo.FullName.Contains(".php"));
+                        FoundCount++;
+                        PhpFoundCount += Convert.ToUInt32(fileInfo.FullName.EndsWith(".php"));
                         WriteFoundFile(fileInfo);
                     }
                     FileCount++;
                     WriteStatus();
                 }
             }
-            catch (SessionRemoteException exc)
+            catch (SessionRemoteException)
             {
-                throw new InvalidOperationException($"Entered path \"{path}\" doesn't exist on the server.", exc);
+                ConsoleOutput.WriteErrorMessage($"Entered path \"{path}\" doesn't exist on the server.");
             }
+            ConsoleOutput.WriteCompletedMessage();
         }
 
-        /// <summary>  </summary>
         private void WriteStatus()
         {
             Console.Write($"Checked {FileCount} file(s) in {FolderCount} folder(s). " +
-                $"Found {FoundCount} file(s) modified after {DisplayDate} ({PhpFilesCount} of them are PHP).");
+                $"Found {FoundCount} file(s) modified after {DisplayDate} ({PhpFoundCount} of them are PHP).");
         }
 
-        /// <summary>  </summary>
         private void WriteFoundFile(RemoteFileInfo fileInfo)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write($"{++FoundCount}. ");
+            Console.Write($"{FoundCount}. ");
 
             Console.ForegroundColor = DefaultColor;
             Console.Write(fileInfo.FullName);
@@ -111,6 +118,16 @@ namespace FtpUpdateChecker
             Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine($"\n\t{fileInfo.LastWriteTime}");
             Console.ForegroundColor = DefaultColor;
+        }
+
+        /// <summary> Uzavřít spojení k FTP serveru. </summary>
+        public void Dispose()
+        {
+            if (Session.Opened)
+            {
+                Session.Close();
+            }
+            GC.SuppressFinalize(this);
         }
     }
 }
