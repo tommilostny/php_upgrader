@@ -27,8 +27,9 @@ namespace FtpUpdateChecker
 
             var date = webName switch
             {
-                null => new(year, month, day),
-                _ => Directory.GetCreationTime($@"{baseFolder}\weby\{webName}")
+                not null and var w when Directory.Exists($@"{baseFolder}\weby\{w}")
+                    => Directory.GetCreationTime($@"{baseFolder}\weby\{w}"),
+                _ => new(year, month, day)
             };
             using var checker = new FtpChecker(login.Username, login.Password, host, date);
 
