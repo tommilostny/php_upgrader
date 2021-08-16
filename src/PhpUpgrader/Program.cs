@@ -16,9 +16,10 @@ namespace PhpUpgrader
         /// <param name="host">URL databázového serveru.</param>
         /// <param name="beta">Přejmenovat proměnnou $beta tímto názvem (nezadáno => nepřejmenovávat).</param>
         /// <param name="connectionFile">Název souboru ve složce "/connect".</param>
+        /// <param name="rubicon"> Upgrade systému Rubicon (nezadáno => Mona). </param>
         static void Main(string webName, string[]? adminFolders = null, string baseFolder = @"C:\McRAI\",
             string? db = null, string? user = null, string? password = null, string host = "mcrai2.vshosting.cz",
-            string? beta = null, string connectionFile = "connection.php")
+            string? beta = null, string connectionFile = "connection.php", bool rubicon = false)
         {
             var workDir = $@"{baseFolder}weby\{webName}";
 
@@ -34,15 +35,25 @@ namespace PhpUpgrader
             }
 
             Console.WriteLine($"Starting PHP upgrader for {webName}...\n");
-            var upgrader = new MonaUpgrader(baseFolder, webName)
+            var upgrader = rubicon switch
             {
-                AdminFolders = adminFolders,
-                Database = db,
-                Username = user,
-                Password = password,
-                Hostname = host,
-                RenameBetaWith = beta,
-                ConnectionFile = connectionFile
+                false => new MonaUpgrader(baseFolder, webName)
+                {
+                    AdminFolders = adminFolders,
+                    Database = db,
+                    Username = user,
+                    Password = password,
+                    Hostname = host,
+                    RenameBetaWith = beta,
+                    ConnectionFile = connectionFile
+                },
+                true => new RubiconUpgrader(baseFolder, webName)
+                {
+                    Database = db,
+                    Username = user,
+                    Password = password,
+                    Hostname = host
+                }
             };
 
             Console.WriteLine($"Modified:   {FileWrapper.ModifiedSymbol}");

@@ -92,38 +92,48 @@ namespace PhpUpgrader
             //aktualizace aktuální složky
             foreach (var filePath in Directory.GetFiles(directoryPath, "*.php"))
             {
-                if (UpgradeTinyAjaxBehavior(filePath))
-                    continue;
-
-                var file = new FileWrapper(filePath);
-
-                if (!filePath.Contains("tiny_mce"))
-                {
-                    UpgradeConnect(file);
-                    UpgradeMysqlResult(file);
-                    UpgradeClanekVypis(file);
-                    UpgradeFindReplace(file);
-                    UpgradeMysqliQueries(file);
-                    UpgradeMysqliClose(file);
-                    UpgradeAnketa(file);
-                    UpgradeChdir(file);
-                    UpgradeTableAddEdit(file);
-                    UpgradeStrankovani(file);
-                    UpgradeXmlFeeds(file);
-                    UpgradeSitemapSave(file);
-                    UpgradeGlobalBeta(file);
-                    RenameBeta(file);
-                }
-                UpgradeRegexFunctions(file);
+                var file = UpgradeProcedure(filePath);
 
                 //upraveno, zapsat do souboru
-                file.WriteStatus();
-                file.Save();
-
+                if (file is not null)
+                {
+                    file.WriteStatus();
+                    file.Save();
+                }
                 //po dodelani nahrazeni nize projit na retezec - mysql_
                 if (Regex.IsMatch(file.Content, "mysql_", RegexOptions.IgnoreCase))
                     FilesContainingMysql.Add(filePath);
             }
+        }
+
+        /// <summary> Procedura aktualizace zadaného souboru. </summary>
+        /// <returns> Upravený soubor, null v případě TinyAjaxBehavior. </returns>
+        protected virtual FileWrapper UpgradeProcedure(string filePath)
+        {
+            if (UpgradeTinyAjaxBehavior(filePath))
+                return null;
+
+            var file = new FileWrapper(filePath);
+
+            if (!filePath.Contains("tiny_mce"))
+            {
+                UpgradeConnect(file);
+                UpgradeMysqlResult(file);
+                UpgradeClanekVypis(file);
+                UpgradeFindReplace(file);
+                UpgradeMysqliQueries(file);
+                UpgradeMysqliClose(file);
+                UpgradeAnketa(file);
+                UpgradeChdir(file);
+                UpgradeTableAddEdit(file);
+                UpgradeStrankovani(file);
+                UpgradeXmlFeeds(file);
+                UpgradeSitemapSave(file);
+                UpgradeGlobalBeta(file);
+                RenameBeta(file);
+            }
+            UpgradeRegexFunctions(file);
+            return file;
         }
 
         /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
