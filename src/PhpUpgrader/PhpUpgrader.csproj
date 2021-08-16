@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
 	<Nullable>annotations</Nullable>
-	<Version>1.1.88</Version>
+	<Version>1.1.90</Version>
   </PropertyGroup>
 
   <ItemGroup>

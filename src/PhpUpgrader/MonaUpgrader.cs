@@ -41,7 +41,7 @@ namespace PhpUpgrader
         public string? RenameBetaWith
         {
             get => _replaceBetaWith;
-            init
+            set
             {
                 if ((_replaceBetaWith = value) is null)
                     return;
@@ -56,7 +56,7 @@ namespace PhpUpgrader
         private string? _replaceBetaWith;
 
         /// <summary> Název souboru ve složce 'connect'. </summary>
-        public string ConnectionFile { get; init; }
+        public string ConnectionFile { get; set; }
 
         /// <summary>
         /// Co nahradit? (načteno ze souboru '{<see cref="BaseFolder"/>}important/find_what.txt').
@@ -473,6 +473,7 @@ namespace PhpUpgrader
             if ((replacement ??= RenameBetaWith) is not null)
             {
                 content = content.Replace("$beta", $"${replacement}");
+                content = content.Replace("_beta", $"_{replacement}");
             }
             return content;
         }
