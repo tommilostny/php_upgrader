@@ -40,6 +40,7 @@ namespace PhpUpgrader
                     continue;
 
                 int nameStartIndex = lines[i].IndexOf("class ") + 6;
+
                 int nameEndIndex = lines[i].IndexOf('{', nameStartIndex + 1);
                 if (nameEndIndex == -1)
                     nameEndIndex = lines[i].IndexOf(' ', nameStartIndex + 1);
@@ -69,12 +70,12 @@ namespace PhpUpgrader
                         int paramsStartIndex = lines[i].IndexOf('(', lines[i].IndexOf($"function {className}")) + 1;
                         int paramsEndIndex = lines[i].IndexOf(')', paramsStartIndex);
 
-                        var @params = lines[i][paramsStartIndex..paramsEndIndex];
+                        var parameters = lines[i][paramsStartIndex..paramsEndIndex];
 
                         lines[i] = lines[i].Replace($"function {className}", "function __construct");
-                        lines[i] = $"    public function {className}({@params})\n" +
+                        lines[i] = $"    public function {className}({parameters})\n" +
                                     "    {\n" +
-                                   $"        self::__construct({_ParamsWithoutDefaultValues(@params)});\n" +
+                                   $"        self::__construct({_ParamsWithoutDefaultValues(parameters)});\n" +
                                    $"    }}\n\n{lines[i]}";
                     }
                     newContent += $"{lines[i]}\n";
