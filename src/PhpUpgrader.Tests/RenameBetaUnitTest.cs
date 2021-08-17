@@ -77,5 +77,22 @@ namespace PhpUpgrader.Tests
             _output.WriteLine(content);
             Assert.Equal(expected, content);
         }
+
+        [Fact]
+        public void SettingShouldRenameBetaInFindReplaceDictionary()
+        {
+            //Arrange
+            var upgrader = new MonaUpgraderFixture();
+
+            //Act, Assert
+            var originalCount = upgrader.FindReplace.Count;
+
+            Assert.Contains(upgrader.FindReplace, fr => fr.Key.Contains("beta") || fr.Value.Contains("beta"));
+            upgrader.RenameBetaWith = "gama";
+            Assert.DoesNotContain(upgrader.FindReplace, fr => fr.Key.Contains("beta") || fr.Value.Contains("beta"));
+            Assert.Contains(upgrader.FindReplace, fr => fr.Key.Contains("gama") || fr.Value.Contains("gama"));
+
+            Assert.Equal(originalCount, upgrader.FindReplace.Count);
+        }
     }
 }

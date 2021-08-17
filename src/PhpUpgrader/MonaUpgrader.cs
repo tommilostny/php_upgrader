@@ -37,6 +37,9 @@ namespace PhpUpgrader
         /// <summary> Nové heslo k databázi. </summary>
         public string? Password { get; init; }
 
+        /// <summary> Název souboru ve složce 'connect'. </summary>
+        public string ConnectionFile { get; set; }
+
         /// <summary> Přejmenovat proměnnou $beta tímto názvem (null => nepřejmenovávat). </summary>
         public string? RenameBetaWith
         {
@@ -46,36 +49,64 @@ namespace PhpUpgrader
                 if ((_replaceBetaWith = value) is null)
                     return;
 
-                for (int i = 0; i < FindWhat?.Length; i++)
+                //starý klíč, nový klíč, nová hodnota
+                var renamedItems = new Stack<(string, string, string)>();
+                foreach (var fr in FindReplace)
                 {
-                    FindWhat[i] = RenameBeta(FindWhat[i], value);
-                    ReplaceWith[i] = RenameBeta(ReplaceWith[i], value);
+                    if (fr.Key.Contains("beta") || fr.Value.Contains("beta"))
+                    {
+                        var newKey = RenameBeta(fr.Key, _replaceBetaWith);
+                        var newValue = RenameBeta(fr.Value, _replaceBetaWith);
+                        renamedItems.Push((fr.Key, newKey, newValue));
+                    }
+                }
+                while (renamedItems.Count > 0)
+                {
+                    (var oldKey, var newKey, var newValue) = renamedItems.Pop();
+                    FindReplace.Remove(oldKey);
+                    FindReplace.Add(newKey, newValue);
                 }
             }
         }
         private string? _replaceBetaWith;
 
-        /// <summary> Název souboru ve složce 'connect'. </summary>
-        public string ConnectionFile { get; set; }
-
-        /// <summary>
-        /// Co nahradit? (načteno ze souboru '{<see cref="BaseFolder"/>}important/find_what.txt').
-        /// </summary>
-        private string[] FindWhat { get; set; }
-
-        /// <summary>
-        /// Čím to nahradit? (načteno ze souboru '{<see cref="BaseFolder"/>}important/replace_with.txt').
-        /// </summary>
-        private string[] ReplaceWith { get; set; }
+        /// <summary> Co a čím to nahradit. </summary>
+        public Dictionary<string, string> FindReplace { get; } = new()
+        {
+            { "=& new", "= new" },
+            { "mysql_num_rows", "mysqli_num_rows" },
+            { "mysql_error()", "mysqli_error($beta)" },
+            { "mysql_connect", "mysqli_connect" },
+            { "mysql_close", "mysqli_close" },
+            { "MySQL_Close", "mysqli_close" },
+            { "mysql_fetch_row", "mysqli_fetch_row" },
+            { "mysql_Fetch_Row", "mysqli_fetch_row" },
+            { "mysql_fetch_array", "mysqli_fetch_array" },
+            { "mysql_fetch_assoc", "mysqli_fetch_assoc" },
+            { "MYSQL_ASSOC", "MYSQLI_ASSOC" },
+            { "mysql_select_db(DB_DATABASE, $this->db)", "mysqli_select_db($this->db, DB_DATABASE)" },
+            { "mysql_select_db($database_beta, $beta)", "mysqli_select_db($beta, $database_beta)" },
+            { "mysql_query(", "mysqli_query($beta," },
+            { "mysql_query (", "mysqli_query($beta," },
+            { "MySQL_Query(", "mysqli_query($beta," },
+            { "MySQL_Query (", "mysqli_query($beta," },
+            { ", $beta)", ")" },
+            { ",$beta)", ")" },
+            { "eregi(", "preg_match(" },
+            { "eregi (", "preg_match(" },
+            { "preg_match('^<tr(.*){0,}</tr>$'", "preg_match('/^<tr(.*){0,}< \\/tr>$/'" },
+            { "unlink", "@unlink" },
+            { "@@unlink", "@unlink" },
+            { "mysql_data_seek", "mysqli_data_seek" },
+            { "mysql_real_escape_string", "mysqli_real_escape_string" },
+            { "mysql_free_result", "mysqli_free_result" },
+            { "mysql_list_tables($database_beta);", "mysqli_query($beta, \"SHOW TABLES FROM `$database_beta`\");" },
+            { "$table_all .= \"`\".mysql_tablename($result, $i).\"`\";", "$table_all .= \"`\".mysqli_fetch_row($result)[0].\"`\";" }
+        };
 
         /// <summary> Inicializace povinných atributů. </summary>
         public MonaUpgrader(string baseFolder, string webName)
-        { 
-            if (!string.IsNullOrEmpty(baseFolder))
-            {
-                FindWhat = File.ReadAllLines($@"{baseFolder}important\find_what.txt");
-                ReplaceWith = File.ReadAllLines($@"{baseFolder}important\replace_with.txt");
-            }
+        {
             BaseFolder = baseFolder;
             WebName = webName;
         }
@@ -250,9 +281,9 @@ namespace PhpUpgrader
         /// </summary>
         public void UpgradeFindReplace(FileWrapper file)
         {
-            for (int i = 0; i < FindWhat?.Length; i++)
+            foreach (var fr in FindReplace)
             {
-                file.Content = file.Content.Replace(FindWhat[i], ReplaceWith[i]);
+                file.Content = file.Content.Replace(fr.Key, fr.Value);
             }
         }
 
