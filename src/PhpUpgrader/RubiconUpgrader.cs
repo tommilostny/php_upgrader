@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace PhpUpgrader
 {
@@ -9,6 +10,7 @@ namespace PhpUpgrader
         /// <summary>  </summary>
         public RubiconUpgrader(string baseFolder, string webName) : base(baseFolder, webName)
         {
+            ConnectionFile = null;
         }
 
         /// <summary> Procedura aktualizace Rubicon souborů. </summary>
@@ -109,6 +111,9 @@ namespace PhpUpgrader
         /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php,  </summary>
         public void UpgradeRubiconImport(FileWrapper file)
         {
+            if (!file.Path.Contains("rubicon_import.php"))
+                return;
+
             var backup = (ConnectionFile, RenameBetaWith);
             (ConnectionFile, RenameBetaWith) = ("rubicon_import.php", "sportmall_import");
             
@@ -120,6 +125,52 @@ namespace PhpUpgrader
                 "mysqli_query($sportmall_import, \"SET character_set_client = cp1250\");");
 
             (ConnectionFile, RenameBetaWith) = backup;
+        }
+
+        /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
+        public void UpgradeSetup(FileWrapper file)
+        {
+            if (!file.Path.Contains($"{WebName}\\setup.php"))
+                return;
+
+            bool usernameLoaded = false, passwordLoaded = false, databaseLoaded = false;
+
+            var evaluator = new MatchEvaluator(_NewCredentialAndComment);
+            file.Content = Regex.Replace(file.Content, @"\$setup_connect.*= ?"".*"";", evaluator);
+            file.Content = file.Content.Replace("////", "//");
+
+            if (!usernameLoaded)
+                file.Warnings.Add("setup.php - username not loaded.");
+            if (!passwordLoaded)
+                file.Warnings.Add("setup.php - password not loaded.");
+            if (!databaseLoaded)
+                file.Warnings.Add("setup.php - database not loaded.");
+
+            file.Warnings.Add("setup.php - check db connections and such.");
+
+            string _NewCredentialAndComment(Match match)
+            {
+                var varName = match.Value.Split('=').First().Trim();
+                var credential = varName switch
+                {
+                    var vn when vn.Contains("username") && (usernameLoaded = true) => Username,
+                    var vn when vn.Contains("password") && (passwordLoaded = true) => Password,
+                    _ => Database
+                };
+                if (!usernameLoaded && !passwordLoaded)
+                    databaseLoaded = true;
+
+                return $"//{match.Value}\n{varName} = \"{credential}\";";
+            }
+        }
+
+        /// <summary> Aktualizace hostname v souboru Connections/beta.php na server mcrai2. </summary>
+        public void UpgradeHostnameBeta(FileWrapper file)
+        {
+            if (file.Path.Contains("Connections\\beta.php"))
+            {
+                file.Content = file.Content.Replace("$hostname_beta = \"93.185.102.228\";", $"//$hostname_beta = \"93.185.102.228\";\n\t$hostname_beta = \"{Hostname}\";");
+            }
         }
     }
 }

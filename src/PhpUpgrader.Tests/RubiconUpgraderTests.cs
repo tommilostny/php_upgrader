@@ -15,6 +15,7 @@ namespace PhpUpgrader.Tests
         [Fact]
         public void ConstructorUpgradeTest()
         {
+            //Arrange
             var file = new FileWrapper("",
                 "<?php\necho \"Nějaká blbost před třídou...\"\n\n" +
                 "class NejakaMojeTrida\n{\n" +
@@ -37,8 +38,10 @@ namespace PhpUpgrader.Tests
 
             var upgrader = new RubiconUpgrader(string.Empty, string.Empty);
 
+            //Act
             upgrader.UpgradeConstructors(file);
 
+            //Assert
             _output.WriteLine($"'{file.Content}'");
             Assert.True(file.IsModified);
             Assert.Contains("function __construct", file.Content);
@@ -47,15 +50,63 @@ namespace PhpUpgrader.Tests
         [Fact]
         public void RubiconImportTest()
         {
-            var file = new FileWrapper("", "");
-
+            //Arrange
+            var file = new FileWrapper("rubicon_import.php", "");
             var upgrader = new RubiconUpgrader(string.Empty, string.Empty)
             { 
                 ConnectionFile = "connect.php",
                 RenameBetaWith = "alfa"
             };
 
+            //Act, Debug
             upgrader.UpgradeRubiconImport(file);
+        }
+
+        [Fact]
+        public void FillInDbLoginToSetup()
+        {
+            //Arrange
+            var file = new FileWrapper("test-web\\setup.php",
+                                       "$setup_connect_db = \"olejemaziva\";\n" +
+                                       "//$setup_connect_db = \"hasici-pristroje\";\n" +
+                                       "$setup_connect_username = \"olejemaziva_use\";\n" +
+                                       "$setup_connect_password = \"3_2n7dSj\"; \");\n");
+
+            var upgrader = new RubiconUpgrader(string.Empty, "test-web")
+            {
+                Username = "myUserName", Password = "myPassword", Database = "myDatabase"
+            };
+
+            //Act
+            upgrader.UpgradeSetup(file);
+
+            //Assert
+            _output.WriteLine(file.Content);
+            Assert.True(file.IsModified);
+        }
+
+        [Fact]
+        public void UpdatesBetaHostnameToMcrai2()
+        {
+            //Arrange
+            var file = new FileWrapper("Connections\\beta.php",
+                                       "\t$hostname_beta = \"93.185.102.228\";		//server(host)\n" +
+	                                   "\t$database_beta = $setup_connect_db;	//databaze\n" +
+	                                   "\t$username_beta = $setup_connect_username;	//login(user)\n" +
+	                                   "\t$password_beta = $setup_connect_password;		//heslo\n" +
+	                                   "\t$connport_beta = \"5432\";			//port");
+
+            var upgrader = new RubiconUpgrader(string.Empty, "test-web")
+            {
+                Hostname = "mcrai2.vshosting.cz"
+            };
+
+            //Act
+            upgrader.UpgradeHostnameBeta(file);
+
+            //Assert
+            _output.WriteLine(file.Content);
+            Assert.True(file.IsModified);
         }
     }
 }

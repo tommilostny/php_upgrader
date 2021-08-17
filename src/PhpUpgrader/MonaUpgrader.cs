@@ -170,6 +170,9 @@ namespace PhpUpgrader
         /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
         public void UpgradeConnect(FileWrapper file)
         {
+            if (ConnectionFile is null)
+                return;
+
             //konec, pokud aktuální soubor nepatří mezi validní connection soubory
             switch (file.Path)
             {
