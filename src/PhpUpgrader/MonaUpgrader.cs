@@ -130,10 +130,11 @@ namespace PhpUpgrader
                 {
                     file.WriteStatus();
                     file.Save();
+
+                    //po dodelani nahrazeni nize projit na retezec - mysql_
+                    if (Regex.IsMatch(file.Content, "mysql_", RegexOptions.IgnoreCase))
+                        FilesContainingMysql.Add(filePath);
                 }
-                //po dodelani nahrazeni nize projit na retezec - mysql_
-                if (Regex.IsMatch(file.Content, "mysql_", RegexOptions.IgnoreCase))
-                    FilesContainingMysql.Add(filePath);
             }
         }
 

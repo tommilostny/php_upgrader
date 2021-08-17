@@ -17,20 +17,21 @@ namespace PhpUpgrader.Tests
         {
             //Arrange
             var file = new FileWrapper("",
-                "<?php\necho \"Nějaká blbost před třídou...\"\n\n" +
+                "<?php\necho \"Nějaká blbost před třídou... obsahuje slovíčko class hhahahahahha\"\n\n" +
                 "class NejakaMojeTrida\n{\n" +
                 "    private function blaBla() { ... }\n\n" +
-                "    public function __construct($foo, $bar = null)\n" +
+                "    public function NejakaMojeTrida($foo, $bar = null)\n" +
                 "    {\n" +
                 "        echo \"new class constructor\\n\";\n" +
                 "    }\n\n" +
+                //"    public function NejakaMojeTrida($foo, $bar, $baz = 20)\n    { self::__construct($foo, $bar, $baz); }\n\n" +
                 "    protected function necoDelam() { ... }\n" +
                 "}\n\necho \"Nějaká blbost za třídou...\"\n\n" +
-                "class JinaTrida extends NejakaMojeTrida\n{\n" +
+                "class JinaTrida extends NejakaMojeTrida {\n\n" +
                 "    private function blaBla() { ... }\n\n" +
-                "    public function JinaTrida($foo, $bar, $baz = 20)\n" +
+                "    public function JinaTrida\t($foo, $bar, $baz = 20)\n" +
                 "    {\n" +
-                "        echo \"Old Class constructor\\n\";\n" +
+                "        echo \"Old constructor\\n\";\n" +
                 "        $this->shit = \"works\";\n" +
                 "    }\n\n" +
                 "    protected function necoDelam() { ... }\n" +
@@ -67,7 +68,7 @@ namespace PhpUpgrader.Tests
         {
             //Arrange
             var file = new FileWrapper("test-web\\setup.php",
-                                       "$setup_connect_db = \"olejemaziva\";\n" +
+                                       "\n\n$setup_connect_db = \"olejemaziva\";\n" +
                                        "//$setup_connect_db = \"hasici-pristroje\";\n" +
                                        "$setup_connect_username = \"olejemaziva_use\";\n" +
                                        "$setup_connect_password = \"3_2n7dSj\"; \");\n");

@@ -24,6 +24,8 @@ namespace PhpUpgrader
             {
                 UpgradeConstructors(file);
                 UpgradeRubiconImport(file);
+                UpgradeSetup(file);
+                UpgradeHostnameBeta(file);
             }
             return file;
         }
@@ -43,20 +45,20 @@ namespace PhpUpgrader
 
                 int nameStartIndex = lines[i].IndexOf("class ") + 6;
 
-                int nameEndIndex = lines[i].IndexOf('{', nameStartIndex + 1);
+                int nameEndIndex = lines[i].IndexOf(' ', nameStartIndex);
                 if (nameEndIndex == -1)
-                    nameEndIndex = lines[i].IndexOf(' ', nameStartIndex + 1);
+                    nameEndIndex = lines[i].IndexOf('{', nameStartIndex);
 
                 var className = lines[i][nameStartIndex..(nameEndIndex != -1 ? nameEndIndex : lines[i].Length)].Trim();
 
                 int bracketCount = Convert.ToInt32(nameEndIndex != -1);
 
-                int lookAheadIndex = _LookAheadFor__construct(bracketCount, i);
-                if (lookAheadIndex != -1) //třída obsahuje metodu __construct(), přeskočit ji a hledat dál od indexu
-                {
-                    i = lookAheadIndex;
+                if (bracketCount == 0 && !lines[i + 1].Contains('{'))
                     continue;
-                }
+
+                if (_LookAheadFor__construct(bracketCount, i + 1)) //třída obsahuje metodu __construct(), nehledat starý konstruktor
+                    continue;
+
                 while (++i < lines.Length) //hledání konstruktoru uvnitř třídy
                 {
                     if (lines[i].Contains('{')) bracketCount++;
@@ -67,7 +69,7 @@ namespace PhpUpgrader
                         newContent += $"{lines[i]}\n";
                         break;
                     }
-                    if (lines[i].Contains($"function {className}"))
+                    if (Regex.IsMatch(lines[i], $@"function {className}\s?\("))
                     {
                         int paramsStartIndex = lines[i].IndexOf('(', lines[i].IndexOf($"function {className}")) + 1;
                         int paramsEndIndex = lines[i].IndexOf(')', paramsStartIndex);
@@ -90,9 +92,8 @@ namespace PhpUpgrader
                 return string.Join(", ", parameters.Split(',').Select(p => p.Split('=').First().Trim()));
             }
 
-            int _LookAheadFor__construct(int bracketCount, int linesIndex)
+            bool _LookAheadFor__construct(int bracketCount, int linesIndex)
             {
-                bool foundConstruct = false;
                 for (; linesIndex < lines.Length; linesIndex++)
                 {
                     if (lines[linesIndex].Contains('{')) bracketCount++;
@@ -102,9 +103,9 @@ namespace PhpUpgrader
                         break;
 
                     if (lines[linesIndex].Contains("function __construct"))
-                        foundConstruct = true;
+                        return true;
                 }
-                return foundConstruct ? linesIndex : -1;
+                return false;
             }
         }
 
@@ -150,6 +151,9 @@ namespace PhpUpgrader
 
             string _NewCredentialAndComment(Match match)
             {
+                if (file.Content[..match.Index].EndsWith("//"))
+                    return match.Value;
+
                 var varName = match.Value.Split('=').First().Trim();
                 var credential = varName switch
                 {
