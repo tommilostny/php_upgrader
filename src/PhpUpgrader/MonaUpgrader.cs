@@ -46,26 +46,8 @@ namespace PhpUpgrader
             get => _replaceBetaWith;
             set
             {
-                if ((_replaceBetaWith = value) is null)
-                    return;
-
-                //starý klíč, nový klíč, nová hodnota
-                var renamedItems = new Stack<(string, string, string)>();
-                foreach (var fr in FindReplace)
-                {
-                    if (fr.Key.Contains("beta") || fr.Value.Contains("beta"))
-                    {
-                        var newKey = RenameBeta(fr.Key, _replaceBetaWith);
-                        var newValue = RenameBeta(fr.Value, _replaceBetaWith);
-                        renamedItems.Push((fr.Key, newKey, newValue));
-                    }
-                }
-                while (renamedItems.Count > 0)
-                {
-                    (var oldKey, var newKey, var newValue) = renamedItems.Pop();
-                    FindReplace.Remove(oldKey);
-                    FindReplace.Add(newKey, newValue);
-                }
+                if ((_replaceBetaWith = value) is not null)
+                    RenameVariableInFindReplace("beta", value);
             }
         }
         private string? _replaceBetaWith;
@@ -125,16 +107,16 @@ namespace PhpUpgrader
             {
                 var file = UpgradeProcedure(filePath);
 
-                //upraveno, zapsat do souboru
-                if (file is not null)
-                {
-                    file.WriteStatus();
-                    file.Save();
+                if (file is null)
+                    continue;
 
-                    //po dodelani nahrazeni nize projit na retezec - mysql_
-                    if (Regex.IsMatch(file.Content, "mysql_", RegexOptions.IgnoreCase))
-                        FilesContainingMysql.Add(filePath);
-                }
+                //upraveno, zapsat do souboru
+                file.WriteStatus();
+                file.Save();
+
+                //po dodelani nahrazeni nize projit na retezec - mysql_
+                if (Regex.IsMatch(file.Content, "[^//]mysql_", RegexOptions.IgnoreCase))
+                    FilesContainingMysql.Add(filePath);
             }
         }
 
@@ -164,16 +146,14 @@ namespace PhpUpgrader
                 UpgradeGlobalBeta(file);
                 RenameBeta(file);
             }
+            else UpgradeFindReplace(file);
             UpgradeRegexFunctions(file);
             return file;
         }
 
         /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
-        public void UpgradeConnect(FileWrapper file)
+        public virtual void UpgradeConnect(FileWrapper file)
         {
-            if (ConnectionFile is null)
-                return;
-
             //konec, pokud aktuální soubor nepatří mezi validní connection soubory
             switch (file.Path)
             {
@@ -201,7 +181,7 @@ namespace PhpUpgrader
                     if (line.TrimStart().StartsWith("$password_beta"))
                         continue;
                 }
-                if (line.Contains("$password_beta") && !inComment && !line.Contains("//$password_beta"))
+                if (line.Contains("$password_") && !inComment && !line.Contains("//$password_"))
                     break;
             }
             //generování nových údajů k databázi, pokud jsou všechny zadány
@@ -240,7 +220,6 @@ namespace PhpUpgrader
                 return;
 
             var lines = file.Content.Split('\n');
-            var newContent = string.Empty;
 
             for (int i = 0; i < lines.Length; i++)
             {
@@ -250,9 +229,8 @@ namespace PhpUpgrader
                     lines[i] = lines[i].Replace(", 0", string.Empty);
                     lines[i] = lines[i].Replace("mysql_result", "mysqli_num_rows");
                 }
-                newContent += $"{lines[i]}\n";
             }
-            file.Content = newContent;
+            file.Content = string.Join('\n', lines);
         }
 
         /// <summary>
@@ -267,17 +245,15 @@ namespace PhpUpgrader
                     return;
             }
             var lines = file.Content.Split('\n');
-            var newContent = string.Empty;
 
             for (int i = 0; i < lines.Length; i++)
             {
                 if (lines[i].Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"))
                 {
-                    newContent += "        $p_sf = array();\n";
+                    lines[i] = $"        $p_sf = array();\n{lines[i]}";
                 }
-                newContent += $"{lines[i]}\n";
             }
-            file.Content = newContent;
+            file.Content = string.Join('\n', lines);
         }
 
         /// <summary>
@@ -421,23 +397,21 @@ namespace PhpUpgrader
             }
             bool sfBracket = false;
             var lines = file.Content.Split('\n');
-            var newContent = string.Empty;
 
             for (int i = 0; i < lines.Length; i++)
             {
                 if (lines[i].Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))"))
                 {
-                    newContent += "          if($query_text_all !== FALSE)\n          {\n";
+                    lines[i] = $"          if($query_text_all !== FALSE)\n          {{\n{lines[i]}";
                     sfBracket = true;
                 }
-                if (lines[i].Contains("}") && sfBracket)
+                if (lines[i].Contains('}') && sfBracket)
                 {
-                    newContent += $"    {lines[i]}\n";
+                    lines[i] = $"    {lines[i]}\n{lines[i]}";
                     sfBracket = false;
                 }
-                newContent += $"{lines[i]}\n";
             }
-            file.Content = newContent;
+            file.Content = string.Join('\n', lines);
         }
 
         /// <summary>
@@ -463,7 +437,7 @@ namespace PhpUpgrader
 
                 newContent += $"{lines[i]}\n";
 
-                if (lines[i].Contains("function") && !javascript && _MysqliInFunction(i))
+                if (Regex.IsMatch(lines[i], "function\\s") && !javascript && _MysqliInFunction(i))
                 {
                     newContent += $"{lines[++i]}\n\n    global $beta;\n\n";
                 }
@@ -490,8 +464,8 @@ namespace PhpUpgrader
                     if (lines[i].Contains("mysqli_") && !inComment && !lines[i].TrimStart().StartsWith("//"))
                         return true;
 
-                    if (lines[i].Contains("{")) bracketCount++;
-                    if (lines[i].Contains("}")) bracketCount--;
+                    if (lines[i].Contains('{')) bracketCount++;
+                    if (lines[i].Contains('}')) bracketCount--;
 
                     if ((lines[i].Contains("global $beta;") || bracketCount <= 0) && i > startIndex)
                         break;
@@ -501,14 +475,15 @@ namespace PhpUpgrader
         }
 
         /// <summary> Přejmenuje proměnnou $beta na přednastavenou hodnotu. </summary>
-        /// <param name="replacement">null => použít vlastnost RenameBetaWith.</param>
+        /// <param name="newVarName">null => použít vlastnost RenameBetaWith.</param>
+        /// <param name="oldVarName"></param>
         /// <param name="content"></param>
-        public string RenameBeta(string content, string? replacement = null)
+        public string RenameBeta(string content, string? newVarName = null, string oldVarName = "beta")
         {
-            if ((replacement ??= RenameBetaWith) is not null)
+            if ((newVarName ??= RenameBetaWith) is not null)
             {
-                content = content.Replace("$beta", $"${replacement}");
-                content = content.Replace("_beta", $"_{replacement}");
+                content = content.Replace($"${oldVarName}", $"${newVarName}");
+                content = content.Replace($"_{oldVarName}", $"_{newVarName}");
             }
             return content;
         }
@@ -548,16 +523,21 @@ namespace PhpUpgrader
                 if (!file.Content.Contains("split") || file.Content.Contains("preg_split"))
                     return;
 
-                if (file.Content.Contains("script") && file.Content.Contains(".split"))
-                {
-                    //soubor obsahuje Javascript i funkci split, zkontrolovat manuálně
-                    file.Warnings.Add("split Javascript alert!");
-                    return;
-                }
-                file.Content = Regex.Replace(file.Content, @"\bsplit ?\('(\\'|[^'])*'", evaluator);
-                file.Content = Regex.Replace(file.Content, @"\bsplit ?\(""(\\""|[^""])*""", evaluator);
+                bool javascript = false;
+                var lines = file.Content.Split('\n');
 
-                if (Regex.IsMatch(file.Content, @"[^preg_]split ?\("))
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    if (lines[i].Contains("<script")) javascript = true;
+                    if (lines[i].Contains("</script")) javascript = false;
+
+                    if (!javascript && !lines[i].Contains(".split"))
+                    {
+                        lines[i] = Regex.Replace(lines[i], @"\bsplit ?\('(\\'|[^'])*'", evaluator);
+                        lines[i] = Regex.Replace(lines[i], @"\bsplit ?\(""(\\""|[^""])*""", evaluator);
+                    }
+                }
+                if (Regex.IsMatch(file.Content = string.Join('\n', lines), @"[^_\.]split ?\("))
                 {
                     file.Warnings.Add("unmodified split alert!");
                 }
@@ -567,7 +547,7 @@ namespace PhpUpgrader
             {
                 int bracketIndex = match.Value.IndexOf('(');
 
-                string pregFunction = match.Value[0..bracketIndex].TrimEnd() switch
+                string pregFunction = match.Value[..bracketIndex].TrimEnd() switch
                 {
                     "ereg_replace" => "preg_replace",
                     "split" => "preg_split",
@@ -577,6 +557,27 @@ namespace PhpUpgrader
                 string insidePattern = match.Value[++bracketIndex..(match.Value.Length - 1)];
 
                 return $"{pregFunction}({quote}~{insidePattern}~{quote}";
+            }
+        }
+
+        /// <summary> Přejmenovat proměnnou ve slovníku <see cref="FindReplace"/>. </summary>
+        protected void RenameVariableInFindReplace(string oldVarName, string newVarName)
+        {
+            var renamedItems = new Stack<(string, string, string)>();
+            foreach (var fr in FindReplace)
+            {
+                if (fr.Key.Contains(oldVarName) || fr.Value.Contains(oldVarName))
+                {
+                    var newKey = RenameBeta(fr.Key, newVarName, oldVarName);
+                    var newValue = RenameBeta(fr.Value, newVarName, oldVarName);
+                    renamedItems.Push((fr.Key, newKey, newValue));
+                }
+            }
+            while (renamedItems.Count > 0)
+            {
+                (var oldKey, var newKey, var newValue) = renamedItems.Pop();
+                FindReplace.Remove(oldKey);
+                FindReplace.Add(newKey, newValue);
             }
         }
     }

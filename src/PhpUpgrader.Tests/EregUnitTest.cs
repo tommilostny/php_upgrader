@@ -68,15 +68,20 @@ namespace PhpUpgrader.Tests
         }
 
         [Fact]
-        public void PregSplitShouldNotReplaceInJavascript()
+        public void PregSplitShouldWorkAroundJavascript()
         {
-            var file = new FileWrapper(string.Empty, "<script language=\"javascript\" type=\"text / javascript\">var split_pomlcky = hodnota_polozky.split(\" - \");");
+            var file = new FileWrapper(string.Empty,
+                "<script language=\"javascript\" type=\"text / javascript\">var split_pomlcky = hodnota_polozky.split(\" - \");\n" +
+                "</script> <?php if (ereg('pattern', $blabla))\n" +
+                "\t$kill = split('that', $man);");
             
             MonaUpgrader.UpgradeRegexFunctions(file);
             
             _output.WriteLine(file.Content);
-            Assert.False(file.IsModified);
-            Assert.Equal("<script language=\"javascript\" type=\"text / javascript\">var split_pomlcky = hodnota_polozky.split(\" - \");", file.Content);
+            Assert.True(file.IsModified);
+            Assert.Equal("<script language=\"javascript\" type=\"text / javascript\">var split_pomlcky = hodnota_polozky.split(\" - \");\n" +
+                "</script> <?php if (preg_match('~pattern~', $blabla))\n" +
+                "\t$kill = preg_split('~that~', $man);", file.Content);
         }
     }
 }

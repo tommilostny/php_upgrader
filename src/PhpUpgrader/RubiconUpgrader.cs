@@ -10,7 +10,10 @@ namespace PhpUpgrader
         /// <summary>  </summary>
         public RubiconUpgrader(string baseFolder, string webName) : base(baseFolder, webName)
         {
-            ConnectionFile = null;
+            FindReplace.Add("mysql_select_db($database_beta);", "//mysql_select_db($database_beta);");
+            FindReplace.Add("////mysql_select_db($database_beta);", "//mysql_select_db($database_beta);");
+            FindReplace.Add("function_exists(\"mysqli_real_escape_string\") ? mysqli_real_escape_string($theValue) : mysql_escape_string($theValue)",
+                            "mysqli_real_escape_string($beta, $theValue)");
         }
 
         /// <summary> Procedura aktualizace Rubicon souborů. </summary>
@@ -23,9 +26,6 @@ namespace PhpUpgrader
             if (file is not null)
             {
                 UpgradeConstructors(file);
-                UpgradeRubiconImport(file);
-                UpgradeSetup(file);
-                UpgradeHostnameBeta(file);
             }
             return file;
         }
@@ -34,12 +34,9 @@ namespace PhpUpgrader
         public void UpgradeConstructors(FileWrapper file)
         {
             var lines = file.Content.Split('\n');
-            var newContent = string.Empty;
 
             for (int i = 0; i < lines.Length; i++) //procházení řádků souboru
             {
-                newContent += $"{lines[i]}\n";
-
                 if (!lines[i].Contains("class "))
                     continue;
 
@@ -51,7 +48,7 @@ namespace PhpUpgrader
 
                 var className = lines[i][nameStartIndex..(nameEndIndex != -1 ? nameEndIndex : lines[i].Length)].Trim();
 
-                int bracketCount = Convert.ToInt32(nameEndIndex != -1);
+                int bracketCount = Convert.ToInt32(lines[i].Contains('{'));
 
                 if (bracketCount == 0 && !lines[i + 1].Contains('{'))
                     continue;
@@ -59,20 +56,23 @@ namespace PhpUpgrader
                 if (_LookAheadFor__construct(bracketCount, i + 1)) //třída obsahuje metodu __construct(), nehledat starý konstruktor
                     continue;
 
-                while (++i < lines.Length) //hledání konstruktoru uvnitř třídy
+                while (++i < lines.Length) //hledání a nahrazení starého konstruktoru uvnitř třídy
                 {
                     if (lines[i].Contains('{')) bracketCount++;
                     if (lines[i].Contains('}')) bracketCount--;
 
                     if (bracketCount == 0)
-                    {
-                        newContent += $"{lines[i]}\n";
                         break;
+
+                    if (bracketCount > 2 && lines[i].TrimStart().StartsWith("function"))
+                    {
+                        file.Warnings.Add($"Large bracket count ({bracketCount}), function around line {i + 1}. Check constructor(s) of class {className}.");
+                        bracketCount = 2;
                     }
                     if (Regex.IsMatch(lines[i], $@"function {className}\s?\("))
                     {
-                        int paramsStartIndex = lines[i].IndexOf('(', lines[i].IndexOf($"function {className}")) + 1;
-                        int paramsEndIndex = lines[i].IndexOf(')', paramsStartIndex);
+                        int paramsStartIndex = lines[i].IndexOf('(') + 1;
+                        int paramsEndIndex = lines[i].LastIndexOf(')');
 
                         var parameters = lines[i][paramsStartIndex..paramsEndIndex];
 
@@ -82,14 +82,13 @@ namespace PhpUpgrader
                                    $"        self::__construct({_ParamsWithoutDefaultValues(parameters)});\n" +
                                    $"    }}\n\n{lines[i]}";
                     }
-                    newContent += $"{lines[i]}\n";
                 }
             }
-            file.Content = newContent;
+            file.Content = string.Join('\n', lines);
 
             static string _ParamsWithoutDefaultValues(string parameters)
             {
-                return string.Join(", ", parameters.Split(',').Select(p => p.Split('=').First().Trim()));
+                return string.Join(", ", parameters.Split(',').Select(p => p.Split('=')[0].Trim().Replace("&", string.Empty)));
             }
 
             bool _LookAheadFor__construct(int bracketCount, int linesIndex)
@@ -109,23 +108,32 @@ namespace PhpUpgrader
             }
         }
 
+        /// <summary> Aktualizace souborů připojení systému Rubicon. </summary>
+        public override void UpgradeConnect(FileWrapper file)
+        {
+            UpgradeRubiconImport(file);
+            UpgradeSetup(file);
+            UpgradeHostnameBeta(file);
+        }
+
         /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php,  </summary>
         public void UpgradeRubiconImport(FileWrapper file)
         {
             if (!file.Path.Contains("rubicon_import.php"))
                 return;
 
-            var backup = (ConnectionFile, RenameBetaWith);
-            (ConnectionFile, RenameBetaWith) = ("rubicon_import.php", "sportmall_import");
+            var backup = ConnectionFile;
+            ConnectionFile = "rubicon_import.php";
             
-            UpgradeConnect(file);
-            RenameBeta(file);
+            base.UpgradeConnect(file);
+            file.Content = RenameBeta(file.Content, "sportmall_import");
+
             file.Content = file.Content.Replace("mysqli_query($sportmall_import, \"SET CHARACTER SET utf8\");",
                 "mysqli_query($sportmall_import, \"SET character_set_connection = cp1250\");\n" +
                 "mysqli_query($sportmall_import, \"SET character_set_results = cp1250\");\n" +
                 "mysqli_query($sportmall_import, \"SET character_set_client = cp1250\");");
 
-            (ConnectionFile, RenameBetaWith) = backup;
+            ConnectionFile = backup;
         }
 
         /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
@@ -154,17 +162,18 @@ namespace PhpUpgrader
                 if (file.Content[..match.Index].EndsWith("//"))
                     return match.Value;
 
-                var varName = match.Value.Split('=').First().Trim();
+                var varName = match.Value.Split('=')[0].Trim();
                 var credential = varName switch
                 {
-                    var vn when vn.Contains("username") && (usernameLoaded = true) => Username,
-                    var vn when vn.Contains("password") && (passwordLoaded = true) => Password,
-                    _ => Database
+                    var vn when vn.EndsWith("username") && (usernameLoaded = true) => Username,
+                    var vn when vn.EndsWith("password") && (passwordLoaded = true) => Password,
+                    var vn when vn.EndsWith("db") && (databaseLoaded = true) => Database,
+                    _ => null
                 };
-                if (!usernameLoaded && !passwordLoaded)
-                    databaseLoaded = true;
+                if (credential is null)
+                    return match.Value;
 
-                return $"//{match.Value}\n{varName} = \"{credential}\";";
+                return $"//{match.Value}\n{varName} = '{credential}';";
             }
         }
 

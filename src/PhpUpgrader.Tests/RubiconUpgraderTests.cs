@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System.IO;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace PhpUpgrader.Tests
@@ -16,7 +17,8 @@ namespace PhpUpgrader.Tests
         public void ConstructorUpgradeTest()
         {
             //Arrange
-            var file = new FileWrapper("",
+            var file = new FileWrapper("", //File.ReadAllText(@"C:\McRAI\weby\olejemaziva-2\admin\_tiny_mce\plugins\imagemanager\classes\Authenticators\BaseAuthenticator.php"));
+                                           //File.ReadAllText(@"C:\McRAI\weby\olejemaziva-2 - Copy\admin\_tiny_mce\plugins\filemanager\classes\FileSystems\LocalFileImpl.php"));
                 "<?php\necho \"Nějaká blbost před třídou... obsahuje slovíčko class hhahahahahha\"\n\n" +
                 "class NejakaMojeTrida\n{\n" +
                 "    private function blaBla() { ... }\n\n" +
@@ -27,9 +29,9 @@ namespace PhpUpgrader.Tests
                 //"    public function NejakaMojeTrida($foo, $bar, $baz = 20)\n    { self::__construct($foo, $bar, $baz); }\n\n" +
                 "    protected function necoDelam() { ... }\n" +
                 "}\n\necho \"Nějaká blbost za třídou...\"\n\n" +
-                "class JinaTrida extends NejakaMojeTrida {\n\n" +
-                "    private function blaBla() { ... }\n\n" +
-                "    public function JinaTrida\t($foo, $bar, $baz = 20)\n" +
+                "class _LocalCopyDirTreeHandler extends Moxiecode_FileTreeHandler {\n\n" +
+                "    var $_handle_as_add_event;\n\n" +
+                "\tfunction _LocalCopyDirTreeHandler(&$manager, $from_file, $dest_file, $handle_as_add_event) {\n" +
                 "    {\n" +
                 "        echo \"Old constructor\\n\";\n" +
                 "        $this->shit = \"works\";\n" +
@@ -44,6 +46,7 @@ namespace PhpUpgrader.Tests
 
             //Assert
             _output.WriteLine($"'{file.Content}'");
+            File.WriteAllText(@"C:\McRAI\tst1.php", file.Content);
             Assert.True(file.IsModified);
             Assert.Contains("function __construct", file.Content);
         }
