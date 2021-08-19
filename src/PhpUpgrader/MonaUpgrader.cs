@@ -282,11 +282,11 @@ namespace PhpUpgrader
         }
 
         /// <summary> pridat mysqli_close($beta); do indexu nakonec </summary>
-        public void UpgradeMysqliClose(FileWrapper file)
+        public virtual void UpgradeMysqliClose(FileWrapper file, string dbFunc = "mysqli")
         {
-            if (file.Path.Contains($@"{WebName}\index.php") && !file.Content.Contains("mysqli_close"))
+            if (file.Path.Contains($@"{WebName}\index.php") && !file.Content.Contains($"{dbFunc}_close"))
             {
-                file.Content += "\n<?php mysqli_close($beta); ?>";
+                file.Content += $"\n<?php {dbFunc}_close($beta); ?>";
             }
         }
 

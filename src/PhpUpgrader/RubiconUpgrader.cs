@@ -185,5 +185,11 @@ namespace PhpUpgrader
                 file.Content = file.Content.Replace("$hostname_beta = \"93.185.102.228\";", $"//$hostname_beta = \"93.185.102.228\";\n\t$hostname_beta = \"{Hostname}\";");
             }
         }
+
+        /// <summary> Přidá funkci pg_close na konec index.php. </summary>
+        public override void UpgradeMysqliClose(FileWrapper file, string dbFunc = "pg")
+        {
+            base.UpgradeMysqliClose(file, dbFunc);
+        }
     }
 }
