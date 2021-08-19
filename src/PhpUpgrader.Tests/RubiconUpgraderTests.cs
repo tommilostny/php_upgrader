@@ -112,5 +112,28 @@ namespace PhpUpgrader.Tests
             _output.WriteLine(file.Content);
             Assert.True(file.IsModified);
         }
+
+        [Fact]
+        public void UpgradesDeprecatedSctiptPHP()
+        {
+            //Arrange
+            var file = new FileWrapper(string.Empty, "<script language=\"javascript\">\n" +
+                                                     "//some JavaScript\n" +
+                                                     "</script>\n"+
+                                                     "<script language=\"php\">\n" +
+                                                     "\techo 'some PHP code';\n" +
+                                                     "</script>\n");
+            
+            //Act
+            RubiconUpgrader.UpgradeScriptLanguagePhp(file);
+
+            //Assert
+            _output.WriteLine(file.Content);
+            Assert.True(file.IsModified);
+            Assert.Contains("<?php", file.Content);
+            Assert.Contains("?>", file.Content);
+            Assert.DoesNotContain("<script language=\"php\">", file.Content);
+            Assert.DoesNotContain("<script language=\"PHP\">", file.Content);
+        }
     }
 }

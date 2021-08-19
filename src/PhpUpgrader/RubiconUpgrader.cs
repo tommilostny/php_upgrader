@@ -26,6 +26,7 @@ namespace PhpUpgrader
             if (file is not null)
             {
                 UpgradeConstructors(file);
+                UpgradeScriptLanguagePhp(file);
             }
             return file;
         }
@@ -190,6 +191,32 @@ namespace PhpUpgrader
         public override void UpgradeMysqliClose(FileWrapper file, string dbFunc = "pg")
         {
             base.UpgradeMysqliClose(file, dbFunc);
+        }
+
+        /// <summary> HTML tag &lt;script language="PHP"&gt;&lt;/script> deprecated => &lt;?php ?&gt; </summary>
+        public static void UpgradeScriptLanguagePhp(FileWrapper file)
+        {
+            if (!Regex.IsMatch(file.Content, @"<script language=""PHP"">", RegexOptions.IgnoreCase))
+                return;
+
+            var lines = file.Content.Split('\n');
+            bool foundPhpScriptTag = false;
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (Regex.IsMatch(lines[i], @"<script language=""PHP"">", RegexOptions.IgnoreCase))
+                {
+                    lines[i] = Regex.Replace(lines[i], @"<script language=""PHP"">", "<?php ", RegexOptions.IgnoreCase);
+                    foundPhpScriptTag = true;
+                }
+                if (foundPhpScriptTag && lines[i].Contains("</script>"))
+                {
+                    lines[i] = lines[i].Replace("</script>", " ?>");
+                    foundPhpScriptTag = false;
+                }
+            }
+            file.Content = string.Join('\n', lines);
+            file.Warnings.Add("Found <script language=\"PHP\">. Better check JavaScript.");
         }
     }
 }
