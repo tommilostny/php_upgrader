@@ -135,5 +135,31 @@ namespace PhpUpgrader.Tests
             Assert.DoesNotContain("<script language=\"php\">", file.Content);
             Assert.DoesNotContain("<script language=\"PHP\">", file.Content);
         }
+
+        [Fact]
+        public void CommentsIncludesInProductDetail()
+        {
+            //Arrange
+            var file = new FileWrapper(@"test-site\templates\amt\product_detail.php",
+                "</div>\n<?php include \"rubicon/modules/category/menu1.php\";?>\n" +
+                "<div class=\"clear\"></div>\n</div>\n</div>\n" +
+                "<!--div class=\"obsah_detail\">\n" +
+                "\t<div class=\"obsah_detail_in\">\n" +
+                "\t\t<?php include TML_URL.\"/product/product_navigace.php\";?>\n" +
+                "\t\t<div class=\"spacer\">&nbsp;</div>\n\n" +
+                "\t\t<?php include \"mona/system/head.php\";?>\n" +
+                "\t\t<?php include \"rubicon/modules/news/main.php\";//load modul news/aktuality?>\n" +
+                "\t</div>\n" +
+                "</div>-->\n\n<?php include TML_URL.\"/product/product_detail_detail.php\";?>");
+
+            //Act
+            RubiconUpgrader.UpgradeIncludesInHtmlComments(file);
+
+            //Assert
+            _output.WriteLine(file.Content);
+            Assert.True(file.IsModified);
+            Assert.Contains("<?php //include", file.Content);
+            Assert.Single(file.Warnings);
+        }
     }
 }

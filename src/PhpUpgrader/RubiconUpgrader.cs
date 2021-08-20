@@ -218,5 +218,37 @@ namespace PhpUpgrader
             file.Content = string.Join('\n', lines);
             file.Warnings.Add("Found <script language=\"PHP\">. Better check JavaScript.");
         }
+
+        /// <summary> templates/.../product_detail.php, zakomentovaný blok HTML stále spouští broken PHP includy, zakomentovat </summary>
+        public static void UpgradeIncludesInHtmlComments(FileWrapper file)
+        {
+            if (!Regex.IsMatch(file.Path, @"\\templates\\.+\\product_detail\.php"))
+                return;
+
+            var lines = file.Content.Split('\n');
+            bool insideHtmlComment = false;
+            bool commentedAtLeastOneInclude = false;
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].Contains("<!--"))
+                    insideHtmlComment = true;
+
+                if (lines[i].Contains("-->"))
+                    insideHtmlComment = false;
+
+                if (insideHtmlComment)
+                {
+                    if (!commentedAtLeastOneInclude)
+                        commentedAtLeastOneInclude = lines[i].Contains("<?php include");
+
+                    lines[i] = lines[i].Replace("<?php include", "<?php //include");
+                }
+            }
+            file.Content = string.Join('\n', lines);
+
+            if (commentedAtLeastOneInclude)
+                file.Warnings.Add("check commented includes");
+        }
     }
 }
