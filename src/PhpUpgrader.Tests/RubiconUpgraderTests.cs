@@ -161,5 +161,21 @@ namespace PhpUpgrader.Tests
             Assert.Contains("<?php //include", file.Content);
             Assert.Single(file.Warnings);
         }
+
+        [Fact]
+        public void ReplacesBreakWithReturnInAegisxDetail()
+        {
+            //Arrange
+            var file = new FileWrapper("test-site\\aegisx\\detail.php", "if ($presmeruj == \"NO\")\n{\n\t\t\tbreak;");
+
+            //Act
+            RubiconUpgrader.UpgradeAegisxDetail(file);
+
+            //Assert
+            _output.WriteLine(file.Content);
+            Assert.True(file.IsModified);
+            Assert.DoesNotContain("break;", file.Content);
+            Assert.Contains("return;", file.Content);
+        }
     }
 }

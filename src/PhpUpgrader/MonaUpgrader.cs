@@ -21,21 +21,21 @@ namespace PhpUpgrader
         public string[] AdminFolders
         {
             get => _adminFolders ??= new string[] { "admin" };
-            init => _adminFolders = value ?? new string[] { "admin" };
+            set => _adminFolders = value ?? new string[] { "admin" };
         }
         private string[] _adminFolders;
 
         /// <summary> URL k databázovému serveru. </summary>
-        public string? Hostname { get; init; }
+        public string? Hostname { get; set; }
 
         /// <summary> Nová databáze na serveru hostname. </summary>
-        public string? Database { get; init; }
+        public string? Database { get; set; }
 
         /// <summary> Nové uživatelské jméno k databázi. </summary>
-        public string? Username { get; init; }
+        public string? Username { get; set; }
 
         /// <summary> Nové heslo k databázi. </summary>
-        public string? Password { get; init; }
+        public string? Password { get; set; }
 
         /// <summary> Název souboru ve složce 'connect'. </summary>
         public string ConnectionFile { get; set; }

@@ -123,18 +123,20 @@ namespace PhpUpgrader
             if (!file.Path.Contains("rubicon_import.php"))
                 return;
 
-            var backup = ConnectionFile;
+            var backup = (ConnectionFile, Username, Password, Database);
             ConnectionFile = "rubicon_import.php";
+            Username = Password = Database = null;
             
             base.UpgradeConnect(file);
             file.Content = RenameBeta(file.Content, "sportmall_import");
+            file.Content = file.Content.Replace("$hostname_sportmall_import = \"localhost\";", "//$hostname_sportmall_import = \"localhost\";\n$hostname_sportmall_import = \"mcrai.vshosting.cz\";");
 
             file.Content = file.Content.Replace("mysqli_query($sportmall_import, \"SET CHARACTER SET utf8\");",
                 "mysqli_query($sportmall_import, \"SET character_set_connection = cp1250\");\n" +
                 "mysqli_query($sportmall_import, \"SET character_set_results = cp1250\");\n" +
                 "mysqli_query($sportmall_import, \"SET character_set_client = cp1250\");");
 
-            ConnectionFile = backup;
+            (ConnectionFile, Username, Password, Database) = backup;
         }
 
         /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
@@ -249,6 +251,15 @@ namespace PhpUpgrader
 
             if (commentedAtLeastOneInclude)
                 file.Warnings.Add("check commented includes");
+        }
+
+        /// <summary>  </summary>
+        public static void UpgradeAegisxDetail(FileWrapper file)
+        {
+            if (!file.Path.Contains("aegisx\\detail.php"))
+                return;
+
+            file.Content = Regex.Replace(file.Content, @"if\s?\(\$presmeruj == ""NO""\)\s*\{\n\s*break;", "if ($presmeruj == \"NO\") {\n\t\t\treturn;");
         }
     }
 }
