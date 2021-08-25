@@ -83,7 +83,8 @@ namespace PhpUpgrader
             { "mysql_real_escape_string", "mysqli_real_escape_string" },
             { "mysql_free_result", "mysqli_free_result" },
             { "mysql_list_tables($database_beta);", "mysqli_query($beta, \"SHOW TABLES FROM `$database_beta`\");" },
-            { "$table_all .= \"`\".mysql_tablename($result, $i).\"`\";", "$table_all .= \"`\".mysqli_fetch_row($result)[0].\"`\";" }
+            { "$table_all .= \"`\".mysql_tablename($result, $i).\"`\";", "$table_all .= \"`\".mysqli_fetch_row($result)[0].\"`\";" },
+            { "<?php/", "<?php /" }
         };
 
         /// <summary> Inicializace povinných atributů. </summary>
@@ -189,7 +190,8 @@ namespace PhpUpgrader
                     break;
             }
             //generování nových údajů k databázi, pokud jsou všechny zadány
-            if (Database is not null && Username is not null && Password is not null && Hostname is not null)
+            if (Database is not null && Username is not null && Password is not null && Hostname is not null
+                && !Regex.IsMatch(file.Content, $@"\$password_.* = '{Password}'"))
             {
                 connectHead = connectHead.Replace("\n", "\n//"); //zakomentovat původní řádky
                 connectHead = connectHead.Replace("////", "//"); //smazat zbytečná lomítka
@@ -286,11 +288,11 @@ namespace PhpUpgrader
         }
 
         /// <summary> pridat mysqli_close($beta); do indexu nakonec </summary>
-        public virtual void UpgradeMysqliClose(FileWrapper file, string dbFunc = "mysqli")
+        public virtual void UpgradeMysqliClose(FileWrapper file)
         {
-            if (file.Path.Contains($@"{WebName}\index.php") && !file.Content.Contains($"{dbFunc}_close"))
+            if (file.Path.Contains($@"{WebName}\index.php") && !file.Content.Contains("mysqli_close"))
             {
-                file.Content += $"\n<?php {dbFunc}_close($beta); ?>";
+                file.Content += "\n<?php mysqli_close($beta); ?>";
             }
         }
 

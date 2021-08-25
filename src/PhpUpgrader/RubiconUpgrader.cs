@@ -14,6 +14,8 @@ namespace PhpUpgrader
             FindReplace.Add("////mysql_select_db($database_beta);", "//mysql_select_db($database_beta);");
             FindReplace.Add("function_exists(\"mysqli_real_escape_string\") ? mysqli_real_escape_string($theValue) : mysql_escape_string($theValue)",
                             "mysqli_real_escape_string($beta, $theValue)");
+            FindReplace.Add("mysql_select_db($database_sportmall_import, $sportmall_import);", "mysqli_select_db($sportmall_import, $database_sportmall_import);");
+            FindReplace.Add("mysqli_query($beta,$query_import_univarzal, $sportmall_import) or die(mysqli_error($beta))", "mysqli_query($sportmall_import, $query_import_univarzal) or die(mysqli_error($sportmall_import))");
         }
 
         /// <summary> Procedura aktualizace Rubicon souborů. </summary>
@@ -27,6 +29,9 @@ namespace PhpUpgrader
             {
                 UpgradeConstructors(file);
                 UpgradeScriptLanguagePhp(file);
+                UpgradeIncludesInHtmlComments(file);
+                UpgradeAegisxDetail(file);
+                UpgradeLoadData(file);
             }
             return file;
         }
@@ -120,16 +125,17 @@ namespace PhpUpgrader
         /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php,  </summary>
         public void UpgradeRubiconImport(FileWrapper file)
         {
-            if (!file.Path.Contains("rubicon_import.php"))
+            if (!file.Path.Contains("Connections\\rubicon_import.php"))
                 return;
 
             var backup = (ConnectionFile, Username, Password, Database);
             ConnectionFile = "rubicon_import.php";
-            Username = Password = Database = null;
+            Database = "eshop-products_n";
+            Username = "eshop-products_u";
+            Password = "bZcg386!";
             
             base.UpgradeConnect(file);
             file.Content = RenameBeta(file.Content, "sportmall_import");
-            file.Content = file.Content.Replace("$hostname_sportmall_import = \"localhost\";", "//$hostname_sportmall_import = \"localhost\";\n$hostname_sportmall_import = \"mcrai.vshosting.cz\";");
 
             file.Content = file.Content.Replace("mysqli_query($sportmall_import, \"SET CHARACTER SET utf8\");",
                 "mysqli_query($sportmall_import, \"SET character_set_connection = cp1250\");\n" +
@@ -142,9 +148,12 @@ namespace PhpUpgrader
         /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
         public void UpgradeSetup(FileWrapper file)
         {
-            if (!file.Path.Contains($"{WebName}\\setup.php"))
-                return;
-
+            switch (file)
+            {
+                case { Path: var p } when !p.Contains($"{WebName}\\setup.php"):
+                case { Content: var c } when c.Contains($"password = '{Password}';"):
+                    return;
+            }
             bool usernameLoaded = false, passwordLoaded = false, databaseLoaded = false;
 
             var evaluator = new MatchEvaluator(_NewCredentialAndComment);
@@ -183,16 +192,24 @@ namespace PhpUpgrader
         /// <summary> Aktualizace hostname v souboru Connections/beta.php na server mcrai2. </summary>
         public void UpgradeHostnameBeta(FileWrapper file)
         {
-            if (file.Path.Contains("Connections\\beta.php"))
+            if (file.Path.Contains("Connections\\beta.php") && !file.Content.Contains($"$hostname_beta = \"{Hostname}\";"))
             {
                 file.Content = file.Content.Replace("$hostname_beta = \"93.185.102.228\";", $"//$hostname_beta = \"93.185.102.228\";\n\t$hostname_beta = \"{Hostname}\";");
+            }
+            if (!file.Content.Contains("//Database::connect('93.185.102.228'"))
+            {
+                file.Content = file.Content.Replace("Database::connect('93.185.102.228', $username_beta, $password_beta, $database_beta, '5432');",
+                    "//Database::connect('93.185.102.228', $username_beta, $password_beta, $database_beta, '5432');\nDatabase::connect('mcrai2.vshosting.cz', $username_beta, $password_beta, $database_beta, '5432');");
             }
         }
 
         /// <summary> Přidá funkci pg_close na konec index.php. </summary>
-        public override void UpgradeMysqliClose(FileWrapper file, string dbFunc = "pg")
+        public override void UpgradeMysqliClose(FileWrapper file)
         {
-            base.UpgradeMysqliClose(file, dbFunc);
+            if (file.Path.Contains($@"{WebName}\index.php") && !file.Content.Contains("pg_close"))
+            {
+                file.Content += "\n<?php pg_close($beta); ?>";
+            }
         }
 
         /// <summary> HTML tag &lt;script language="PHP"&gt;&lt;/script> deprecated => &lt;?php ?&gt; </summary>
@@ -253,13 +270,23 @@ namespace PhpUpgrader
                 file.Warnings.Add("check commented includes");
         }
 
-        /// <summary>  </summary>
+        /// <summary> [Break => Return] v souboru aegisx\detail.php (není ve smyčce, ale included). </summary>
         public static void UpgradeAegisxDetail(FileWrapper file)
         {
-            if (!file.Path.Contains("aegisx\\detail.php"))
+            if (!file.Path.Contains(@"aegisx\detail.php"))
                 return;
 
             file.Content = Regex.Replace(file.Content, @"if\s?\(\$presmeruj == ""NO""\)\s*\{\n\s*break;", "if ($presmeruj == \"NO\") {\n\t\t\treturn;");
+        }
+
+        /// <summary> Úprava mysql a proměnné $beta v souboru aegisx\import\load_data.php. </summary>
+        public static void UpgradeLoadData(FileWrapper file)
+        {
+            if (!file.Path.Contains(@"aegisx\import\load_data.php"))
+                return;
+
+            file.Content = file.Content.Replace("global $beta;", "global $sportmall_import;");
+            file.Content = file.Content.Replace("mysqli_real_escape_string($beta,", "mysqli_real_escape_string($sportmall_import,");
         }
     }
 }
