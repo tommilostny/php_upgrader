@@ -146,7 +146,11 @@ namespace PhpUpgrader
                 UpgradeGlobalBeta(file);
                 RenameBeta(file);
             }
-            else UpgradeFindReplace(file);
+            else
+            {
+                UpgradeFindReplace(file);
+                UpgradeTinyMceUploaded(file);
+            }
             UpgradeRegexFunctions(file);
             return file;
         }
@@ -558,6 +562,15 @@ namespace PhpUpgrader
 
                 return $"{pregFunction}({quote}~{insidePattern}~{quote}";
             }
+        }
+
+        ///<summary> PHP Parse error:  syntax error, unexpected '&amp;' on line 49` </summary>
+        public static void UpgradeTinyMceUploaded(FileWrapper file)
+        {
+            if (!file.Path.Contains(@"\plugins\imagemanager\plugins\Uploaded\Uploaded.php"))
+                return;
+
+            file.Content = file.Content.Replace("$this->_uploadedFile(&$man, $file1);", "$this->_uploadedFile($man, $file1);");
         }
 
         /// <summary> Přejmenovat proměnnou ve slovníku <see cref="FindReplace"/>. </summary>
