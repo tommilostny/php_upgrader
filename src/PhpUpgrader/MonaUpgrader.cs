@@ -434,26 +434,22 @@ namespace PhpUpgrader
             }
             bool javascript = false;
             var lines = file.Content.Split('\n');
-            var newContent = string.Empty;
 
             for (int i = 0; i < lines.Length; i++)
             {
                 if (lines[i].Contains("<script")) javascript = true;
                 if (lines[i].Contains("</script")) javascript = false;
 
-                newContent += $"{lines[i]}\n";
-
-                if (Regex.IsMatch(lines[i], "function\\s") && !javascript && _MysqliInFunction(i))
+                if (Regex.IsMatch(lines[i], @"function\s") && !javascript && _MysqliAndBetaInFunction(i))
                 {
-                    newContent += $"{lines[++i]}\n\n    global $beta;\n\n";
+                    lines[++i] += $"\n    global $beta;\n\n";
                 }
             }
-            file.Content = newContent;
+            file.Content = string.Join('\n', lines);
 
-            bool _MysqliInFunction(int startIndex)
+            bool _MysqliAndBetaInFunction(int startIndex)
             {
-                bool javascript = false;
-                bool inComment = false;
+                bool javascript = false, inComment = false, foundMysqli = false, foundBeta = false;
                 int bracketCount = 0;
 
                 for (int i = startIndex; i < lines.Length; i++)
@@ -467,9 +463,14 @@ namespace PhpUpgrader
                     if (lines[i].Contains("/*")) inComment = true;
                     if (lines[i].Contains("*/")) inComment = false;
 
-                    if (lines[i].Contains("mysqli_") && !inComment && !lines[i].TrimStart().StartsWith("//"))
-                        return true;
+                    if (!inComment && !lines[i].TrimStart().StartsWith("//"))
+                    {
+                        if (lines[i].Contains("mysqli_")) foundMysqli = true;
+                        if (lines[i].Contains("$beta")) foundBeta = true;
 
+                        if (foundBeta && foundMysqli)
+                            return true;
+                    }
                     if (lines[i].Contains('{')) bracketCount++;
                     if (lines[i].Contains('}')) bracketCount--;
 

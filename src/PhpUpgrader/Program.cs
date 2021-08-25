@@ -34,27 +34,25 @@ namespace PhpUpgrader
                 return;
             }
 
-            Console.WriteLine($"Starting PHP upgrader for {webName}...\n");
-            var upgrader = rubicon switch
+            Console.Write($"Starting PHP upgrade for {webName} ");
+            var upgrader = rubicon ? new RubiconUpgrader(baseFolder, webName)
             {
-                false => new MonaUpgrader(baseFolder, webName)
-                {
-                    AdminFolders = adminFolders,
-                    Database = db,
-                    Username = user,
-                    Password = password,
-                    Hostname = host,
-                    RenameBetaWith = beta,
-                    ConnectionFile = connectionFile
-                },
-                true => new RubiconUpgrader(baseFolder, webName)
-                {
-                    Database = db,
-                    Username = user,
-                    Password = password,
-                    Hostname = host
-                }
+                Database = db,
+                Username = user,
+                Password = password,
+                Hostname = host
+            }
+            : new MonaUpgrader(baseFolder, webName)
+            {
+                AdminFolders = adminFolders,
+                Database = db,
+                Username = user,
+                Password = password,
+                Hostname = host,
+                RenameBetaWith = beta,
+                ConnectionFile = connectionFile
             };
+            Console.WriteLine($"using {(upgrader is RubiconUpgrader ? "Rubicon" : "Mona")} upgrader...\n");
 
             Console.WriteLine($"Modified:   {FileWrapper.ModifiedSymbol}");
             Console.WriteLine($"Unmodified: {FileWrapper.UnmodifiedSymbol}");
