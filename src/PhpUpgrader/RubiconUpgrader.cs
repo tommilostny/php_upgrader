@@ -219,19 +219,19 @@ namespace PhpUpgrader
                 return;
 
             var lines = file.Content.Split('\n');
-            bool foundPhpScriptTag = false;
+            bool insidePhpScriptTag = false;
 
             for (int i = 0; i < lines.Length; i++)
             {
                 if (Regex.IsMatch(lines[i], @"<script language=""PHP"">", RegexOptions.IgnoreCase))
                 {
                     lines[i] = Regex.Replace(lines[i], @"<script language=""PHP"">", "<?php ", RegexOptions.IgnoreCase);
-                    foundPhpScriptTag = true;
+                    insidePhpScriptTag = true;
                 }
-                if (foundPhpScriptTag && lines[i].Contains("</script>"))
+                if (insidePhpScriptTag && lines[i].Contains("</script>"))
                 {
                     lines[i] = lines[i].Replace("</script>", " ?>");
-                    foundPhpScriptTag = false;
+                    insidePhpScriptTag = false;
                 }
             }
             file.Content = string.Join('\n', lines);
@@ -256,11 +256,8 @@ namespace PhpUpgrader
                 if (lines[i].Contains("-->"))
                     insideHtmlComment = false;
 
-                if (insideHtmlComment)
+                if (insideHtmlComment && (commentedAtLeastOneInclude |= lines[i].Contains("<?php include")))
                 {
-                    if (!commentedAtLeastOneInclude)
-                        commentedAtLeastOneInclude = lines[i].Contains("<?php include");
-
                     lines[i] = lines[i].Replace("<?php include", "<?php //include");
                 }
             }
