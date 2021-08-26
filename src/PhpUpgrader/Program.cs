@@ -62,6 +62,7 @@ namespace PhpUpgrader
             upgrader.UpgradeAllFilesRecursively(workDir);
 
             Console.WriteLine($"\nAutomatic PHP upgrade of {webName} is complete!");
+            Console.WriteLine($"Total files modified: {upgrader.ModifiedFilesCount}/{upgrader.TotalFilesCount}");
             Console.WriteLine($"Files containing mysql_: {upgrader.FilesContainingMysql.Count}");
 
             foreach (var fileName in upgrader.FilesContainingMysql)

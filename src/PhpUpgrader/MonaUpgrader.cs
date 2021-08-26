@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -87,6 +88,12 @@ namespace PhpUpgrader
             { "<?php/", "<?php /" }
         };
 
+        /// <summary> Počet modifikovaných souborů během procesu aktualizace. </summary>
+        public uint ModifiedFilesCount { get; private set; } = 0;
+
+        /// <summary> Celkový počet zpracovaných souborů. </summary>
+        public uint TotalFilesCount { get; private set; } = 0;
+
         /// <summary> Inicializace povinných atributů. </summary>
         public MonaUpgrader(string baseFolder, string webName)
         {
@@ -106,6 +113,7 @@ namespace PhpUpgrader
             //aktualizace aktuální složky
             foreach (var filePath in Directory.GetFiles(directoryPath, "*.php"))
             {
+                TotalFilesCount++;
                 var file = UpgradeProcedure(filePath);
 
                 if (file is null)
@@ -114,6 +122,7 @@ namespace PhpUpgrader
                 //upraveno, zapsat do souboru
                 file.WriteStatus();
                 file.Save();
+                ModifiedFilesCount += Convert.ToUInt32(file.IsModified);
 
                 //po dodelani nahrazeni nize projit na retezec - mysql_
                 if (Regex.IsMatch(file.Content, "[^//]mysql_", RegexOptions.IgnoreCase))
@@ -213,6 +222,7 @@ namespace PhpUpgrader
             {
                 File.Copy($"{BaseFolder}important\\TinyAjaxBehavior.txt", file.Path, overwrite: true);
                 file.WriteStatus();
+                ModifiedFilesCount++;
             }
             return file.IsModified;
         }
