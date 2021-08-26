@@ -1,6 +1,6 @@
-# RS Mona PHP upgrader tool
+# PHP upgrader tool (RS Mona, Rubicon)
 
-Vytvořeno pro *McRAI* Tomášem Milostným jako nástroj aktualizace webových prezentací z PHP verze 5 na verzi 7, běžící na redakčním systému Mona.
+Vytvořeno pro *McRAI* Tomášem Milostným jako nástroj aktualizace webových prezentací z PHP verze 5 na verzi 7.
 
 ### Nastavení a spuštění:
 
@@ -12,6 +12,8 @@ Vytvořeno pro *McRAI* Tomášem Milostným jako nástroj aktualizace webových 
 Název webu odpovídá složce v adresáři *"C:\McRAI\weby\"*, kde **C:\McRAI\\** je výchozím nastavením parametru *--base-folder* a **weby** je podadresářem *C:\McRAI\\*.
 
 Archiv rovněž obsahuje složku "important", kterou je třeba umístit jako *"C:\McRAI\important"*.
+
+Navrženo pro běh na OS *Windows* a **doporučeno** spusit v terminálu podporující *Unicode* (např. *Windows Terminal*).
 
 ---
 
