@@ -101,6 +101,11 @@ namespace PhpUpgrader
             }
             file.Content = string.Join('\n', lines);
 
+            if (!file.IsModified && file.Warnings.Count > 0)
+            {
+                file.Warnings.Remove(file.Warnings.FirstOrDefault(w => w.StartsWith("Large bracket count (")));
+            }
+
             static string _ParamsWithoutDefaultValues(string parameters)
             {
                 return string.Join(", ", parameters.Split(',').Select(p => p.Split('=')[0].Trim().Replace("&", string.Empty)));

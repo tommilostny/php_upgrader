@@ -46,7 +46,7 @@ namespace PhpUpgrader.Tests
 
             //Assert
             _output.WriteLine($"'{file.Content}'");
-            File.WriteAllText(@"C:\McRAI\tst_final.php", file.Content);
+            //File.WriteAllText(@"C:\McRAI\tst_final.php", file.Content);
             Assert.True(file.IsModified);
             Assert.Contains("function __construct", file.Content);
             Assert.Empty(file.Warnings);
