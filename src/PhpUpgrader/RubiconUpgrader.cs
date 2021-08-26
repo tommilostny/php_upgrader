@@ -16,6 +16,7 @@ namespace PhpUpgrader
                             "mysqli_real_escape_string($beta, $theValue)");
             FindReplace.Add("mysql_select_db($database_sportmall_import, $sportmall_import);", "mysqli_select_db($sportmall_import, $database_sportmall_import);");
             FindReplace.Add("mysqli_query($beta,$query_import_univarzal, $sportmall_import) or die(mysqli_error($beta))", "mysqli_query($sportmall_import, $query_import_univarzal) or die(mysqli_error($sportmall_import))");
+            FindReplace.Add(@"preg_match(""^$atom+(\\.$atom+)*@($domain?\\.)+$domain\$"", $email)", @"preg_match("";^$atom+(\\.$atom+)*@($domain?\\.)+$domain\$;"", $email)");
         }
 
         /// <summary> Procedura aktualizace Rubicon souborů. </summary>
@@ -63,8 +64,15 @@ namespace PhpUpgrader
                 if (_LookAheadFor__construct(bracketCount, i + 1)) //třída obsahuje metodu __construct(), nehledat starý konstruktor
                     continue;
 
+                bool inComment = lines[i].Contains("/*");
                 while (++i < lines.Length) //hledání a nahrazení starého konstruktoru uvnitř třídy
                 {
+                    if (lines[i].Contains("/*")) inComment = true;
+                    if (lines[i].Contains("*/")) inComment = false;
+
+                    if (inComment || lines[i].TrimStart().StartsWith("//"))
+                        continue;
+
                     if (lines[i].Contains('{')) bracketCount++;
                     if (lines[i].Contains('}')) bracketCount--;
 
@@ -287,7 +295,7 @@ namespace PhpUpgrader
             file.Content = file.Content.Replace("mysqli_real_escape_string($beta,", "mysqli_real_escape_string($sportmall_import,");
         }
 
-        /// <summary> Úprava SQL dotazu na top produkty v souboru aegisx\home.php </summary>
+        /// <summary> Úprava SQL dotazu na top produkty v souboru aegisx\home.php. </summary>
         public static void UpgradeHomeTopProducts(FileWrapper file)
         {
             if (!file.Path.Contains(@"aegisx\home.php"))
