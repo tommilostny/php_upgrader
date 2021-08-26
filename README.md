@@ -7,6 +7,7 @@ Vytvořeno pro *McRAI* Tomášem Milostným jako nástroj aktualizace webových 
 1. Ke spuštění je potřeba nainstalovat [.NET 5.0 SDK](https://dotnet.microsoft.com/download). 
 2. Skript se spouští přes příkazovou řádku (viz **příklady spuštění**) a pracuje s následujícími argumenty:
   - **``--web-name``**, ``--admin-folders``, ``--base-folder``, ``--db``, ``--user``, ``--password``, ``--host``, ``--beta`` a ``--connection-file`` (pro podrobé informace spusťte s argumentem **``--help``**).
+  - ``--rubicon`` přepíná upgrader do režimu pro Rubicon (pracuje pak s argumenty **``--web-name``**, ``--db``, ``--user``, ``--password``, ``--host``).
 
 Název webu odpovídá složce v adresáři *"C:\McRAI\weby\"*, kde **C:\McRAI\\** je výchozím nastavením parametru *--base-folder* a **weby** je podadresářem *C:\McRAI\\*.
 
@@ -21,7 +22,9 @@ Archiv rovněž obsahuje složku "important", kterou je třeba umístit jako *"C
 - Další složky s administrací, údaje k databázi nezměněné:
   - ``dotnet run -- --web-name kalimera-greece --admin-folders slozka1 slozka2 slozka3``
 - Výchozí 1 nepřejmenovaná složka *admin* + nové údaje k databázi na serveru mcrai2:
-  - ``dotnet run -- --web-name smluvniservis --db smluvniservis_n --user smluvniservis_u --password heslo``
+  - ``dotnet run -- --web-name smluvniservis --db smluvniservis_n --user smluvniservis_u --password 'heslo'``
+- Uprade webu se systémem Rubicon:
+  - ``dotnet run -- --rubicon --web-name olejemaziva --db olejemaziva_n --user olejemaziva_u --password 'heslo'``
 
 Informace k ``dotnet run`` viz [https://docs.microsoft.com/cs-cz/dotnet/core/tools/dotnet-run](https://docs.microsoft.com/cs-cz/dotnet/core/tools/dotnet-run) (práce s ním a jak zadávat argumenty aplikace atd.).
 
@@ -38,7 +41,7 @@ Pokud je zadán argument ``--web-name``, odpovídající složce v *C:\McRAI\web
 
 ### ftp_logins.txt
 
-Soubor využívaný bezparametrovým argumentem **``--use-logins-file``** k načtení hesla dle jména zadaného argumentem ``--username``.
+Soubor využívaný bezparametrovým argumentem **``--use-logins-file``** k načtení hesla dle jména zadaného argumentem *``--username``* nebo podle **``--web-name``** (nalezeno v *ftp_logins.txt* s prefixem **tom-**).
 
 Nachází se ve složce zadané argumentem ``--base-folder`` (výchozí *C:\McRAI\ftp_logins.txt*).
 
