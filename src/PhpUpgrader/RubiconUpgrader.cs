@@ -89,7 +89,7 @@ namespace PhpUpgrader
 
                     if (bracketCount > 2 && lines[i].TrimStart().StartsWith("function"))
                     {
-                        file.Warnings.Add($"Large bracket count ({bracketCount}), function around line {i + 1}. Check constructor(s) of class {className}.");
+                        file.Warnings.Add($"Neočekávaný počet složených závorek ({bracketCount}), funkce okolo řádku {i + 1}. Zkontrolovat konstruktor(y) třídy {className}.");
                         bracketCount = 2;
                     }
                     if (Regex.IsMatch(lines[i], $@"function {className}\s?\("))
@@ -189,13 +189,13 @@ namespace PhpUpgrader
             file.Content = file.Content.Replace("////", "//");
 
             if (!usernameLoaded)
-                file.Warnings.Add("setup.php - username not loaded.");
+                file.Warnings.Add("setup.php - nenačtené přihlašovací jméno.");
             if (!passwordLoaded)
-                file.Warnings.Add("setup.php - password not loaded.");
+                file.Warnings.Add("setup.php - nenačtené heslo.");
             if (!databaseLoaded)
-                file.Warnings.Add("setup.php - database not loaded.");
+                file.Warnings.Add("setup.php - nenačtený název databáze.");
 
-            file.Warnings.Add("setup.php - check db connections and such.");
+            file.Warnings.Add("setup.php - zkontrolovat připojení k databázi atd..");
 
             string _NewCredentialAndComment(Match match)
             {
@@ -263,7 +263,7 @@ namespace PhpUpgrader
                 }
             }
             file.Content = string.Join('\n', lines);
-            file.Warnings.Add("Found <script language=\"PHP\">. Better check JavaScript.");
+            file.Warnings.Add("Nalezena značka <script language=\"PHP\">. Zkontrolovat možný Javascript.");
         }
 
         /// <summary> templates/.../product_detail.php, zakomentovaný blok HTML stále spouští broken PHP includy, zakomentovat </summary>
@@ -292,7 +292,7 @@ namespace PhpUpgrader
             file.Content = string.Join('\n', lines);
 
             if (commentedAtLeastOneInclude)
-                file.Warnings.Add("check commented includes");
+                file.Warnings.Add("Zkontrolovat HTML zakomentované '<?php include'.");
         }
 
         /// <summary> [Break => Return] v souboru aegisx\detail.php (není ve smyčce, ale included). </summary>

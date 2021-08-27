@@ -367,7 +367,7 @@ namespace PhpUpgrader
                     return;
             }
             //zahlásit chybu při nalezení další varianty funkce predchozi_dalsi
-            file.Warnings.Add("predchozi_dalsi error!");
+            file.Warnings.Add("Nalezena neznámá varianta funkce predchozi_dalsi.");
 
             //iterátor dvojic 'co hledat?', 'čím to nahradit?' pro varianty funkce predchozi_dalsi
             static IEnumerable<(string, string)> _PredchoziDalsiVariants()
@@ -531,7 +531,7 @@ namespace PhpUpgrader
 
                 if (file.Content.Contains("ereg"))
                 {
-                    file.Warnings.Add("ereg alert!");
+                    file.Warnings.Add("Nemodifikovaná funkce ereg!");
                 }
             }
 
@@ -556,7 +556,7 @@ namespace PhpUpgrader
                 }
                 if (Regex.IsMatch(file.Content = string.Join('\n', lines), @"[^_\.]split ?\("))
                 {
-                    file.Warnings.Add("unmodified split alert!");
+                    file.Warnings.Add("Nemodifikovaná funkce split!");
                 }
             }
 
