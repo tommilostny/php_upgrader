@@ -141,13 +141,7 @@ namespace PhpUpgrader
         {
             UpgradeRubiconImport(file);
             UpgradeSetup(file);
-            UpgradeHostnameBeta(file);
-
-            if (!file.Content.Contains("Database::connect('mcrai2.vshosting.cz'"))
-            {
-                file.Content = file.Content.Replace("Database::connect('93.185.102.228', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');",
-                    "//Database::connect('93.185.102.228', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');\n\tDatabase::connect('mcrai2.vshosting.cz', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');");
-            }
+            UpgradeHostnameFromMcrai1IP(file);
         }
 
         /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php,  </summary>
@@ -217,17 +211,22 @@ namespace PhpUpgrader
             }
         }
 
-        /// <summary> Aktualizace hostname v souboru Connections/beta.php na server mcrai2. </summary>
-        public void UpgradeHostnameBeta(FileWrapper file)
+        /// <summary> Aktualizace hostname z mcrai1 na server mcrai2. </summary>
+        public void UpgradeHostnameFromMcrai1IP(FileWrapper file)
         {
             if (file.Path.EndsWith("Connections\\beta.php") && !file.Content.Contains($"$hostname_beta = \"{Hostname}\";"))
             {
                 file.Content = file.Content.Replace("$hostname_beta = \"93.185.102.228\";", $"//$hostname_beta = \"93.185.102.228\";\n\t$hostname_beta = \"{Hostname}\";");
             }
-            if (!file.Content.Contains("//Database::connect('93.185.102.228'"))
+            if (!file.Content.Contains($"Database::connect('{Hostname}'"))
             {
-                file.Content = file.Content.Replace("Database::connect('93.185.102.228', $username_beta, $password_beta, $database_beta, '5432');",
-                    "//Database::connect('93.185.102.228', $username_beta, $password_beta, $database_beta, '5432');\nDatabase::connect('mcrai2.vshosting.cz', $username_beta, $password_beta, $database_beta, '5432');");
+                file.Content = file.Content.Replace("Database::connect('93.185.102.228', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');",
+                    $"//Database::connect('93.185.102.228', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');\n\tDatabase::connect('{Hostname}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');");
+            }
+            if (!file.Content.Contains($"$api = new RubiconAPI($_REQUEST['url'], '{Hostname}'"))
+            {
+                file.Content = file.Content.Replace("$api = new RubiconAPI($_REQUEST['url'], '93.185.102.228', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');",
+                    $"//$api = new RubiconAPI($_REQUEST['url'], '93.185.102.228', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');\n\t$api = new RubiconAPI($_REQUEST['url'], '{Hostname}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');");
             }
         }
 

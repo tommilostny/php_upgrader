@@ -107,7 +107,7 @@ namespace PhpUpgrader.Tests
             };
 
             //Act
-            upgrader.UpgradeHostnameBeta(file);
+            upgrader.UpgradeHostnameFromMcrai1IP(file);
 
             //Assert
             _output.WriteLine(file.Content);

@@ -162,6 +162,10 @@ namespace PhpUpgrader
                 UpgradeTinyMceUploaded(file);
             }
             UpgradeRegexFunctions(file);
+
+            if (file.Content.Contains("93.185.102.228"))
+                file.Warnings.Add("Soubor obsahuje IP adresu mcrai1 (93.185.102.228).");
+
             return file;
         }
 
