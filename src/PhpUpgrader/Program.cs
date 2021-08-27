@@ -25,16 +25,16 @@ namespace PhpUpgrader
 
             if (webName == string.Empty)
             {
-                Console.Error.WriteLine($"Folder {workDir} is invalid because parameter '--web-name' is empty.");
+                Console.Error.WriteLine($"Složka {workDir} není validní, protože parametr '--web-name' není zadán.");
                 return;
             }
             if (!Directory.Exists(workDir))
             {
-                Console.Error.WriteLine($"Folder {workDir} does not exist.");
+                Console.Error.WriteLine($"Složka {workDir} neexistuje.");
                 return;
             }
 
-            Console.Write($"Starting PHP upgrade for {webName} ");
+            Console.Write($"Spuštěn PHP upgrade pro '{webName}'");
             var upgrader = rubicon ? new RubiconUpgrader(baseFolder, webName)
             {
                 Database = db,
@@ -52,18 +52,18 @@ namespace PhpUpgrader
                 RenameBetaWith = beta,
                 ConnectionFile = connectionFile
             };
-            Console.WriteLine($"using {(upgrader is RubiconUpgrader ? "Rubicon" : "Mona")} upgrader...\n");
+            Console.WriteLine($" použitím {(upgrader is RubiconUpgrader ? "Rubicon" : "Mona")} upgraderu...\n");
 
-            Console.WriteLine($"Modified:   {FileWrapper.ModifiedSymbol}");
-            Console.WriteLine($"Unmodified: {FileWrapper.UnmodifiedSymbol}");
-            Console.WriteLine($"Warning:    {FileWrapper.WarningSymbol}");
+            Console.WriteLine($"Modifikován:   {FileWrapper.ModifiedSymbol}");
+            Console.WriteLine($"Nemodifikován: {FileWrapper.UnmodifiedSymbol}");
+            Console.WriteLine($"Varování:      {FileWrapper.WarningSymbol}");
 
-            Console.WriteLine("\nProcessed files:");
+            Console.WriteLine("\nZpracované soubory:");
             upgrader.UpgradeAllFilesRecursively(workDir);
 
-            Console.WriteLine($"\nAutomatic PHP upgrade of {webName} is complete!");
-            Console.WriteLine($"Total files modified: {upgrader.ModifiedFilesCount}/{upgrader.TotalFilesCount}");
-            Console.WriteLine($"Files containing mysql_: {upgrader.FilesContainingMysql.Count}");
+            Console.WriteLine($"\nAutomatický upgrade PHP webu {webName} je dokončen!");
+            Console.WriteLine($"Celkem upravených souborů: {upgrader.ModifiedFilesCount}/{upgrader.TotalFilesCount}");
+            Console.WriteLine($"Soubory obsahující mysql_: {upgrader.FilesContainingMysql.Count}");
 
             foreach (var fileName in upgrader.FilesContainingMysql)
                 Console.WriteLine(fileName);
