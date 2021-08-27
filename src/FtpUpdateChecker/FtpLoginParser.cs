@@ -81,7 +81,7 @@ namespace FtpUpdateChecker
         private static string UsernameFromWebName(string? webName, string @default) => webName switch
         {
             var w when string.IsNullOrWhiteSpace(w) => @default,
-            { Length: >= 12 } => $"tom-{webName[0..12]}",
+            { Length: >= 12 } => $"tom-{webName[..12]}",
             _ => $"tom-{webName}"
         };
     }

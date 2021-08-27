@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -7,7 +8,11 @@ namespace PhpUpgrader
     /// <summary> PHP upgrader pro systém Rubicon, založený na upgraderu pro systém Mona. </summary>
     public class RubiconUpgrader : MonaUpgrader
     {
-        /// <summary>  </summary>
+        /// <summary> Obsahuje právě aktualizovaný web soubor classes\Object.php? </summary>
+        private bool ContainsObjectClass { get; }
+
+        /// <summary> Konstruktor Rubicon > Mona upgraderu. </summary>
+        /// <remarks> Přidá specifické případy pro Rubicon do <see cref="MonaUpgrader.FindReplace"/>. </remarks>
         public RubiconUpgrader(string baseFolder, string webName) : base(baseFolder, webName)
         {
             FindReplace.Add("mysql_select_db($database_beta);", "//mysql_select_db($database_beta);");
@@ -17,6 +22,8 @@ namespace PhpUpgrader
             FindReplace.Add("mysql_select_db($database_sportmall_import, $sportmall_import);", "mysqli_select_db($sportmall_import, $database_sportmall_import);");
             FindReplace.Add("mysqli_query($beta,$query_import_univarzal, $sportmall_import) or die(mysqli_error($beta))", "mysqli_query($sportmall_import, $query_import_univarzal) or die(mysqli_error($sportmall_import))");
             FindReplace.Add(@"preg_match(""^$atom+(\\.$atom+)*@($domain?\\.)+$domain\$"", $email)", @"preg_match("";^$atom+(\\.$atom+)*@($domain?\\.)+$domain\$;"", $email)");
+        
+            ContainsObjectClass = File.Exists($@"{BaseFolder}\weby\{WebName}\classes\Object.php");
         }
 
         /// <summary> Procedura aktualizace Rubicon souborů. </summary>
@@ -28,6 +35,7 @@ namespace PhpUpgrader
 
             if (file is not null)
             {
+                UpgradeObjectClass(file);
                 UpgradeConstructors(file);
                 UpgradeScriptLanguagePhp(file);
                 UpgradeIncludesInHtmlComments(file);
@@ -134,12 +142,18 @@ namespace PhpUpgrader
             UpgradeRubiconImport(file);
             UpgradeSetup(file);
             UpgradeHostnameBeta(file);
+
+            if (!file.Content.Contains("Database::connect('mcrai2.vshosting.cz'"))
+            {
+                file.Content = file.Content.Replace("Database::connect('93.185.102.228', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');",
+                    "//Database::connect('93.185.102.228', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');\n\tDatabase::connect('mcrai2.vshosting.cz', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');");
+            }
         }
 
         /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php,  </summary>
         public void UpgradeRubiconImport(FileWrapper file)
         {
-            if (!file.Path.Contains("Connections\\rubicon_import.php"))
+            if (!file.Path.EndsWith("Connections\\rubicon_import.php"))
                 return;
 
             var backup = (ConnectionFile, Username, Password, Database);
@@ -206,7 +220,7 @@ namespace PhpUpgrader
         /// <summary> Aktualizace hostname v souboru Connections/beta.php na server mcrai2. </summary>
         public void UpgradeHostnameBeta(FileWrapper file)
         {
-            if (file.Path.Contains("Connections\\beta.php") && !file.Content.Contains($"$hostname_beta = \"{Hostname}\";"))
+            if (file.Path.EndsWith("Connections\\beta.php") && !file.Content.Contains($"$hostname_beta = \"{Hostname}\";"))
             {
                 file.Content = file.Content.Replace("$hostname_beta = \"93.185.102.228\";", $"//$hostname_beta = \"93.185.102.228\";\n\t$hostname_beta = \"{Hostname}\";");
             }
@@ -220,7 +234,7 @@ namespace PhpUpgrader
         /// <summary> Přidá funkci pg_close na konec index.php. </summary>
         public override void UpgradeMysqliClose(FileWrapper file)
         {
-            if (file.Path.Contains($@"{WebName}\index.php") && !file.Content.Contains("pg_close"))
+            if (file.Path.EndsWith($@"{WebName}\index.php") && !file.Content.Contains("pg_close"))
             {
                 file.Content += "\n<?php pg_close($beta); ?>";
             }
@@ -284,7 +298,7 @@ namespace PhpUpgrader
         /// <summary> [Break => Return] v souboru aegisx\detail.php (není ve smyčce, ale included). </summary>
         public static void UpgradeAegisxDetail(FileWrapper file)
         {
-            if (!file.Path.Contains(@"aegisx\detail.php"))
+            if (!file.Path.EndsWith(@"aegisx\detail.php"))
                 return;
 
             file.Content = Regex.Replace(file.Content, @"if\s?\(\$presmeruj == ""NO""\)\s*\{\n\s*break;", "if ($presmeruj == \"NO\") {\n\t\t\treturn;");
@@ -293,7 +307,7 @@ namespace PhpUpgrader
         /// <summary> Úprava mysql a proměnné $beta v souboru aegisx\import\load_data.php. </summary>
         public static void UpgradeLoadData(FileWrapper file)
         {
-            if (!file.Path.Contains(@"aegisx\import\load_data.php"))
+            if (!file.Path.EndsWith(@"aegisx\import\load_data.php"))
                 return;
 
             file.Content = file.Content.Replace("global $beta;", "global $sportmall_import;");
@@ -303,11 +317,29 @@ namespace PhpUpgrader
         /// <summary> Úprava SQL dotazu na top produkty v souboru aegisx\home.php. </summary>
         public static void UpgradeHomeTopProducts(FileWrapper file)
         {
-            if (!file.Path.Contains(@"aegisx\home.php"))
+            if (!file.Path.EndsWith(@"aegisx\home.php"))
                 return;
 
             file.Content = file.Content.Replace("SELECT product_id, COUNT(orders_data.order_id) AS num_orders FROM orders_data, orders WHERE orders_data.order_id=orders.order_id AND \" . getSQLLimit3Months() . \" GROUP BY product_id ORDER BY num_orders DESC LIMIT 1",
                 "SELECT product_id, COUNT(orders_data.order_id) AS num_orders FROM orders_data, orders WHERE orders_data.order_id=orders.order_id AND \" . getSQLLimit3Months() . \" AND product_id IN (SELECT product_id FROM product_info) GROUP BY product_id ORDER BY num_orders DESC LIMIT 1");
+        }
+
+        /// <summary> Aktualizace třídy Object => ObjectBase. Provádí se pouze pokud existuje soubor classes\Object.php. </summary>
+        /// <remarks> + extends Object, @param Object, @property Object </remarks>
+        public void UpgradeObjectClass(FileWrapper file)
+        {
+            if (!ContainsObjectClass)
+                return;
+
+            if (file.Path.EndsWith("classes\\Object.php") && file.Content.Contains("abstract class Object"))
+            {
+                file.Content = file.Content.Replace("abstract class Object", "abstract class ObjectBase");
+                file.Content = Regex.Replace(file.Content, @"function\s+Object\s*\(", "function ObjectBase(");
+                file.MoveOnSavePath = file.Path.Replace("classes\\Object.php", "classes\\ObjectBase.php");
+            }
+            file.Content = file.Content.Replace("extends Object", "extends ObjectBase");
+            file.Content = file.Content.Replace("@param Object", "@param ObjectBase");
+            file.Content = file.Content.Replace("@property  Object", "@property  ObjectBase");
         }
     }
 }

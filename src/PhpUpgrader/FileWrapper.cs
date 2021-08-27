@@ -40,6 +40,9 @@ namespace PhpUpgrader
         /// <summary> Seznam varování o možných chybách. Zobrazí se za výpisem stavu o souboru. </summary>
         public List<string> Warnings { get; } = new();
 
+        /// <summary> Přejmenování/přesunutí souboru na tuto cestu při ukládání, pokud není null. </summary>
+        public string? MoveOnSavePath { get; set; } = null;
+
         /// <summary> Obsah souboru je zadán parametrem. </summary>
         /// <param name="path"> Cesta k souboru. </param>
         /// <param name="content"> Obsah souboru. </param>
@@ -57,9 +60,16 @@ namespace PhpUpgrader
         }
 
         /// <summary> Uložit modifikovaný obsah souboru. </summary>
+        /// <remarks> Přesune soubor na cestu <see cref="MoveOnSavePath"/>, pokud není null. </remarks>
         public void Save()
         {
-            if (IsModified) File.WriteAllText(Path, Content);
+            if (!IsModified)
+                return;
+
+            File.WriteAllText(Path, Content);
+
+            if (MoveOnSavePath is not null)
+                File.Move(Path, MoveOnSavePath);
         }
 
         /// <summary> Vypíše název souboru a stav modifikace. </summary>
