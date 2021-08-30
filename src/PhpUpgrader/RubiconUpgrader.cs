@@ -22,7 +22,8 @@ namespace PhpUpgrader
             FindReplace.Add("mysql_select_db($database_sportmall_import, $sportmall_import);", "mysqli_select_db($sportmall_import, $database_sportmall_import);");
             FindReplace.Add("mysqli_query($beta,$query_import_univarzal, $sportmall_import) or die(mysqli_error($beta))", "mysqli_query($sportmall_import, $query_import_univarzal) or die(mysqli_error($sportmall_import))");
             FindReplace.Add(@"preg_match(""^$atom+(\\.$atom+)*@($domain?\\.)+$domain\$"", $email)", @"preg_match("";^$atom+(\\.$atom+)*@($domain?\\.)+$domain\$;"", $email)");
-        
+            FindReplace.Add("emptiable(strip_tags($obj->category_name.', '.$obj->style_name)), $title)", "emptiable(strip_tags($obj->category_name.', '.$obj->style_name), $title))");
+
             ContainsObjectClass = File.Exists($@"{BaseFolder}\weby\{WebName}\classes\Object.php");
         }
 
