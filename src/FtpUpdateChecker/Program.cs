@@ -4,6 +4,10 @@ namespace FtpUpdateChecker
 {
     class Program
     {
+        const int DefaultYear = 2021;
+        const int DefaultMonth = 7;
+        const int DefaultDay = 8;
+
         /// <summary>
         /// Nástroj pro kontrolu nových souborů na FTP serveru po určitém datu.
         /// </summary>
@@ -18,16 +22,17 @@ namespace FtpUpdateChecker
         /// <param name="baseFolder">Kde je soubor ftp_logins.txt?</param>
         /// <param name="webName">Název složky v '{baseFolder}\weby'. Získá datum vytvoření, přepisuje argumenty --year, --month a --day.</param>
         static void Main(string? username = null, string? password = null, string host = "mcrai.vshosting.cz",
-            string path = "/httpdocs", int year = 2021, int month = 7, int day = 8, bool useLoginsFile = false,
-            string baseFolder = @"C:\McRAI\", string? webName = null)
+            string path = "/httpdocs", int year = DefaultYear, int month = DefaultMonth, int day = DefaultDay,
+            bool useLoginsFile = false, string baseFolder = @"C:\McRAI\", string? webName = null)
         {
             var login = new FtpLoginParser(webName, password, username);
             if (!login.LoadLoginInfo(useLoginsFile, baseFolder))
                 return;
 
+            bool modifiedDate = year != DefaultYear || month != DefaultMonth || day != DefaultDay;
             var date = webName switch
             {
-                not null and var w when Directory.Exists($@"{baseFolder}\weby\{w}")
+                not null and var w when !modifiedDate && Directory.Exists($@"{baseFolder}\weby\{w}")
                     => Directory.GetCreationTime($@"{baseFolder}\weby\{w}"),
                 _ => new(year, month, day)
             };
