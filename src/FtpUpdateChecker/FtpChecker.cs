@@ -9,9 +9,6 @@ namespace FtpUpdateChecker
         /// <summary> Datum, od kterého hlásit změnu. </summary>
         public DateTime FromDate { get; }
 
-        /// <summary> Datum k zobrazení v textu. </summary>
-        public string DisplayDate { get => $"{FromDate.ToShortDateString()}, {FromDate.ToShortTimeString()}"; }
-
         /// <summary> Celkový počet souborů. </summary>
         public uint FileCount { get; private set; }
 
@@ -63,7 +60,7 @@ namespace FtpUpdateChecker
             }
             else Console.WriteLine();
 
-            Console.WriteLine($"Checking all files in {path} for updates after {DisplayDate}.");
+            Console.WriteLine($"Checking all files in {path} for updates after {FromDate}.");
             var enumerationOptions = EnumerationOptions.EnumerateDirectories | EnumerationOptions.AllDirectories;
             var fileInfos = Session.EnumerateRemoteFiles(path, null, enumerationOptions);
 
@@ -101,7 +98,7 @@ namespace FtpUpdateChecker
         private void WriteStatus()
         {
             Console.Write($"Checked {FileCount} file(s) in {FolderCount} folder(s). " +
-                $"Found {FoundCount} file(s) modified after {DisplayDate} ({PhpFoundCount} of them are PHP).");
+                $"Found {FoundCount} file(s) modified after {FromDate} ({PhpFoundCount} of them are PHP).");
         }
 
         private void WriteFoundFile(RemoteFileInfo fileInfo)
