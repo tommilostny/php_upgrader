@@ -24,7 +24,7 @@ namespace FtpUpdateChecker
 
         /// <summary> Zkusit načíst uživatelské jméno z názvu webu. </summary>
         /// <remarks> Použit výchozí parametr userName, pokud je webName prázdné/null. </remarks>
-        public FtpLoginParser(string? webName, string password, string defaultUsername)
+        public FtpLoginParser(string? webName, string? password, string? defaultUsername)
             : this(UsernameFromWebName(webName, defaultUsername), password)
         {
         }
@@ -78,11 +78,15 @@ namespace FtpUpdateChecker
         /// <param name="webName"> Jméno webu, ze kterého tvořit uživatelské jméno. </param>
         /// <param name="default"> Výchozí hodnota uživatelského jména, použita pokud je webName prázdné/null. </param>
         /// <returns> Uživatelské jméno s prefixem 'tom-' nebo výchozí hodnota. </returns>
-        private static string UsernameFromWebName(string? webName, string @default) => webName switch
+        private static string UsernameFromWebName(string? webName, string? @default) => @default switch
         {
-            var w when string.IsNullOrWhiteSpace(w) => @default,
-            { Length: >= 12 } => $"tom-{webName[..12]}",
-            _ => $"tom-{webName}"
+            null => webName switch
+            {
+                var w when string.IsNullOrWhiteSpace(w) => throw new ArgumentNullException(nameof(webName)),
+                { Length: >= 12 } => $"tom-{webName[..12]}",
+                _ => $"tom-{webName}"
+            },
+            _ => @default
         };
     }
 }
