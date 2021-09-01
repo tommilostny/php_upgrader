@@ -171,6 +171,9 @@ namespace PhpUpgrader
         /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
         public void UpgradeSetup(FileWrapper file)
         {
+            if (Database is null || Username is null || Password is null || Hostname is null)
+                return;
+
             switch (file)
             {
                 case { Path: var p } when !p.Contains($"{WebName}\\setup.php"):
