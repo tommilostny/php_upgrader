@@ -221,6 +221,7 @@ namespace PhpUpgrader
             if (file.Path.EndsWith("Connections\\beta.php") && !file.Content.Contains($"$hostname_beta = \"{Hostname}\";"))
             {
                 file.Content = file.Content.Replace("$hostname_beta = \"93.185.102.228\";", $"//$hostname_beta = \"93.185.102.228\";\n\t$hostname_beta = \"{Hostname}\";");
+                file.Content = file.Content.Replace("$hostname_beta = \"localhost\";", $"//$hostname_beta = \"localhost\";\n\t$hostname_beta = \"{Hostname}\";");
             }
             if (!file.Content.Contains($"Database::connect('{Hostname}'"))
             {
