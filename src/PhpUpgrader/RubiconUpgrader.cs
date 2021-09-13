@@ -93,7 +93,7 @@ namespace PhpUpgrader
                         file.Warnings.Add($"Neočekávaný počet složených závorek ({bracketCount}), funkce okolo řádku {i + 1}. Zkontrolovat konstruktor(y) třídy {className}.");
                         bracketCount = 2;
                     }
-                    if (Regex.IsMatch(lines[i], $@"function {className}\s?\("))
+                    if (Regex.IsMatch(lines[i], $@"function {className}\s?\(.*\)"))
                     {
                         int paramsStartIndex = lines[i].IndexOf('(') + 1;
                         int paramsEndIndex = lines[i].LastIndexOf(')');
@@ -171,7 +171,7 @@ namespace PhpUpgrader
         /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
         public void UpgradeSetup(FileWrapper file)
         {
-            if (Database is null || Username is null || Password is null || Hostname is null)
+            if (Database is null || Username is null || Password is null)
                 return;
 
             switch (file)
