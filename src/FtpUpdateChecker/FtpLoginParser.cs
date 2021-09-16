@@ -27,16 +27,12 @@ namespace FtpUpdateChecker
         public FtpLoginParser(string? webName, string? password, string? overrideUsername, string baseFolder)
             : this(UsernameFromWebName(webName, overrideUsername), password)
         {
-            LoadLoginInfo(baseFolder);
+            LoadPassword(baseFolder);
         }
 
         /// <summary> Načíst a zkontrolovat přihlašovací údaje dle parametru useLoginsFile. </summary>
-        private void LoadLoginInfo(string baseFolder)
+        private void LoadPassword(string baseFolder)
         {
-            if (string.IsNullOrWhiteSpace(Username))
-            {
-                throw new ArgumentNullException(nameof(Username), "Argument is required while in --use-logins-file mode.");
-            }
             if (Password is null)
             {
                 Password = _LoadPasswordFromFile(out var paths);
@@ -58,7 +54,7 @@ namespace FtpUpdateChecker
                         return login[1].Trim();
                     }
                 }
-                throw new InvalidOperationException($"Unable to load password from {baseFolder}ftp_logins.txt for user {Username}.");
+                throw new InvalidOperationException($"Nelze načíst heslo ze souboru {baseFolder}ftp_logins.txt pro uživatele {Username}.");
             }
         }
 
@@ -69,7 +65,7 @@ namespace FtpUpdateChecker
         {
             null => webName switch
             {
-                var w when string.IsNullOrWhiteSpace(w) => throw new ArgumentNullException(nameof(webName)),
+                var w when string.IsNullOrWhiteSpace(w) => throw new ArgumentException("Nelze vytvořit uživatelské jméno (chybí parametr --username nebo --web-name)."),
                 { Length: >= 12 } => $"tom-{webName[..12]}",
                 _ => $"tom-{webName}"
             },

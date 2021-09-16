@@ -46,26 +46,26 @@ namespace FtpUpdateChecker
         {
             if (!Session.Opened)
             {
-                Console.WriteLine($"Connecting to {SessionOptions.UserName}@{SessionOptions.HostName} ...");
+                Console.WriteLine($"Připojování k FTP {SessionOptions.UserName}@{SessionOptions.HostName} ...");
                 try //Connect
                 {
                     Session.Open(SessionOptions);
-                    Console.Write("Connection successful! ");
+                    Console.WriteLine("Připojení proběhlo úspěšně!\n");
                 }
                 catch (SessionRemoteException)
                 {
-                    ConsoleOutput.WriteErrorMessage("Unable to open session with entered username and password.");
+                    ConsoleOutput.WriteErrorMessage("Připojení k FTP serveru selhalo pro zadané uživatelské jméno a heslo.");
                     return;
                 }
             }
             else Console.WriteLine();
 
-            Console.WriteLine($"Checking all files in {path} for updates after {FromDate}.");
+            Console.WriteLine($"Probíhá kontrola všech souborů v adresáři '{path}' na změny po datu {FromDate}.");
             var enumerationOptions = EnumerationOptions.EnumerateDirectories | EnumerationOptions.AllDirectories;
             var fileInfos = Session.EnumerateRemoteFiles(path, null, enumerationOptions);
 
             FileCount = FolderCount = PhpFoundCount = FoundCount = 0;
-            WriteStatus();
+            int messageLength = WriteStatus();
             try //Enumerate files
             {
                 foreach (var fileInfo in fileInfos)
@@ -75,33 +75,37 @@ namespace FtpUpdateChecker
                     if (fileInfo.IsDirectory)
                     {
                         FolderCount++;
-                        WriteStatus();
+                        messageLength = WriteStatus();
                         continue;
                     }
                     if (fileInfo.LastWriteTime >= FromDate)
                     {
                         FoundCount++;
                         PhpFoundCount += Convert.ToUInt32(fileInfo.FullName.EndsWith(".php"));
-                        WriteFoundFile(fileInfo);
+                        WriteFoundFile(fileInfo, messageLength);
                     }
                     FileCount++;
-                    WriteStatus();
+                    messageLength = WriteStatus();
                 }
             }
             catch (SessionRemoteException)
             {
-                ConsoleOutput.WriteErrorMessage($"Entered path \"{path}\" doesn't exist on the server.");
+                ConsoleOutput.WriteErrorMessage($"Zadaná cesta '{path}' na serveru neexistuje.");
             }
             ConsoleOutput.WriteCompletedMessage();
         }
 
-        private void WriteStatus()
+        /// <returns> Délku vypsaného řetězce zprávy. </returns>
+        private int WriteStatus()
         {
-            Console.Write($"Checked {FileCount} file(s) in {FolderCount} folder(s). " +
-                $"Found {FoundCount} file(s) modified after {FromDate} ({PhpFoundCount} of them are PHP).");
+            string message = $"Zkontrolováno {FileCount} souborů v {FolderCount} adresářích. " +
+                $"Nalezeno {FoundCount} souborů modifikovaných po {FromDate} ({PhpFoundCount} z nich je PHP).";
+            
+            Console.Write(message);
+            return message.Length;
         }
 
-        private void WriteFoundFile(RemoteFileInfo fileInfo)
+        private void WriteFoundFile(RemoteFileInfo fileInfo, int messageLength)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write($"{FoundCount}. ");
@@ -109,8 +113,8 @@ namespace FtpUpdateChecker
             Console.ForegroundColor = DefaultColor;
             Console.Write(fileInfo.FullName);
 
-            for (int i = fileInfo.FullName.Length; i < 110; i++)
-                Console.Write(" ");
+            for (int i = fileInfo.FullName.Length; i < messageLength; i++)
+                Console.Write(' ');
 
             Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine($"\n\t{fileInfo.LastWriteTime}");

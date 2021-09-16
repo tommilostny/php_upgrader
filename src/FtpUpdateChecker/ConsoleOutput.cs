@@ -12,7 +12,7 @@ namespace FtpUpdateChecker
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Error.WriteLine($"\n❌ {message}");
             Console.ForegroundColor = defaultColor;
-            Console.Error.WriteLine("   Run with --help to display additional information.");
+            Console.Error.WriteLine("\tSpusťte s parametrem --help k zobrazení nápovědy.");
         }
 
         /// <summary>  </summary>
@@ -20,7 +20,7 @@ namespace FtpUpdateChecker
         {
             var defaultColor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("\n\n✔️ Process completed.");
+            Console.WriteLine("\n\n✔️ Proces dokončen.");
             Console.ForegroundColor = defaultColor;
         }
     }
