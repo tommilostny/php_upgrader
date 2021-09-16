@@ -37,13 +37,13 @@ Informace k ``dotnet run`` viz [https://docs.microsoft.com/cs-cz/dotnet/core/too
 Nástroj pro kontrolu nových souborů na FTP serveru po určitém datu.
 
 Skript se spouští přes příkazovou řádku (**dotnet cli** stejně jako PhpUpgrader) a pracuje s následujícími argumenty:
-  - **``--username``**, **``--password``**, ``--host``, ``--path``, ``--year``, ``--month``, ``--day``, ``--use-logins-file``, ``--base-folder`` a ``--web-name`` (pro podrobé informace spusťte s argumentem **``--help``**).
+  - ``--username``, ``--password``, ``--host``, ``--path``, ``--year``, ``--month``, ``--day``, ``--base-folder`` a **``--web-name``** (pro podrobé informace spusťte s argumentem **``--help``**).
 
 Pokud je zadán argument ``--web-name``, odpovídající složce v *C:\McRAI\weby\\* stejně jako u PhpUpgraderu, jako referenční datum bude použito datum vytvoření zadané složky.
 
 ### ftp_logins.txt
 
-Soubor využívaný bezparametrovým argumentem **``--use-logins-file``** k načtení hesla dle jména zadaného argumentem *``--username``* nebo podle **``--web-name``** (nalezeno v *ftp_logins.txt* s prefixem **tom-**).
+Soubor využívaný k načtení hesla dle jména zadaného argumentem *``--username``* nebo podle **``--web-name``** (nalezeno v *ftp_logins.txt* s prefixem **tom-**).
 
 Nachází se ve složce zadané argumentem ``--base-folder`` (výchozí *C:\McRAI\ftp_logins.txt*).
 

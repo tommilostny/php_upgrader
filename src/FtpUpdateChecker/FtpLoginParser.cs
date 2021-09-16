@@ -23,42 +23,29 @@ namespace FtpUpdateChecker
         }
 
         /// <summary> Zkusit načíst uživatelské jméno z názvu webu. </summary>
-        /// <remarks> Použit výchozí parametr userName, pokud je webName prázdné/null. </remarks>
-        public FtpLoginParser(string? webName, string? password, string? defaultUsername)
-            : this(UsernameFromWebName(webName, defaultUsername), password)
+        /// <remarks> Použit výchozí parametr userName místo webName, pokud není prázdné/null. </remarks>
+        public FtpLoginParser(string? webName, string? password, string? overrideUsername, string baseFolder)
+            : this(UsernameFromWebName(webName, overrideUsername), password)
         {
+            LoadLoginInfo(baseFolder);
         }
 
         /// <summary> Načíst a zkontrolovat přihlašovací údaje dle parametru useLoginsFile. </summary>
-        public bool LoadLoginInfo(bool useLoginsFile, string baseFolder)
+        private void LoadLoginInfo(string baseFolder)
         {
-            if (useLoginsFile)
+            if (string.IsNullOrWhiteSpace(Username))
             {
-                try
-                {
-                    Password = _LoadPasswordFromFile(out var paths);
-                    Paths = paths;
-                    return true;
-                }
-                catch (Exception exception)
-                {
-                    ConsoleOutput.WriteErrorMessage(exception.Message);
-                    return false;
-                }
+                throw new ArgumentNullException(nameof(Username), "Argument is required while in --use-logins-file mode.");
             }
-            else if (Username is null || Password is null)
+            if (Password is null)
             {
-                ConsoleOutput.WriteErrorMessage("Missing arguments --username or --password argument.");
-                return false;
+                Password = _LoadPasswordFromFile(out var paths);
+                Paths = paths;
             }
-            return true;
 
             //heslo, pole cest oddělené čárkou (více webů na jednom ftp)
             string _LoadPasswordFromFile(out string[] paths)
             {
-                if (string.IsNullOrWhiteSpace(Username))
-                    throw new ArgumentNullException(nameof(Username), "Argument is required while in --use-logins-file mode.");
-
                 using var sr = new StreamReader($"{baseFolder}ftp_logins.txt");
 
                 while (!sr.EndOfStream)
@@ -76,9 +63,9 @@ namespace FtpUpdateChecker
         }
 
         /// <param name="webName"> Jméno webu, ze kterého tvořit uživatelské jméno. </param>
-        /// <param name="default"> Výchozí hodnota uživatelského jména, použita pokud je webName prázdné/null. </param>
+        /// <param name="override"> Výchozí hodnota uživatelského jména, použita místo webName, pokud není prázdné/null. </param>
         /// <returns> Uživatelské jméno s prefixem 'tom-' nebo výchozí hodnota. </returns>
-        private static string UsernameFromWebName(string? webName, string? @default) => @default switch
+        private static string UsernameFromWebName(string? webName, string? @override) => @override switch
         {
             null => webName switch
             {
@@ -86,7 +73,7 @@ namespace FtpUpdateChecker
                 { Length: >= 12 } => $"tom-{webName[..12]}",
                 _ => $"tom-{webName}"
             },
-            _ => @default
+            _ => @override
         };
     }
 }
