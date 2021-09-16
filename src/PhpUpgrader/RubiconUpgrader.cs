@@ -227,6 +227,8 @@ namespace PhpUpgrader
             {
                 file.Content = file.Content.Replace("Database::connect('93.185.102.228', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');",
                     $"//Database::connect('93.185.102.228', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');\n\tDatabase::connect('{Hostname}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');");
+                file.Content = file.Content.Replace("Database::connect('93.185.102.228', $username_beta, $password_beta, $database_beta, '5432');",
+                    $"//Database::connect('93.185.102.228', $username_beta, $password_beta, $database_beta, '5432');\n\tDatabase::connect('{Hostname}', $username_beta, $password_beta, $database_beta, '5432');");
             }
             if (!file.Content.Contains($"$api = new RubiconAPI($_REQUEST['url'], '{Hostname}'"))
             {
