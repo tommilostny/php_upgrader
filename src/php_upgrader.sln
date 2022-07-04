@@ -7,7 +7,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PhpUpgrader", "PhpUpgrader\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FtpUpdateChecker", "FtpUpdateChecker\FtpUpdateChecker.csproj", "{F8C7012A-F2E6-4478-80B6-A1A245D282C9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhpUpgrader.Tests", "PhpUpgrader.Tests\PhpUpgrader.Tests.csproj", "{6D670EA2-4188-4DC6-8AA5-293CB2A6FE58}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PhpUpgrader.Tests", "PhpUpgrader.Tests\PhpUpgrader.Tests.csproj", "{6D670EA2-4188-4DC6-8AA5-293CB2A6FE58}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{75EA2830-48FE-4968-9583-B32C99A2667A}"
+	ProjectSection(SolutionItems) = preProject
+		..\.gitignore = ..\.gitignore
+		..\README.md = ..\README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

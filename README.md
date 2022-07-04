@@ -4,7 +4,7 @@ Vytvořeno pro *McRAI* Tomášem Milostným jako nástroj aktualizace webových 
 
 ### Nastavení a spuštění:
 
-1. Ke spuštění je potřeba nainstalovat [.NET 5.0 SDK](https://dotnet.microsoft.com/download). 
+1. Ke spuštění je potřeba nainstalovat [.NET 6.0 SDK](https://dotnet.microsoft.com/download). 
 2. Skript se spouští přes příkazovou řádku (viz **příklady spuštění**) a pracuje s následujícími argumenty:
   - **``--web-name``**, ``--admin-folders``, ``--base-folder``, ``--db``, ``--user``, ``--password``, ``--host``, ``--beta`` a ``--connection-file`` (pro podrobé informace spusťte s argumentem **``--help``**).
   - ``--rubicon`` přepíná upgrader do režimu pro Rubicon (pracuje pak s argumenty **``--web-name``**, ``--db``, ``--user``, ``--password``, ``--host``).
