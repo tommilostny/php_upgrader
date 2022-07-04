@@ -1,5 +1,4 @@
-﻿using WinSCP;
-using EnumerationOptions = WinSCP.EnumerationOptions;
+﻿using EnumerationOptions = WinSCP.EnumerationOptions;
 
 namespace FtpUpdateChecker;
 
@@ -21,7 +20,7 @@ public class FtpChecker : IDisposable
     /// <summary> Počet PHP souborů přidaných po datu <see cref="FromDate"/>. </summary>
     public uint PhpFoundCount { get; private set; }
 
-    private ConsoleColor DefaultColor { get; } = Console.ForegroundColor;
+    internal ConsoleColor DefaultColor { get; } = Console.ForegroundColor;
 
     private SessionOptions SessionOptions { get; }
 
@@ -65,7 +64,7 @@ public class FtpChecker : IDisposable
         var fileInfos = Session.EnumerateRemoteFiles(path, null, enumerationOptions);
 
         FileCount = FolderCount = PhpFoundCount = FoundCount = 0;
-        int messageLength = WriteStatus();
+        int messageLength = this.WriteStatus();
         try //Enumerate files
         {
             foreach (var fileInfo in fileInfos)
@@ -75,17 +74,17 @@ public class FtpChecker : IDisposable
                 if (fileInfo.IsDirectory)
                 {
                     FolderCount++;
-                    messageLength = WriteStatus();
+                    messageLength = this.WriteStatus();
                     continue;
                 }
                 if (fileInfo.LastWriteTime >= FromDate)
                 {
                     FoundCount++;
                     PhpFoundCount += Convert.ToUInt32(fileInfo.FullName.EndsWith(".php"));
-                    WriteFoundFile(fileInfo, messageLength);
+                    this.WriteFoundFile(fileInfo, messageLength);
                 }
                 FileCount++;
-                messageLength = WriteStatus();
+                messageLength = this.WriteStatus();
             }
         }
         catch (SessionRemoteException)
@@ -93,32 +92,6 @@ public class FtpChecker : IDisposable
             ConsoleOutput.WriteErrorMessage($"Zadaná cesta '{path}' na serveru neexistuje.");
         }
         ConsoleOutput.WriteCompletedMessage();
-    }
-
-    /// <returns> Délku vypsaného řetězce zprávy. </returns>
-    private int WriteStatus()
-    {
-        string message = $"Zkontrolováno {FileCount} souborů v {FolderCount} adresářích. " +
-            $"Nalezeno {FoundCount} souborů modifikovaných po {FromDate} ({PhpFoundCount} z nich je PHP).";
-        
-        Console.Write(message);
-        return message.Length;
-    }
-
-    private void WriteFoundFile(RemoteFileInfo fileInfo, int messageLength)
-    {
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.Write($"{FoundCount}. ");
-
-        Console.ForegroundColor = DefaultColor;
-        Console.Write(fileInfo.FullName);
-
-        for (int i = fileInfo.FullName.Length; i < messageLength; i++)
-            Console.Write(' ');
-
-        Console.ForegroundColor = ConsoleColor.DarkGray;
-        Console.WriteLine($"\n\t{fileInfo.LastWriteTime}");
-        Console.ForegroundColor = DefaultColor;
     }
 
     /// <summary> Uzavřít spojení k FTP serveru. </summary>
