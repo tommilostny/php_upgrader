@@ -7,7 +7,7 @@ public class FileWrapper
     public string Path { get; }
 
     /// <summary> Obsah souboru. </summary>
-    public StringBuilder Content { get; set; }
+    public StringBuilder Content { get; }
 
     /// <summary> Původní obsah souboru pro porovnání. </summary>
     private readonly string _initialContent;

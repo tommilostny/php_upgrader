@@ -34,7 +34,7 @@ internal static class Extensions
             if (character == delimiter)
             {
                 collection.Add(current);
-                current = new StringBuilder();
+                current = new();
                 continue;
             }
             current.Append(character);

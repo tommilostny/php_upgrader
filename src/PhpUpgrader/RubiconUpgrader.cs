@@ -4,7 +4,7 @@
 public class RubiconUpgrader : MonaUpgrader
 {
     /// <summary> Obsahuje právě aktualizovaný web soubor classes\Object.php? </summary>
-    private bool ContainsObjectClass { get; }
+    private readonly bool _containsObjectClass;
 
     /// <summary> Konstruktor Rubicon > Mona upgraderu. </summary>
     /// <remarks> Přidá specifické případy pro Rubicon do <see cref="MonaUpgrader.FindReplace"/>. </remarks>
@@ -19,7 +19,7 @@ public class RubiconUpgrader : MonaUpgrader
         FindReplace.Add(@"preg_match(""^$atom+(\\.$atom+)*@($domain?\\.)+$domain\$"", $email)", @"preg_match("";^$atom+(\\.$atom+)*@($domain?\\.)+$domain\$;"", $email)");
         FindReplace.Add("emptiable(strip_tags($obj->category_name.', '.$obj->style_name)), $title)", "emptiable(strip_tags($obj->category_name.', '.$obj->style_name), $title))");
 
-        ContainsObjectClass = File.Exists($@"{BaseFolder}\weby\{WebName}\classes\Object.php");
+        _containsObjectClass = File.Exists(Path.Combine(BaseFolder, "weby", WebName, "classes", "Object.php"));
     }
 
     /// <summary> Procedura aktualizace Rubicon souborů. </summary>
@@ -43,7 +43,7 @@ public class RubiconUpgrader : MonaUpgrader
     }
 
     /// <summary> Old style constructor function ClassName() => function __construct() </summary>
-    public void UpgradeConstructors(FileWrapper file)
+    public static void UpgradeConstructors(FileWrapper file)
     {
         var lines = file.Content.Split();
 
@@ -107,7 +107,7 @@ public class RubiconUpgrader : MonaUpgrader
                         .AppendLine($"    public function {className}({@params})")
                         .AppendLine( "    {")
                         .AppendLine($"        self::__construct({_ParamsWithoutDefaultValues(@params)});")
-                        .AppendLine( "    }}")
+                        .AppendLine( "    }")
                         .AppendLine();
 
                     line.Insert(0, compatibilityConstructorBuilder.ToString());
@@ -156,7 +156,7 @@ public class RubiconUpgrader : MonaUpgrader
     /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php,  </summary>
     public void UpgradeRubiconImport(FileWrapper file)
     {
-        if (!file.Path.EndsWith("Connections\\rubicon_import.php"))
+        if (!file.Path.EndsWith(Path.Combine("Connections", "rubicon_import.php")))
         {
             return;
         }
@@ -189,7 +189,7 @@ public class RubiconUpgrader : MonaUpgrader
         }
         switch (file)
         {
-            case { Path: var p } when !p.Contains($"{WebName}\\setup.php"):
+            case { Path: var p } when !p.Contains(Path.Combine(WebName, "setup.php")):
             case { Content: var c } when c.Contains($"password = '{Password}';"):
                 return;
         }
@@ -233,7 +233,8 @@ public class RubiconUpgrader : MonaUpgrader
     /// <summary> Aktualizace hostname z mcrai1 na server mcrai2. </summary>
     public void UpgradeHostnameFromMcrai1IP(FileWrapper file)
     {
-        if (file.Path.EndsWith("Connections\\beta.php") && !file.Content.Contains($"$hostname_beta = \"{Hostname}\";"))
+        if (file.Path.EndsWith(Path.Combine("Connections", "beta.php"))
+            && !file.Content.Contains($"$hostname_beta = \"{Hostname}\";"))
         {
             file.Content.Replace("$hostname_beta = \"93.185.102.228\";", $"//$hostname_beta = \"93.185.102.228\";\n\t$hostname_beta = \"{Hostname}\";");
             file.Content.Replace("$hostname_beta = \"localhost\";", $"//$hostname_beta = \"localhost\";\n\t$hostname_beta = \"{Hostname}\";");
@@ -255,7 +256,7 @@ public class RubiconUpgrader : MonaUpgrader
     /// <summary> Přidá funkci pg_close na konec index.php. </summary>
     public override void UpgradeMysqliClose(FileWrapper file)
     {
-        if (file.Path.EndsWith($@"{WebName}\index.php") && !file.Content.Contains("pg_close"))
+        if (file.Path.EndsWith(Path.Combine(WebName, "index.php")) && !file.Content.Contains("pg_close"))
         {
             file.Content.AppendLine();
             file.Content.Append("<?php pg_close($beta); ?>");
@@ -295,7 +296,7 @@ public class RubiconUpgrader : MonaUpgrader
     /// <summary> templates/.../product_detail.php, zakomentovaný blok HTML stále spouští broken PHP includy, zakomentovat </summary>
     public static void UpgradeIncludesInHtmlComments(FileWrapper file)
     {
-        if (!Regex.IsMatch(file.Path, @"\\templates\\.+\\product_detail\.php", _regexCompiledOpts))
+        if (!Regex.IsMatch(file.Path, @"(\\|/)templates(\\|/).+(\\|/)product_detail\.php", _regexCompiledOpts))
         {
             return;
         }
@@ -329,7 +330,7 @@ public class RubiconUpgrader : MonaUpgrader
     /// <summary> [Break => Return] v souboru aegisx\detail.php (není ve smyčce, ale included). </summary>
     public static void UpgradeAegisxDetail(FileWrapper file)
     {
-        if (!file.Path.EndsWith(@"aegisx\detail.php"))
+        if (!file.Path.EndsWith(Path.Combine("aegisx", "detail.php")))
         {
             return;
         }
@@ -341,7 +342,7 @@ public class RubiconUpgrader : MonaUpgrader
     /// <summary> Úprava mysql a proměnné $beta v souboru aegisx\import\load_data.php. </summary>
     public static void UpgradeLoadData(FileWrapper file)
     {
-        if (!file.Path.EndsWith(@"aegisx\import\load_data.php"))
+        if (!file.Path.EndsWith(Path.Combine("aegisx", "import", "load_data.php")))
         {
             return;
         }
@@ -352,7 +353,7 @@ public class RubiconUpgrader : MonaUpgrader
     /// <summary> Úprava SQL dotazu na top produkty v souboru aegisx\home.php. </summary>
     public static void UpgradeHomeTopProducts(FileWrapper file)
     {
-        if (!file.Path.EndsWith(@"aegisx\home.php"))
+        if (!file.Path.EndsWith(Path.Combine("aegisx", "home.php")))
         {
             return;
         }
@@ -364,17 +365,18 @@ public class RubiconUpgrader : MonaUpgrader
     /// <remarks> + extends Object, @param Object, @property Object </remarks>
     public void UpgradeObjectClass(FileWrapper file)
     {
-        if (!ContainsObjectClass)
+        if (!_containsObjectClass)
         {
             return;
         }
-        if (file.Path.EndsWith("classes\\Object.php") && file.Content.Contains("abstract class Object"))
+        if (file.Path.EndsWith(Path.Combine("classes", "Object.php")) && file.Content.Contains("abstract class Object"))
         {
             file.Content.Replace("abstract class Object", "abstract class ObjectBase");
             var contentStr = file.Content.ToString();
             file.Content.Clear();
             file.Content.Append(Regex.Replace(contentStr, @"function\s+Object\s*\(", "function ObjectBase("));
-            file.MoveOnSavePath = file.Path.Replace("classes\\Object.php", "classes\\ObjectBase.php");
+            file.MoveOnSavePath = file.Path.Replace(Path.Combine("classes", "Object.php"),
+                                                    Path.Combine("classes", "ObjectBase.php"));
         }
         file.Content.Replace("extends Object", "extends ObjectBase");
         file.Content.Replace("@param Object", "@param ObjectBase");

@@ -99,6 +99,7 @@ public class MonaUpgrader
     {
         BaseFolder = baseFolder;
         WebName = webName;
+        Regex.CacheSize = 20;
     }
 
     /// <summary> Rekurzivní upgrade .php souborů ve všech podadresářích. </summary>
@@ -178,9 +179,9 @@ public class MonaUpgrader
         //konec, pokud aktuální soubor nepatří mezi validní connection soubory
         switch (file.Path)
         {
-            case var p0 when p0.Contains($@"\connect\{ConnectionFile}"):
-            case var p1 when p1.Contains($@"\system\{ConnectionFile}"):
-            case var p2 when p2.Contains($@"\Connections\{ConnectionFile}"):
+            case var p0 when p0.Contains(Path.Combine("connect", ConnectionFile)):
+            case var p1 when p1.Contains(Path.Combine("system", ConnectionFile)):
+            case var p2 when p2.Contains(Path.Combine("Connections", ConnectionFile)):
                 break;
             default: return;
         }
@@ -219,7 +220,7 @@ public class MonaUpgrader
             file.Content.AppendLine($"$username_beta = '{Username}';");
             file.Content.AppendLine($"$password_beta = '{Password}';");
         }
-        file.Content.Append(File.ReadAllText($"{BaseFolder}important\\connection.txt"));
+        file.Content.Append(File.ReadAllText(Path.Combine(BaseFolder, "important", "connection.txt")));
     }
 
     /// <summary>
@@ -229,9 +230,9 @@ public class MonaUpgrader
     {
         var file = new FileWrapper(filePath, string.Empty);
 
-        if (AdminFolders.Any(af => filePath.Contains($@"\{af}\include\TinyAjaxBehavior.php")))
+        if (AdminFolders.Any(af => filePath.Contains(Path.Combine(af, "include", "TinyAjaxBehavior.php"))))
         {
-            File.Copy($"{BaseFolder}important\\TinyAjaxBehavior.txt", file.Path, overwrite: true);
+            File.Copy(Path.Combine(BaseFolder, "important", "TinyAjaxBehavior.txt"), file.Path, overwrite: true);
             file.WriteStatus(true);
             ModifiedFilesCount++;
             return true;
@@ -314,7 +315,7 @@ public class MonaUpgrader
     /// <summary> pridat mysqli_close($beta); do indexu nakonec </summary>
     public virtual void UpgradeMysqliClose(FileWrapper file)
     {
-        if (file.Path.Contains($@"{WebName}\index.php") && !file.Content.Contains("mysqli_close"))
+        if (file.Path.Contains(Path.Combine(WebName, "index.php")) && !file.Content.Contains("mysqli_close"))
         {
             file.Content.AppendLine();
             file.Content.Append("<?php mysqli_close($beta); ?>");
@@ -327,16 +328,16 @@ public class MonaUpgrader
     /// </summary>
     public static void UpgradeAnketa(FileWrapper file)
     {
-        if (file.Path.Contains(@"\anketa\anketa.php"))
+        if (file.Path.Contains(Path.Combine("anketa", "anketa.php")))
         {
-            file.Content.Replace("include_once(\"../setup.php\")", "include_once(\"setup.php\")");
+            file.Content.Replace(@"include_once(""../setup.php"")", @"include_once(""setup.php"")");
         }
     }
 
     /// <summary> zakomentovat radky s funkci chdir v souboru admin/funkce/vytvoreni_adr.php </summary>
     public void UpgradeChdir(FileWrapper file)
     {
-        if (!AdminFolders.Any(af => file.Path.Contains($@"\{af}\funkce\vytvoreni_adr.php")))
+        if (!AdminFolders.Any(af => file.Path.Contains(Path.Combine(af, "funkce", "vytvoreni_adr.php"))))
         {
             return;
         }
@@ -356,8 +357,8 @@ public class MonaUpgrader
     {
         switch (AdminFolders)
         {
-            case var afs0 when afs0.Any(af => file.Path.Contains($@"\{af}\table_x_add.php")):
-            case var afs1 when afs1.Any(af => file.Path.Contains($@"\{af}\table_x_edit.php")):
+            case var afs0 when afs0.Any(af => file.Path.Contains(Path.Combine(af, "table_x_add.php"))):
+            case var afs1 when afs1.Any(af => file.Path.Contains(Path.Combine(af, "table_x_edit.php"))):
                 break;
             default: return;
         }
@@ -375,7 +376,7 @@ public class MonaUpgrader
     {
         switch (file)
         {
-            case { Path: var p } when !p.Contains(@"\funkce\strankovani.php"):
+            case { Path: var p } when !p.Contains(Path.Combine("funkce", "strankovani.php")):
             case { Content: var c } when !c.Contains("function predchozi_dalsi"):
                 return;
         }
@@ -425,7 +426,7 @@ public class MonaUpgrader
     /// </summary>
     public void UpgradeSitemapSave(FileWrapper file)
     {
-        if (!AdminFolders.Any(af => file.Path.Contains($@"\{af}\sitemap_save.php")))
+        if (!AdminFolders.Any(af => file.Path.Contains(Path.Combine(af, "sitemap_save.php"))))
             return;
 
         switch (file.Content)
@@ -631,7 +632,7 @@ public class MonaUpgrader
     ///<summary> PHP Parse error:  syntax error, unexpected '&amp;' on line 49` </summary>
     public static void UpgradeTinyMceUploaded(FileWrapper file)
     {
-        if (!file.Path.Contains(@"\plugins\imagemanager\plugins\Uploaded\Uploaded.php"))
+        if (!file.Path.Contains(Path.Combine("plugins", "imagemanager", "plugins", "Uploaded", "Uploaded.php")))
         {
             return;
         }

@@ -41,7 +41,7 @@ public class RubiconUpgraderTests
         var upgrader = new RubiconUpgrader(string.Empty, string.Empty);
 
         //Act
-        upgrader.UpgradeConstructors(file);
+        RubiconUpgrader.UpgradeConstructors(file);
 
         //Assert
         _output.WriteLine($"'{file.Content}'");
