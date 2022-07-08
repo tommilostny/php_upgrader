@@ -17,6 +17,20 @@ internal static class Extensions
     }
 
     /// <summary>
+    /// Spojí řetězcovou reprezentaci prvků dané kolekce
+    /// oddělenou daným znakem separátoru
+    /// a nahradí tím obsah cílové instance <seealso cref="StringBuilder"/>.
+    /// </summary>
+    /// <param name="collection">Kolekce prvků ke spojení do řetězce.</param>
+    /// <param name="destination">Cílový StringBuilder, jehož obsah bude nahrazen.</param>
+    /// <param name="separator">Oddělovač prvků kolekce.</param>
+    internal static void JoinInto<T>(this List<T> collection, StringBuilder destination, string separator)
+    {
+        destination.Clear();
+        destination.AppendJoin(separator, collection);
+    }
+
+    /// <summary>
     /// Rozdělí obsah daného <seealso cref="StringBuilder"/>u
     /// do seznamu <seealso cref="StringBuilder"/>ů dle daného oddělovače.
     /// </summary>

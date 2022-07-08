@@ -123,7 +123,17 @@ public class RubiconUpgrader : MonaUpgrader
 
         static string _ParamsWithoutDefaultValues(string parameters)
         {
-            return string.Join(", ", parameters.Split(',').Select(p => p.Split('=')[0].Trim().Replace("&", string.Empty)));
+            var sb = new StringBuilder(parameters);
+            var @params = sb.Split(',');
+            for (int i = 0; i < @params.Count; i++)
+            {
+                var param = @params[i];
+                var name = param.Split('=')[0].Replace(" ", string.Empty).Replace("&", string.Empty);
+                param.Clear();
+                param.Append(name);
+            }
+            @params.JoinInto(sb, ", ");
+            return sb.ToString();
         }
 
         bool _LookAheadFor__construct(int bracketCount, int linesIndex)
