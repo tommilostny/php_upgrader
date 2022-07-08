@@ -22,9 +22,10 @@ public class StrankovaniUnitTest
 
         MonaUpgrader.UpgradeStrankovani(file);
 
-        _output.WriteLine(file.Content);
+        var contentStr = file.Content.ToString();
+        _output.WriteLine(contentStr);
         Assert.True(file.IsModified);
-        Assert.NotEqual(input, file.Content);
+        Assert.NotEqual(input, contentStr);
     }
 
     [Fact]
@@ -35,9 +36,10 @@ public class StrankovaniUnitTest
 
         MonaUpgrader.UpgradeStrankovani(file);
 
-        _output.WriteLine(file.Content);
+        var contentStr = file.Content.ToString();
+        _output.WriteLine(contentStr);
         Assert.False(file.IsModified);
-        Assert.Equal(input, file.Content);
+        Assert.Equal(input, contentStr);
     }
 
     [Fact]
@@ -48,9 +50,10 @@ public class StrankovaniUnitTest
 
         MonaUpgrader.UpgradeStrankovani(file);
 
-        _output.WriteLine(file.Content);
+        var contentStr = file.Content.ToString();
+        _output.WriteLine(contentStr);
         Assert.False(file.IsModified);
-        Assert.Equal(input, file.Content);
+        Assert.Equal(input, contentStr);
     }
 
     [Fact]
@@ -61,9 +64,9 @@ public class StrankovaniUnitTest
 
         MonaUpgrader.UpgradeStrankovani(file);
 
-        _output.WriteLine(file.Content);
+        var contentStr = file.Content.ToString();
+        _output.WriteLine(contentStr);
         Assert.False(file.IsModified);
-        Assert.Equal(input, file.Content);
-
+        Assert.Equal(input, contentStr);
     }
 }

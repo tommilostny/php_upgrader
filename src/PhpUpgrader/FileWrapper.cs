@@ -7,22 +7,13 @@ public class FileWrapper
     public string Path { get; }
 
     /// <summary> Obsah souboru. </summary>
-    public string Content
-    {
-        get => _content;
-        set
-        {
-            if (value == _content)
-                return;
+    public StringBuilder Content { get; set; }
 
-            _content = value;
-            IsModified = true;
-        }
-    }
-    private string _content;
+    /// <summary> Původní obsah souboru pro porovnání. </summary>
+    private readonly string _initialContent;
 
     /// <summary> Příznak modifikace obsahu souboru. </summary>
-    public bool IsModified { get; private set; }
+    public bool IsModified => !Content.Equals(_initialContent);
 
     /// <summary> Symbol značící nemodifikovaný soubor (černá). </summary>
     public const string UnmodifiedSymbol = "⚫";
@@ -45,8 +36,8 @@ public class FileWrapper
     public FileWrapper(string path, string content)
     {
         Path = path;
-        Content = content;
-        IsModified = false;
+        Content = new(content);
+        _initialContent = content;
     }
 
     /// <summary> Obsah souboru je načten z disku na zadané cestě. </summary>
@@ -62,18 +53,19 @@ public class FileWrapper
         if (!IsModified)
             return;
 
-        File.WriteAllText(Path, Content);
+        File.WriteAllText(Path, Content.ToString());
 
         if (MoveOnSavePath is not null)
             File.Move(Path, MoveOnSavePath);
     }
 
     /// <summary> Vypíše název souboru a stav modifikace. </summary>
-    public void WriteStatus()
+    /// <param name="modified">Který symbol modifikace vybrat?</param>
+    public void WriteStatus(bool modified)
     {
         string displayName = Path.Contains(@"\weby\") ? Path[(Path.IndexOf(@"\weby\") + 6)..] : Path;
 
-        string symbol = IsModified ? ModifiedSymbol : UnmodifiedSymbol;
+        string symbol = modified ? ModifiedSymbol : UnmodifiedSymbol;
 
         Console.WriteLine($"{symbol} {displayName}");
         foreach (var warning in Warnings)
@@ -85,5 +77,7 @@ public class FileWrapper
         }
     }
 
-    internal bool OverwriteModificationFlag(bool newValue) => IsModified = newValue;
+    /// <summary> Vypíše název souboru a stav modifikace. </summary>
+    /// <remarks> Pro zjištění modifikace použije <see cref="IsModified"/>. </remarks>
+    public void WriteStatus() => WriteStatus(IsModified);
 }

@@ -47,7 +47,7 @@ public class RubiconUpgraderTests
         _output.WriteLine($"'{file.Content}'");
         //File.WriteAllText(@"C:\McRAI\tst_final.php", file.Content);
         Assert.True(file.IsModified);
-        Assert.Contains("function __construct", file.Content);
+        Assert.Contains("function __construct", file.Content.ToString());
         Assert.Empty(file.Warnings);
     }
 
@@ -85,7 +85,7 @@ public class RubiconUpgraderTests
         upgrader.UpgradeSetup(file);
 
         //Assert
-        _output.WriteLine(file.Content);
+        _output.WriteLine(file.Content.ToString());
         Assert.True(file.IsModified);
     }
 
@@ -109,7 +109,7 @@ public class RubiconUpgraderTests
         upgrader.UpgradeHostnameFromMcrai1IP(file);
 
         //Assert
-        _output.WriteLine(file.Content);
+        _output.WriteLine(file.Content.ToString());
         Assert.True(file.IsModified);
     }
 
@@ -128,12 +128,13 @@ public class RubiconUpgraderTests
         RubiconUpgrader.UpgradeScriptLanguagePhp(file);
 
         //Assert
-        _output.WriteLine(file.Content);
+        var contentStr = file.Content.ToString();
+        _output.WriteLine(contentStr);
         Assert.True(file.IsModified);
-        Assert.Contains("<?php", file.Content);
-        Assert.Contains("?>", file.Content);
-        Assert.DoesNotContain("<script language=\"php\">", file.Content);
-        Assert.DoesNotContain("<script language=\"PHP\">", file.Content);
+        Assert.Contains("<?php", contentStr);
+        Assert.Contains("?>", contentStr);
+        Assert.DoesNotContain("<script language=\"php\">", contentStr);
+        Assert.DoesNotContain("<script language=\"PHP\">", contentStr);
     }
 
     [Fact]
@@ -156,9 +157,10 @@ public class RubiconUpgraderTests
         RubiconUpgrader.UpgradeIncludesInHtmlComments(file);
 
         //Assert
-        _output.WriteLine(file.Content);
+        var contentStr = file.Content.ToString();
+        _output.WriteLine(contentStr);
         Assert.True(file.IsModified);
-        Assert.Contains("<?php //include", file.Content);
+        Assert.Contains("<?php //include", contentStr);
         Assert.Single(file.Warnings);
     }
 
@@ -172,9 +174,10 @@ public class RubiconUpgraderTests
         RubiconUpgrader.UpgradeAegisxDetail(file);
 
         //Assert
-        _output.WriteLine(file.Content);
+        var contentStr = file.Content.ToString();
+        _output.WriteLine(contentStr);
         Assert.True(file.IsModified);
-        Assert.DoesNotContain("break;", file.Content);
-        Assert.Contains("return;", file.Content);
+        Assert.DoesNotContain("break;", contentStr);
+        Assert.Contains("return;", contentStr);
     }
 }

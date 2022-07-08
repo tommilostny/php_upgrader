@@ -3,6 +3,12 @@
 /// <summary> PHP upgrader pro RS Mona z verze 5 na verzi 7. </summary>
 public class MonaUpgrader
 {
+    /// <summary> Výchozí nastavení pro regulární výrazy. </summary>
+    protected const RegexOptions _regexCompiledOpts = RegexOptions.Compiled;
+
+    /// <summary> Výchozí nastavení pro regulární výrazy ignorující velikost písmen. </summary>
+    protected const RegexOptions _regexIgnoreCaseOpts = RegexOptions.IgnoreCase | _regexCompiledOpts;
+
     /// <summary> Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce. </summary>
     public List<string> FilesContainingMysql { get; } = new();
 
@@ -119,8 +125,10 @@ public class MonaUpgrader
             ModifiedFilesCount += Convert.ToUInt32(file.IsModified);
 
             //po dodelani nahrazeni nize projit na retezec - mysql_
-            if (Regex.IsMatch(file.Content, "[^//]mysql_", RegexOptions.IgnoreCase))
+            if (Regex.IsMatch(file.Content.ToString(), "[^//]mysql_", _regexIgnoreCaseOpts))
+            {
                 FilesContainingMysql.Add(filePath);
+            }
         }
     }
 
@@ -158,8 +166,9 @@ public class MonaUpgrader
         UpgradeRegexFunctions(file);
 
         if (file.Content.Contains("93.185.102.228"))
+        {
             file.Warnings.Add("Soubor obsahuje IP adresu mcrai1 (93.185.102.228).");
-
+        }
         return file;
     }
 
@@ -175,38 +184,42 @@ public class MonaUpgrader
                 break;
             default: return;
         }
-        string connectHead = string.Empty;
-        bool inComment = false;
-        using var sr = new StreamReader(file.Path);
-
-        while (!sr.EndOfStream)
+        file.Content.Clear();
+        using (var sr = new StreamReader(file.Path))
         {
-            string line = sr.ReadLine();
-            connectHead += $"{line}\n";
-
-            if (line.Contains("/*"))
-                inComment = true;
-
-            if (line.Contains("*/"))
+            bool inComment = false;
+            while (!sr.EndOfStream)
             {
-                inComment = false;
-                if (line.TrimStart().StartsWith("$password_beta"))
-                    continue;
+                string line = sr.ReadLine();
+                file.Content.AppendLine(line);
+
+                if (line.Contains("/*"))
+                    inComment = true;
+
+                if (line.Contains("*/"))
+                {
+                    inComment = false;
+                    if (line.TrimStart().StartsWith("$password_beta"))
+                        continue;
+                }
+                if (line.Contains("$password_") && !inComment && !line.Contains("//$password_"))
+                    break;
             }
-            if (line.Contains("$password_") && !inComment && !line.Contains("//$password_"))
-                break;
         }
         //generování nových údajů k databázi, pokud jsou všechny zadány
         if (Database is not null && Username is not null && Password is not null && Hostname is not null
-            && !Regex.IsMatch(file.Content, $@"\$password_.* = '{Password}'"))
+            && !Regex.IsMatch(file.Content.ToString(), $@"\$password_.* = '{Password}'"))
         {
-            connectHead = connectHead.Replace("\n", "\n//"); //zakomentovat původní řádky
-            connectHead = connectHead.Replace("////", "//"); //smazat zbytečná lomítka
-            connectHead += '\n';
-            connectHead = connectHead.Replace("//\n", "\n");
-            connectHead += $"$hostname_beta = '{Hostname}';\n$database_beta = '{Database}';\n$username_beta = '{Username}';\n$password_beta = '{Password}';\n";
+            file.Content.Replace("\n", "\n//"); //zakomentovat původní řádky
+            file.Content.Replace("////", "//"); //smazat zbytečná lomítka
+            file.Content.AppendLine();
+            file.Content.Replace("//\n", "\n");
+            file.Content.AppendLine($"$hostname_beta = '{Hostname}';");
+            file.Content.AppendLine($"$database_beta = '{Database}';");
+            file.Content.AppendLine($"$username_beta = '{Username}';");
+            file.Content.AppendLine($"$password_beta = '{Password}';");
         }
-        file.Content = connectHead + File.ReadAllText($"{BaseFolder}important\\connection.txt");
+        file.Content.Append(File.ReadAllText($"{BaseFolder}important\\connection.txt"));
     }
 
     /// <summary>
@@ -216,13 +229,14 @@ public class MonaUpgrader
     {
         var file = new FileWrapper(filePath, string.Empty);
 
-        if (file.OverwriteModificationFlag(AdminFolders.Any(af => filePath.Contains($@"\{af}\include\TinyAjaxBehavior.php"))))
+        if (AdminFolders.Any(af => filePath.Contains($@"\{af}\include\TinyAjaxBehavior.php")))
         {
             File.Copy($"{BaseFolder}important\\TinyAjaxBehavior.txt", file.Path, overwrite: true);
-            file.WriteStatus();
+            file.WriteStatus(true);
             ModifiedFilesCount++;
+            return true;
         }
-        return file.IsModified;
+        return false;
     }
 
     /// <summary>
@@ -233,18 +247,19 @@ public class MonaUpgrader
         if (!file.Content.Contains("mysql_result"))
             return;
 
-        var lines = file.Content.Split('\n');
+        var lines = file.Content.Split();
 
-        for (int i = 0; i < lines.Length; i++)
+        for (int i = 0; i < lines.Count; i++)
         {
-            if (lines[i].Contains("mysql_result"))
+            var line = lines[i];
+            if (line.Contains("mysql_result"))
             {
-                lines[i] = lines[i].Replace("COUNT(*)", "*");
-                lines[i] = lines[i].Replace(", 0", string.Empty);
-                lines[i] = lines[i].Replace("mysql_result", "mysqli_num_rows");
+                line.Replace("COUNT(*)", "*");
+                line.Replace(", 0", string.Empty);
+                line.Replace("mysql_result", "mysqli_num_rows");
             }
         }
-        file.Content = string.Join('\n', lines);
+        lines.JoinInto(file.Content);
     }
 
     /// <summary>
@@ -258,16 +273,17 @@ public class MonaUpgrader
             case var c1 when c1.Contains("$p_sf = array();"):
                 return;
         }
-        var lines = file.Content.Split('\n');
+        var lines = file.Content.Split();
 
-        for (int i = 0; i < lines.Length; i++)
+        for (int i = 0; i < lines.Count; i++)
         {
-            if (lines[i].Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"))
+            var line = lines[i];
+            if (line.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"))
             {
-                lines[i] = $"        $p_sf = array();\n{lines[i]}";
+                line.Insert(0, "        $p_sf = array();\n");
             }
         }
-        file.Content = string.Join('\n', lines);
+        lines.JoinInto(file.Content);
     }
 
     /// <summary>
@@ -277,7 +293,7 @@ public class MonaUpgrader
     {
         foreach (var fr in FindReplace)
         {
-            file.Content = file.Content.Replace(fr.Key, fr.Value);
+            file.Content.Replace(fr.Key, fr.Value);
         }
     }
 
@@ -290,8 +306,8 @@ public class MonaUpgrader
     {
         if (file.Content.Contains("$this->db"))
         {
-            file.Content = file.Content.Replace("mysqli_query($beta, \"SET CHARACTER SET utf8\", $this->db);", "mysqli_query($this->db, \"SET CHARACTER SET utf8\");");
-            file.Content = RenameBeta(file.Content, "this->db");
+            file.Content.Replace("mysqli_query($beta, \"SET CHARACTER SET utf8\", $this->db);", "mysqli_query($this->db, \"SET CHARACTER SET utf8\");");
+            RenameBeta(file.Content, "this->db");
         }
     }
 
@@ -300,7 +316,8 @@ public class MonaUpgrader
     {
         if (file.Path.Contains($@"{WebName}\index.php") && !file.Content.Contains("mysqli_close"))
         {
-            file.Content += "\n<?php mysqli_close($beta); ?>";
+            file.Content.AppendLine();
+            file.Content.Append("<?php mysqli_close($beta); ?>");
         }
     }
 
@@ -312,7 +329,7 @@ public class MonaUpgrader
     {
         if (file.Path.Contains(@"\anketa\anketa.php"))
         {
-            file.Content = file.Content.Replace("include_once(\"../setup.php\")", "include_once(\"setup.php\")");
+            file.Content.Replace("include_once(\"../setup.php\")", "include_once(\"setup.php\")");
         }
     }
 
@@ -320,10 +337,13 @@ public class MonaUpgrader
     public void UpgradeChdir(FileWrapper file)
     {
         if (!AdminFolders.Any(af => file.Path.Contains($@"\{af}\funkce\vytvoreni_adr.php")))
+        {
             return;
-
+        }
         if (!file.Content.Contains("//chdir"))
-            file.Content = file.Content.Replace("chdir", "//chdir");
+        {
+            file.Content.Replace("chdir", "//chdir");
+        }
     }
 
     /// <summary>
@@ -342,7 +362,9 @@ public class MonaUpgrader
             default: return;
         }
         if (!file.Content.Contains("@$pocet_text_all"))
-            file.Content = file.Content.Replace("$pocet_text_all = mysqli_num_rows", "@$pocet_text_all = mysqli_num_rows");
+        {
+            file.Content.Replace("$pocet_text_all = mysqli_num_rows", "@$pocet_text_all = mysqli_num_rows");
+        }
     }
 
     /// <summary>
@@ -359,7 +381,7 @@ public class MonaUpgrader
         }
         foreach (var variant in _PredchoziDalsiVariants())
         {
-            file.Content = file.Content.Replace(variant.Item1, variant.Item2);
+            file.Content.Replace(variant.Item1, variant.Item2);
 
             if (file.Content.Contains(variant.Item2))
                 return;
@@ -390,9 +412,9 @@ public class MonaUpgrader
     /// </summary>
     public static void UpgradeXmlFeeds(FileWrapper file)
     {
-        if (Regex.IsMatch(file.Path, "xml_feeds_[^edit]"))
+        if (Regex.IsMatch(file.Path, "xml_feeds_[^edit]", _regexCompiledOpts))
         {
-            file.Content = file.Content.Replace("if($query_podmenu_all[\"casovani\"] == 1)", "if($data_podmenu_all[\"casovani\"] == 1)");
+            file.Content.Replace("if($query_podmenu_all[\"casovani\"] == 1)", "if($data_podmenu_all[\"casovani\"] == 1)");
         }
     }
 
@@ -413,22 +435,24 @@ public class MonaUpgrader
                 return;
         }
         bool sfBracket = false;
-        var lines = file.Content.Split('\n');
+        var lines = file.Content.Split();
 
-        for (int i = 0; i < lines.Length; i++)
+        for (int i = 0; i < lines.Count; i++)
         {
-            if (lines[i].Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))"))
+            var line = lines[i];
+            if (line.Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))"))
             {
-                lines[i] = $"          if($query_text_all !== FALSE)\n          {{\n{lines[i]}";
+                line.Insert(0, "          if($query_text_all !== FALSE)\n          {\n");
                 sfBracket = true;
             }
-            if (lines[i].Contains('}') && sfBracket)
+            if (line.Contains('}') && sfBracket)
             {
-                lines[i] = $"    {lines[i]}\n{lines[i]}";
+                line.Append($"\n{line}");
+                line.Insert(0, "    ");
                 sfBracket = false;
             }
         }
-        file.Content = string.Join('\n', lines);
+        lines.JoinInto(file.Content);
     }
 
     /// <summary>
@@ -439,56 +463,73 @@ public class MonaUpgrader
     {
         switch (file.Content)
         {
-            case var c0 when !Regex.IsMatch(c0, "(?s)^(?=.*?function )(?=.*?mysqli_)"):
+            case var c0 when !Regex.IsMatch(c0.ToString(), "(?s)^(?=.*?function )(?=.*?mysqli_)", _regexCompiledOpts):
             case var c1 when c1.Contains("$this"):
                 return;
         }
         bool javascript = false;
-        var lines = file.Content.Split('\n');
+        var lines = file.Content.Split();
 
-        for (int i = 0; i < lines.Length; i++)
+        for (int i = 0; i < lines.Count; i++)
         {
-            if (lines[i].Contains("<script")) javascript = true;
-            if (lines[i].Contains("</script")) javascript = false;
+            var line = lines[i];
+            if (line.Contains("<script")) javascript = true;
+            if (line.Contains("</script")) javascript = false;
 
-            if (Regex.IsMatch(lines[i], @"function\s") && !javascript && _MysqliAndBetaInFunction(i))
+            if (Regex.IsMatch(line.ToString(), @"function\s", _regexCompiledOpts)
+                && !javascript
+                && _MysqliAndBetaInFunction(i))
             {
-                lines[++i] += $"\n    global $beta;\n\n";
+                lines[++i].Append("\n    global $beta;\n\n");
             }
         }
-        file.Content = string.Join('\n', lines);
+        lines.JoinInto(file.Content);
 
         bool _MysqliAndBetaInFunction(int startIndex)
         {
             bool javascript = false, inComment = false, foundMysqli = false, foundBeta = false;
             int bracketCount = 0;
 
-            for (int i = startIndex; i < lines.Length; i++)
+            for (int i = startIndex; i < lines.Count; i++)
             {
-                if (lines[i].Contains("<script")) javascript = true;
-                if (lines[i].Contains("</script")) javascript = false;
+                var line = lines[i];
+                if (line.Contains("<script")) javascript = true;
+                if (line.Contains("</script")) javascript = false;
 
                 if (javascript)
                     continue;
 
-                if (lines[i].Contains("/*")) inComment = true;
-                if (lines[i].Contains("*/")) inComment = false;
+                if (line.Contains("/*")) inComment = true;
+                if (line.Contains("*/")) inComment = false;
 
-                if (!inComment && !lines[i].TrimStart().StartsWith("//"))
+                if (!inComment && !line.ToString().TrimStart().StartsWith("//"))
                 {
-                    if (lines[i].Contains("mysqli_")) foundMysqli = true;
-                    if (lines[i].Contains("$beta")) foundBeta = true;
+                    if (line.Contains("mysqli_")) foundMysqli = true;
+                    if (line.Contains("$beta")) foundBeta = true;
 
                     if (foundBeta && foundMysqli)
                         return true;
                 }
-                if (lines[i].Contains('{')) bracketCount++;
-                if (lines[i].Contains('}')) bracketCount--;
+                if (line.Contains('{')) bracketCount++;
+                if (line.Contains('}')) bracketCount--;
 
-                if ((lines[i].Contains("global $beta;") || bracketCount <= 0) && i > startIndex)
+                if ((line.Contains("global $beta;") || bracketCount <= 0) && i > startIndex)
                     break;
             }
             return false;
+        }
+    }
+
+    /// <summary> Přejmenuje proměnnou $beta na přednastavenou hodnotu v instanci <see cref="StringBuilder"/>. </summary>
+    /// <param name="newVarName">null => použít vlastnost RenameBetaWith.</param>
+    /// <param name="oldVarName"></param>
+    /// <param name="content"></param>
+    public void RenameBeta(StringBuilder content, string? newVarName = null, string oldVarName = "beta")
+    {
+        if ((newVarName ??= RenameBetaWith) is not null)
+        {
+            content.Replace($"${oldVarName}", $"${newVarName}");
+            content.Replace($"_{oldVarName}", $"_{newVarName}");
         }
     }
 
@@ -507,7 +548,7 @@ public class MonaUpgrader
     }
 
     /// <summary> Přejmenovat proměnnou $beta v souboru. </summary>
-    public void RenameBeta(FileWrapper file) => file.Content = RenameBeta(file.Content);
+    public void RenameBeta(FileWrapper file) => RenameBeta(file.Content);
 
     /// <summary>
     /// - funkci ereg nebo ereg_replace doplnit do prvního parametru delimetr na začátek a nakonec (if(ereg('.+@.+..+', $retezec))
@@ -524,16 +565,20 @@ public class MonaUpgrader
             if (!file.Content.Contains("ereg"))
                 return;
 
-            file.Content = Regex.Replace(file.Content, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator);
-            file.Content = Regex.Replace(file.Content, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator);
+            string content = file.Content.ToString();
 
-            file.Content = Regex.Replace(file.Content, @"ereg ?\( ?\$", "preg_match($");
-            file.Content = Regex.Replace(file.Content, @"ereg_replace ?\( ?\$", "preg_replace($");
+            content = Regex.Replace(content, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator, _regexCompiledOpts);
+            content = Regex.Replace(content, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator, _regexCompiledOpts);
 
-            if (file.Content.Contains("ereg"))
+            content = Regex.Replace(content, @"ereg ?\( ?\$", "preg_match($", _regexCompiledOpts);
+            content = Regex.Replace(content, @"ereg_replace ?\( ?\$", "preg_replace($", _regexCompiledOpts);
+
+            if (content.Contains("ereg"))
             {
                 file.Warnings.Add("Nemodifikovaná funkce ereg!");
             }
+            file.Content.Clear();
+            file.Content.Append(content);
         }
 
         void _UpgradeSplit()
@@ -542,20 +587,25 @@ public class MonaUpgrader
                 return;
 
             bool javascript = false;
-            var lines = file.Content.Split('\n');
+            var lines = file.Content.Split();
 
-            for (int i = 0; i < lines.Length; i++)
+            for (int i = 0; i < lines.Count; i++)
             {
-                if (lines[i].Contains("<script")) javascript = true;
-                if (lines[i].Contains("</script")) javascript = false;
+                var line = lines[i];
+                if (line.Contains("<script")) javascript = true;
+                if (line.Contains("</script")) javascript = false;
 
-                if (!javascript && !lines[i].Contains(".split"))
+                if (!javascript && !line.Contains(".split"))
                 {
-                    lines[i] = Regex.Replace(lines[i], @"\bsplit ?\('(\\'|[^'])*'", evaluator);
-                    lines[i] = Regex.Replace(lines[i], @"\bsplit ?\(""(\\""|[^""])*""", evaluator);
+                    var lineStr = line.ToString();
+                    lineStr = Regex.Replace(lineStr, @"\bsplit ?\('(\\'|[^'])*'", evaluator, _regexCompiledOpts);
+                    lineStr = Regex.Replace(lineStr, @"\bsplit ?\(""(\\""|[^""])*""", evaluator, _regexCompiledOpts);
+                    line.Clear();
+                    line.Append(lineStr);
                 }
             }
-            if (Regex.IsMatch(file.Content = string.Join('\n', lines), @"[^_\.]split ?\("))
+            lines.JoinInto(file.Content);
+            if (Regex.IsMatch(file.Content.ToString(), @"[^_\.]split ?\(", _regexCompiledOpts))
             {
                 file.Warnings.Add("Nemodifikovaná funkce split!");
             }
@@ -582,9 +632,10 @@ public class MonaUpgrader
     public static void UpgradeTinyMceUploaded(FileWrapper file)
     {
         if (!file.Path.Contains(@"\plugins\imagemanager\plugins\Uploaded\Uploaded.php"))
+        {
             return;
-
-        file.Content = file.Content.Replace("$this->_uploadedFile(&$man, $file1);", "$this->_uploadedFile($man, $file1);");
+        }
+        file.Content.Replace("$this->_uploadedFile(&$man, $file1);", "$this->_uploadedFile($man, $file1);");
     }
 
     /// <summary> Přejmenovat proměnnou ve slovníku <see cref="FindReplace"/>. </summary>

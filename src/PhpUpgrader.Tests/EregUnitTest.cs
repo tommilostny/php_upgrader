@@ -27,9 +27,10 @@ public class EregUnitTest
 
         MonaUpgrader.UpgradeRegexFunctions(file);
 
-        _output.WriteLine(file.Content);
+        var contentStr = file.Content.ToString();
+        _output.WriteLine(contentStr);
         Assert.True(file.IsModified);
-        Assert.DoesNotContain("ereg", file.Content);
+        Assert.DoesNotContain("ereg", contentStr);
     }
 
     [Fact]
@@ -40,7 +41,7 @@ public class EregUnitTest
         MonaUpgrader.UpgradeRegexFunctions(file);
 
         Assert.False(file.IsModified);
-        Assert.Equal("mysqli_query($beta, $query);", file.Content);
+        Assert.Equal("mysqli_query($beta, $query);", file.Content.ToString());
     }
 
     [Fact]
@@ -50,9 +51,10 @@ public class EregUnitTest
 
         MonaUpgrader.UpgradeRegexFunctions(file);
 
-        _output.WriteLine(file.Content);
+        var contentStr = file.Content.ToString();
+        _output.WriteLine(contentStr);
         Assert.True(file.IsModified);
-        Assert.Equal("$var = preg_split('~pattern~', $query);", file.Content);
+        Assert.Equal("$var = preg_split('~pattern~', $query);", contentStr);
     }
 
     [Fact]
@@ -62,9 +64,10 @@ public class EregUnitTest
 
         MonaUpgrader.UpgradeRegexFunctions(file);
 
-        _output.WriteLine(file.Content);
+        var contentStr = file.Content.ToString();
+        _output.WriteLine(contentStr);
         Assert.False(file.IsModified);
-        Assert.Equal("preg_split('~pattern~', $query);", file.Content);
+        Assert.Equal("preg_split('~pattern~', $query);", contentStr);
     }
 
     [Fact]
@@ -76,11 +79,12 @@ public class EregUnitTest
             "\t$kill = split('that', $man);");
         
         MonaUpgrader.UpgradeRegexFunctions(file);
-        
-        _output.WriteLine(file.Content);
+
+        var contentStr = file.Content.ToString();
+        _output.WriteLine(contentStr);
         Assert.True(file.IsModified);
         Assert.Equal("<script language=\"javascript\" type=\"text / javascript\">var split_pomlcky = hodnota_polozky.split(\" - \");\n" +
             "</script> <?php if (preg_match('~pattern~', $blabla))\n" +
-            "\t$kill = preg_split('~that~', $man);", file.Content);
+            "\t$kill = preg_split('~that~', $man);", contentStr);
     }
 }
