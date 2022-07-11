@@ -185,42 +185,83 @@ public class MonaUpgrader
                 break;
             default: return;
         }
-        file.Content.Clear();
-        using (var sr = new StreamReader(file.Path))
-        {
-            bool inComment = false;
-            while (!sr.EndOfStream)
-            {
-                string line = sr.ReadLine();
-                file.Content.AppendLine(line);
-
-                if (line.Contains("/*"))
-                    inComment = true;
-
-                if (line.Contains("*/"))
-                {
-                    inComment = false;
-                    if (line.TrimStart().StartsWith("$password_beta"))
-                        continue;
-                }
-                if (line.Contains("$password_") && !inComment && !line.Contains("//$password_"))
-                    break;
-            }
-        }
+        //načtení hlavičky connect souboru.
+        _LoadConnectHeader();
         //generování nových údajů k databázi, pokud jsou všechny zadány
-        if (Database is not null && Username is not null && Password is not null && Hostname is not null
-            && !Regex.IsMatch(file.Content.ToString(), $@"\$password_.* = '{Password}'"))
-        {
-            file.Content.Replace("\n", "\n//"); //zakomentovat původní řádky
-            file.Content.Replace("////", "//"); //smazat zbytečná lomítka
-            file.Content.AppendLine();
-            file.Content.Replace("//\n", "\n");
-            file.Content.AppendLine($"$hostname_beta = '{Hostname}';");
-            file.Content.AppendLine($"$database_beta = '{Database}';");
-            file.Content.AppendLine($"$username_beta = '{Username}';");
-            file.Content.AppendLine($"$password_beta = '{Password}';");
-        }
+        _GenerateNewCredentials();
+        //na konec přidání obsahu předpřipraveného souboru
         file.Content.Append(File.ReadAllText(Path.Combine(BaseFolder, "important", "connection.txt")));
+
+        void _LoadConnectHeader()
+        {
+            bool inComment, hostLoaded, dbnameLoaded, usernameLoaded, passwdLoaded;
+            inComment = hostLoaded = dbnameLoaded = usernameLoaded = passwdLoaded = false;
+            var lines = file.Content.Split();
+
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var line = lines[i];
+
+                if (line.Contains("/*")) inComment = true;
+                if (line.Contains("*/")) inComment = false;
+
+                if (!inComment)
+                {
+                    if (line.Contains("$hostname_beta") && !line.Contains("//$hostname_beta"))
+                    {
+                        hostLoaded = true;
+                    }
+                    else if (line.Contains("$database_beta") && !line.Contains("//$database_beta"))
+                    {
+                        dbnameLoaded = true;
+                    }
+                    else if (line.Contains("$username_beta") && !line.Contains("//$username_beta"))
+                    {
+                        usernameLoaded = true;
+                    }
+                    else if (line.Contains("$password_beta") && !line.Contains("//$password_beta"))
+                    {
+                        passwdLoaded = true;
+                    }
+                    if (hostLoaded && dbnameLoaded && usernameLoaded && passwdLoaded)
+                    {
+                        lines.RemoveRange(i + 1, lines.Count - i - 1);
+                        break;
+                    }
+                }
+            }
+            lines.JoinInto(file.Content);
+        }
+
+        void _GenerateNewCredentials()
+        {
+            var hostCreds = new Lazy<string>(() => $"$hostname_beta = '{Hostname}';");
+            var dbCreds = new Lazy<string>(() => $"$database_beta = '{Database}';");
+            var userCreds = new Lazy<string>(() => $"$username_beta = '{Username}';");
+            var passwdCreds = new Lazy<string>(() => $"$password_beta = '{Password}';");
+
+            if (Hostname is not null && !file.Content.Contains(hostCreds.Value))
+            {
+                file.Content.Replace("\n$hostname_beta", "\n//$hostname_beta");
+                file.Content.AppendLine(hostCreds.Value);
+            }
+            if (Database is not null && !file.Content.Contains(dbCreds.Value))
+            {
+                file.Content.Replace("\n$database_beta", "\n//$database_beta");
+                file.Content.AppendLine(dbCreds.Value);
+            }
+            if (Username is not null && !file.Content.Contains(userCreds.Value))
+            {
+                file.Content.Replace("\n$username_beta", "\n//$username_beta");
+                file.Content.AppendLine(userCreds.Value);
+            }
+            if (Password is not null && !file.Content.Contains(passwdCreds.Value))
+            {
+                file.Content.Replace("\n$password_beta", "\n//$password_beta");
+                file.Content.AppendLine(passwdCreds.Value);
+            }
+            file.Content.Replace("////", "//"); //smazat zbytečná lomítka
+        }
     }
 
     /// <summary>

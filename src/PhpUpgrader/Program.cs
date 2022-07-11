@@ -13,9 +13,9 @@ class Program
     /// <param name="host">URL databázového serveru.</param>
     /// <param name="beta">Přejmenovat proměnnou $beta tímto názvem (nezadáno => nepřejmenovávat).</param>
     /// <param name="connectionFile">Název souboru ve složce "/connect".</param>
-    /// <param name="rubicon"> Upgrade systému Rubicon (nezadáno => Mona). </param>
+    /// <param name="rubicon">Upgrade systému Rubicon (nezadáno => Mona).</param>
     static void Main(string webName, string[]? adminFolders = null, string baseFolder = "/McRAI",
-        string? db = null, string? user = null, string? password = null, string host = "mcrai2.vshosting.cz",
+        string? db = null, string? user = null, string? password = null, string host = "localhost",
         string? beta = null, string connectionFile = "connection.php", bool rubicon = false)
     {
         var workDir = Path.Combine(baseFolder, "weby", webName);
