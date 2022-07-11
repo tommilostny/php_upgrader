@@ -179,9 +179,9 @@ public class MonaUpgrader
         //konec, pokud aktuální soubor nepatří mezi validní connection soubory
         switch (file.Path)
         {
-            case var p0 when p0.Contains(Path.Combine("connect", ConnectionFile)):
-            case var p1 when p1.Contains(Path.Combine("system", ConnectionFile)):
-            case var p2 when p2.Contains(Path.Combine("Connections", ConnectionFile)):
+            case var p0 when p0.Contains(Path.Join("connect", ConnectionFile)):
+            case var p1 when p1.Contains(Path.Join("system", ConnectionFile)):
+            case var p2 when p2.Contains(Path.Join("Connections", ConnectionFile)):
                 break;
             default: return;
         }
@@ -190,7 +190,7 @@ public class MonaUpgrader
         //generování nových údajů k databázi, pokud jsou všechny zadány
         _GenerateNewCredentials();
         //na konec přidání obsahu předpřipraveného souboru
-        file.Content.Append(File.ReadAllText(Path.Combine(BaseFolder, "important", "connection.txt")));
+        file.Content.Append(File.ReadAllText(Path.Join(BaseFolder, "important", "connection.txt")));
 
         void _LoadConnectHeader()
         {
@@ -235,10 +235,10 @@ public class MonaUpgrader
 
         void _GenerateNewCredentials()
         {
-            var hostCreds = new Lazy<string>(() => $"$hostname_beta = '{Hostname}';");
-            var dbCreds = new Lazy<string>(() => $"$database_beta = '{Database}';");
-            var userCreds = new Lazy<string>(() => $"$username_beta = '{Username}';");
-            var passwdCreds = new Lazy<string>(() => $"$password_beta = '{Password}';");
+            Lazy<string> hostCreds = new(() => $"$hostname_beta = '{Hostname}';");
+            Lazy<string> dbCreds = new(() => $"$database_beta = '{Database}';");
+            Lazy<string> userCreds = new(() => $"$username_beta = '{Username}';");
+            Lazy<string> passwdCreds = new(() => $"$password_beta = '{Password}';");
 
             if (Hostname is not null && !file.Content.Contains(hostCreds.Value))
             {
@@ -271,9 +271,9 @@ public class MonaUpgrader
     {
         var file = new FileWrapper(filePath, string.Empty);
 
-        if (AdminFolders.Any(af => filePath.Contains(Path.Combine(af, "include", "TinyAjaxBehavior.php"))))
+        if (AdminFolders.Any(af => filePath.Contains(Path.Join(af, "include", "TinyAjaxBehavior.php"))))
         {
-            File.Copy(Path.Combine(BaseFolder, "important", "TinyAjaxBehavior.txt"), file.Path, overwrite: true);
+            File.Copy(Path.Join(BaseFolder, "important", "TinyAjaxBehavior.txt"), file.Path, overwrite: true);
             file.WriteStatus(true);
             ModifiedFilesCount++;
             return true;
@@ -356,7 +356,7 @@ public class MonaUpgrader
     /// <summary> pridat mysqli_close($beta); do indexu nakonec </summary>
     public virtual void UpgradeMysqliClose(FileWrapper file)
     {
-        if (file.Path.Contains(Path.Combine(WebName, "index.php")) && !file.Content.Contains("mysqli_close"))
+        if (file.Path.Contains(Path.Join(WebName, "index.php")) && !file.Content.Contains("mysqli_close"))
         {
             file.Content.AppendLine();
             file.Content.Append("<?php mysqli_close($beta); ?>");
@@ -369,7 +369,7 @@ public class MonaUpgrader
     /// </summary>
     public static void UpgradeAnketa(FileWrapper file)
     {
-        if (file.Path.Contains(Path.Combine("anketa", "anketa.php")))
+        if (file.Path.Contains(Path.Join("anketa", "anketa.php")))
         {
             file.Content.Replace(@"include_once(""../setup.php"")", @"include_once(""setup.php"")");
         }
@@ -378,7 +378,7 @@ public class MonaUpgrader
     /// <summary> zakomentovat radky s funkci chdir v souboru admin/funkce/vytvoreni_adr.php </summary>
     public void UpgradeChdir(FileWrapper file)
     {
-        if (!AdminFolders.Any(af => file.Path.Contains(Path.Combine(af, "funkce", "vytvoreni_adr.php"))))
+        if (!AdminFolders.Any(af => file.Path.Contains(Path.Join(af, "funkce", "vytvoreni_adr.php"))))
         {
             return;
         }
@@ -398,8 +398,8 @@ public class MonaUpgrader
     {
         switch (AdminFolders)
         {
-            case var afs0 when afs0.Any(af => file.Path.Contains(Path.Combine(af, "table_x_add.php"))):
-            case var afs1 when afs1.Any(af => file.Path.Contains(Path.Combine(af, "table_x_edit.php"))):
+            case var afs0 when afs0.Any(af => file.Path.Contains(Path.Join(af, "table_x_add.php"))):
+            case var afs1 when afs1.Any(af => file.Path.Contains(Path.Join(af, "table_x_edit.php"))):
                 break;
             default: return;
         }
@@ -417,7 +417,7 @@ public class MonaUpgrader
     {
         switch (file)
         {
-            case { Path: var p } when !p.Contains(Path.Combine("funkce", "strankovani.php")):
+            case { Path: var p } when !p.Contains(Path.Join("funkce", "strankovani.php")):
             case { Content: var c } when !c.Contains("function predchozi_dalsi"):
                 return;
         }
@@ -467,7 +467,7 @@ public class MonaUpgrader
     /// </summary>
     public void UpgradeSitemapSave(FileWrapper file)
     {
-        if (!AdminFolders.Any(af => file.Path.Contains(Path.Combine(af, "sitemap_save.php"))))
+        if (!AdminFolders.Any(af => file.Path.Contains(Path.Join(af, "sitemap_save.php"))))
             return;
 
         switch (file.Content)
@@ -673,7 +673,7 @@ public class MonaUpgrader
     ///<summary> PHP Parse error:  syntax error, unexpected '&amp;' on line 49` </summary>
     public static void UpgradeTinyMceUploaded(FileWrapper file)
     {
-        if (!file.Path.Contains(Path.Combine("plugins", "imagemanager", "plugins", "Uploaded", "Uploaded.php")))
+        if (!file.Path.Contains(Path.Join("plugins", "imagemanager", "plugins", "Uploaded", "Uploaded.php")))
         {
             return;
         }

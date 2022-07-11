@@ -2,8 +2,10 @@
 
 class Program
 {
-    /// <summary>RS Mona PHP upgrader z verze 5 na verzi 7</summary>
-    /// <remarks>Created for McRAI by Tomáš Milostný</remarks>
+    /// <summary>
+    /// RS Mona a Rubicon PHP upgrader z verze 5 na verzi 7 (vytvořeno pro McRAI).
+    /// Autor: Tomáš Milostný
+    /// </summary>
     /// <param name="webName">Název webu ve složce 'weby' (nesmí chybět).</param>
     /// <param name="adminFolders">Složky obsahující administraci RS Mona (default prázdné: 1 složka admin)</param>
     /// <param name="baseFolder">Absolutní cesta základní složky, kde jsou složky 'weby' a 'important'.</param>
@@ -14,11 +16,13 @@ class Program
     /// <param name="beta">Přejmenovat proměnnou $beta tímto názvem (nezadáno => nepřejmenovávat).</param>
     /// <param name="connectionFile">Název souboru ve složce "/connect".</param>
     /// <param name="rubicon">Upgrade systému Rubicon (nezadáno => Mona).</param>
+    /// <param name="ignoreConnect">Ignore DB connection arguments (--host, --db, --user, --password).</param>
     static void Main(string webName, string[]? adminFolders = null, string baseFolder = "/McRAI",
         string? db = null, string? user = null, string? password = null, string host = "localhost",
-        string? beta = null, string connectionFile = "connection.php", bool rubicon = false)
+        string? beta = null, string connectionFile = "connection.php", bool rubicon = false,
+        bool ignoreConnect = false)
     {
-        var workDir = Path.Combine(baseFolder, "weby", webName);
+        var workDir = Path.Join(baseFolder, "weby", webName);
 
         if (webName == string.Empty)
         {
@@ -34,18 +38,18 @@ class Program
         Console.Write($"Spuštěn PHP upgrade pro '{webName}'");
         var upgrader = rubicon ? new RubiconUpgrader(baseFolder, webName)
         {
-            Database = db,
-            Username = user,
-            Password = password,
-            Hostname = host
+            Database = ignoreConnect ? null : db,
+            Username = ignoreConnect ? null : user,
+            Password = ignoreConnect ? null : password,
+            Hostname = ignoreConnect ? null : host
         }
         : new MonaUpgrader(baseFolder, webName)
         {
             AdminFolders = adminFolders,
-            Database = db,
-            Username = user,
-            Password = password,
-            Hostname = host,
+            Database = ignoreConnect ? null : db,
+            Username = ignoreConnect ? null : user,
+            Password = ignoreConnect ? null : password,
+            Hostname = ignoreConnect ? null : host,
             RenameBetaWith = beta,
             ConnectionFile = connectionFile
         };
@@ -60,9 +64,11 @@ class Program
 
         Console.WriteLine($"\nAutomatický upgrade PHP webu {webName} je dokončen!");
         Console.WriteLine($"Celkem upravených souborů: {upgrader.ModifiedFilesCount}/{upgrader.TotalFilesCount}");
+        
         Console.WriteLine($"Soubory obsahující mysql_: {upgrader.FilesContainingMysql.Count}");
-
         foreach (var fileName in upgrader.FilesContainingMysql)
+        {
             Console.WriteLine(fileName);
+        }
     }
 }
