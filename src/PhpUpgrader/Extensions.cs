@@ -68,18 +68,16 @@ internal static class Extensions
     /// <returns>Příznak existence podřetězce.</returns>
     internal static bool Contains(this StringBuilder stringBuilder, ReadOnlySpan<char> value)
     {
-        int searchedLength = value.Length;
-        int sbLength = stringBuilder.Length;
-        Span<char> chunk = stackalloc char[searchedLength << 1];
+        Span<char> chunk = stackalloc char[value.Length << 1];
 
-        for (int i = 0; i < sbLength; i += searchedLength)
+        for (int i = 0; i < stringBuilder.Length; i += value.Length)
         {
-            Span<char> higher = chunk[searchedLength..];
+            Span<char> higher = chunk[value.Length..];
             higher.CopyTo(chunk);
             higher.Clear();
 
-            var copyCount = searchedLength < sbLength - i ? searchedLength : sbLength - i;
-            stringBuilder.CopyTo(i, higher, copyCount);
+            var maxCopyCount = stringBuilder.Length - i;
+            stringBuilder.CopyTo(i, higher, Math.Min(value.Length, maxCopyCount));
 
             if (chunk.Contains(value))
             {

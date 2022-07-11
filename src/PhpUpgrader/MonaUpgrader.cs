@@ -231,6 +231,10 @@ public class MonaUpgrader
                 }
             }
             lines.JoinInto(file.Content);
+            if (file.Content[file.Content.Length - 1] != '\n')
+            {
+                file.Content.AppendLine();
+            }
         }
 
         void _GenerateNewCredentials()
@@ -261,6 +265,7 @@ public class MonaUpgrader
                 file.Content.AppendLine(passwdCreds.Value);
             }
             file.Content.Replace("////", "//"); //smazat zbytečná lomítka
+            file.Content.Replace("\r\r", "\r"); //smazat zbytečné \r
         }
     }
 
@@ -273,9 +278,17 @@ public class MonaUpgrader
 
         if (AdminFolders.Any(af => filePath.Contains(Path.Join(af, "include", "TinyAjaxBehavior.php"))))
         {
-            File.Copy(Path.Join(BaseFolder, "important", "TinyAjaxBehavior.txt"), file.Path, overwrite: true);
-            file.WriteStatus(true);
-            ModifiedFilesCount++;
+            var tabPath = Path.Join(BaseFolder, "important", "TinyAjaxBehavior.txt");
+            if (File.GetLastWriteTime(tabPath) == File.GetLastWriteTime(file.Path))
+            {
+                file.WriteStatus(false);
+            }
+            else
+            {
+                File.Copy(tabPath, file.Path, overwrite: true);
+                ModifiedFilesCount++;
+                file.WriteStatus(true);
+            }
             return true;
         }
         return false;

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PhpUpgrader": {
+      "commandName": "Project",
+      "commandLineArgs": "--web-name bily-kralik"
+    }
+  }
+}
