@@ -69,7 +69,10 @@ public class FileWrapper
     /// <param name="modified">Který symbol modifikace vybrat?</param>
     public void WriteStatus(bool modified)
     {
-        var displayName = Path.Contains(@"\weby\") ? Path.AsSpan(Path.IndexOf(@"\weby\") + 6) : Path.AsSpan();
+        var s = System.IO.Path.DirectorySeparatorChar;
+        var webyIndex = Path.IndexOf($"{s}weby{s}");
+        
+        var displayName = webyIndex != -1 ? Path.AsSpan(webyIndex + 6) : Path;
 
         var symbol = modified ? ModifiedSymbol : UnmodifiedSymbol;
 

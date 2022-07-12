@@ -2,12 +2,12 @@
 
 class Program
 {
-    const int _defaultYear = 2022;
-    const int _defaultMonth = 7;
-    const int _defaultDay = 4;
+    const int _defaultYear = 2021;
+    const int _defaultMonth = 9;
+    const int _defaultDay = 1;
 
     const string _defaultHostname = "mcrai.vshosting.cz";
-    const string _defaultBaseFolder = @"C:\McRAI\";
+    const string _defaultBaseFolder = "/McRAI";
 
     /// <summary>
     /// Nástroj pro kontrolu nových souborů na FTP serveru po určitém datu.
@@ -32,15 +32,16 @@ class Program
         }
         catch (System.Exception exception)
         {
-            ConsoleOutput.WriteErrorMessage(exception.Message);
+            ConsoleOutput.WriteError(exception.Message);
             return;
         }
 
         bool modifiedDate = year != _defaultYear || month != _defaultMonth || day != _defaultDay;
+        var webPath = Path.Join(baseFolder, "weby", webName);
         var date = webName switch
         {
-            not null and var w when !modifiedDate && Directory.Exists($@"{baseFolder}\weby\{w}")
-                => Directory.GetCreationTime($@"{baseFolder}\weby\{w}"),
+            not null and _ when !modifiedDate && Directory.Exists(webPath)
+                => Directory.GetCreationTime(webPath),
             _ => new(year, month, day)
         };
 

@@ -39,7 +39,8 @@ public class FtpLoginParser
         //heslo, pole cest oddělené čárkou (více webů na jednom ftp)
         string _LoadPasswordFromFile(out string[] paths)
         {
-            using var sr = new StreamReader($"{baseFolder}ftp_logins.txt");
+            var loginsFilePath = Path.Join(baseFolder, "ftp_logins.txt");
+            using var sr = new StreamReader(loginsFilePath);
 
             while (!sr.EndOfStream)
             {
@@ -51,7 +52,7 @@ public class FtpLoginParser
                     return login[1].Trim();
                 }
             }
-            throw new InvalidOperationException($"Nelze načíst heslo ze souboru {baseFolder}ftp_logins.txt pro uživatele {Username}.");
+            throw new InvalidOperationException($"Nelze načíst heslo ze souboru {loginsFilePath} pro uživatele {Username}.");
         }
     }
 

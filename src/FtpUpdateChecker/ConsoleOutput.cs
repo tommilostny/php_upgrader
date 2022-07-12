@@ -4,7 +4,7 @@
 internal static class ConsoleOutput
 {
     /// <summary> Outputs formatted message to stderr. </summary>
-    internal static void WriteErrorMessage(string message)
+    internal static void WriteError(string message)
     {
         var defaultColor = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Red;
@@ -14,7 +14,7 @@ internal static class ConsoleOutput
     }
 
     /// <summary> Outputs process completition message to stdout. </summary>
-    internal static void WriteCompletedMessage()
+    internal static void WriteCompleted()
     {
         var defaultColor = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Green;
@@ -50,7 +50,7 @@ internal static class ConsoleOutput
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.Write(numberStr);
 
-        _OutputSpaces(numberStr.Length, 5);
+        _OutputSpaces(numberStr.Length, 6);
 
         var timeStr = fileInfo.LastWriteTime.ToString();
         Console.ForegroundColor = ConsoleColor.DarkGray;

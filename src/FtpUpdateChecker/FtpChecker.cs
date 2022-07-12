@@ -1,4 +1,4 @@
-﻿using EnumerationOptions = WinSCP.EnumerationOptions;
+﻿using EnumOpts = WinSCP.EnumerationOptions;
 
 namespace FtpUpdateChecker;
 
@@ -53,14 +53,14 @@ public class FtpChecker : IDisposable
             }
             catch (SessionRemoteException)
             {
-                ConsoleOutput.WriteErrorMessage("Připojení k FTP serveru selhalo pro zadané uživatelské jméno a heslo.");
+                ConsoleOutput.WriteError("Připojení k FTP serveru selhalo pro zadané uživatelské jméno a heslo.");
                 return;
             }
         }
         else Console.WriteLine();
 
-        Console.WriteLine($"Probíhá kontrola všech souborů v adresáři '{path}' na změny po datu {FromDate.ToShortDateString()}.");
-        var enumerationOptions = EnumerationOptions.EnumerateDirectories | EnumerationOptions.AllDirectories;
+        Console.WriteLine($"Probíhá kontrola '{path}'...");
+        var enumerationOptions = EnumOpts.EnumerateDirectories | EnumOpts.AllDirectories;
         var fileInfos = Session.EnumerateRemoteFiles(path, null, enumerationOptions);
 
         FileCount = FolderCount = PhpFoundCount = FoundCount = 0;
@@ -69,7 +69,7 @@ public class FtpChecker : IDisposable
         {
             foreach (var fileInfo in fileInfos)
             {
-                Console.Write("\r");
+                Console.Write('\r');
 
                 if (fileInfo.IsDirectory)
                 {
@@ -93,9 +93,9 @@ public class FtpChecker : IDisposable
         }
         catch (SessionRemoteException)
         {
-            ConsoleOutput.WriteErrorMessage($"Zadaná cesta '{path}' na serveru neexistuje.");
+            ConsoleOutput.WriteError($"Zadaná cesta '{path}' na serveru neexistuje.");
         }
-        ConsoleOutput.WriteCompletedMessage();
+        ConsoleOutput.WriteCompleted();
     }
 
     /// <summary> Uzavřít spojení k FTP serveru. </summary>
