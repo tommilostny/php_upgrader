@@ -59,7 +59,7 @@ public class FtpChecker : IDisposable
         }
         else Console.WriteLine();
 
-        Console.WriteLine($"Probíhá kontrola všech souborů v adresáři '{path}' na změny po datu {FromDate}.");
+        Console.WriteLine($"Probíhá kontrola všech souborů v adresáři '{path}' na změny po datu {FromDate.ToShortDateString()}.");
         var enumerationOptions = EnumerationOptions.EnumerateDirectories | EnumerationOptions.AllDirectories;
         var fileInfos = Session.EnumerateRemoteFiles(path, null, enumerationOptions);
 
@@ -80,8 +80,12 @@ public class FtpChecker : IDisposable
                 if (fileInfo.LastWriteTime >= FromDate)
                 {
                     FoundCount++;
-                    PhpFoundCount += Convert.ToUInt32(fileInfo.FullName.EndsWith(".php"));
-                    this.WriteFoundFile(fileInfo, messageLength);
+                    bool isPhp;
+                    if (isPhp = fileInfo.FullName.EndsWith(".php"))
+                    {
+                        PhpFoundCount++;
+                    }
+                    this.WriteFoundFile(fileInfo, messageLength, isPhp);
                 }
                 FileCount++;
                 messageLength = this.WriteStatus();

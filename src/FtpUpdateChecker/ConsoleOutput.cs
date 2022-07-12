@@ -8,9 +8,9 @@ internal static class ConsoleOutput
     {
         var defaultColor = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.Error.WriteLine($"\n❌ {message}");
+        Console.Error.WriteLine($"❌ {message}");
         Console.ForegroundColor = defaultColor;
-        Console.Error.WriteLine("\tSpusťte s parametrem --help k zobrazení nápovědy.");
+        Console.Error.WriteLine("Spusťte s parametrem --help k zobrazení nápovědy.\n");
     }
 
     /// <summary> Outputs process completition message to stdout. </summary>
@@ -18,7 +18,7 @@ internal static class ConsoleOutput
     {
         var defaultColor = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine("\n\n\r✔️ Proces dokončen.");
+        Console.WriteLine("\n\n\r✅ Proces dokončen.\n");
         Console.ForegroundColor = defaultColor;
     }
 
@@ -33,7 +33,7 @@ internal static class ConsoleOutput
             .Append($" Nalezeno {fc.FoundCount} souborů modifikovaných po {fc.FromDate}")
             .Append($" ({fc.PhpFoundCount} z nich je PHP).");
 
-        Console.Write(messageBuilder.ToString());
+        Console.Write(messageBuilder);
         return messageBuilder.Length;
     }
 
@@ -43,7 +43,8 @@ internal static class ConsoleOutput
     /// <param name="fc">Running FTP checker intance.</param>
     /// <param name="fileInfo">WinSCP file info.</param>
     /// <param name="messageLength">The lenghth of space printed message needs to overwrite with spaces.</param>
-    internal static void WriteFoundFile(this FtpChecker fc, RemoteFileInfo fileInfo, int messageLength)
+    /// <param name="isPhp">PHP files are printed to console in cyan, others in <see cref="FtpChecker.DefaultColor"/>.</param>
+    internal static void WriteFoundFile(this FtpChecker fc, RemoteFileInfo fileInfo, int messageLength, bool isPhp)
     {
         var numberStr = $"{fc.FoundCount}.";
         Console.ForegroundColor = ConsoleColor.Yellow;
@@ -57,10 +58,11 @@ internal static class ConsoleOutput
 
         _OutputSpaces(timeStr.Length + 6, 28);
 
-        Console.ForegroundColor = fc.DefaultColor;
+        Console.ForegroundColor = isPhp ? ConsoleColor.Cyan : fc.DefaultColor;
         Console.Write(fileInfo.FullName);
+        Console.ForegroundColor = fc.DefaultColor;
 
-        _OutputSpaces(fileInfo.FullName.Length + timeStr.Length + 2, messageLength);
+        _OutputSpaces(fileInfo.FullName.Length + 27, messageLength);
         Console.WriteLine();
 
         static void _OutputSpaces(int fromIndex, int toIndex)
