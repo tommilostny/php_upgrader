@@ -1,10 +1,13 @@
-﻿using EnumOpts = WinSCP.EnumerationOptions;
+﻿using EO = WinSCP.EnumerationOptions;
 
 namespace FtpUpdateChecker;
 
 /// <summary> Třída nad knihovnou WinSCP kontrolující soubory na FTP po určitém datu. </summary>
 public class FtpChecker : IDisposable
 {
+    private readonly SessionOptions _sessionOptions;
+    private readonly Session _session = new();
+
     /// <summary> Datum, od kterého hlásit změnu. </summary>
     public DateTime FromDate { get; }
 
@@ -22,14 +25,10 @@ public class FtpChecker : IDisposable
 
     internal ConsoleColor DefaultColor { get; } = Console.ForegroundColor;
 
-    private SessionOptions SessionOptions { get; }
-
-    private Session Session { get; } = new();
-
     /// <summary> Inicializace sezení spojení WinSCP, nastavení data. </summary>
     public FtpChecker(string username, string password, string hostname, DateTime fromDate)
     {
-        SessionOptions = new SessionOptions
+        _sessionOptions = new SessionOptions
         {
             Protocol = Protocol.Ftp,
             HostName = hostname,
@@ -43,12 +42,12 @@ public class FtpChecker : IDisposable
     /// <summary> Spustit procházení všech souborů na FTP serveru v zadané cestě. </summary>
     public void Run(string path)
     {
-        if (!Session.Opened)
+        if (!_session.Opened)
         {
-            Console.WriteLine($"Připojování k FTP {SessionOptions.UserName}@{SessionOptions.HostName} ...");
+            Console.WriteLine($"Připojování k FTP {_sessionOptions.UserName}@{_sessionOptions.HostName} ...");
             try //Connect
             {
-                Session.Open(SessionOptions);
+                _session.Open(_sessionOptions);
                 Console.WriteLine("Připojení proběhlo úspěšně!\n");
             }
             catch (SessionRemoteException)
@@ -57,11 +56,10 @@ public class FtpChecker : IDisposable
                 return;
             }
         }
-        else Console.WriteLine();
 
         Console.WriteLine($"Probíhá kontrola '{path}'...");
-        var enumerationOptions = EnumOpts.EnumerateDirectories | EnumOpts.AllDirectories;
-        var fileInfos = Session.EnumerateRemoteFiles(path, null, enumerationOptions);
+        var enumerationOptions = EO.EnumerateDirectories | EO.AllDirectories;
+        var fileInfos = _session.EnumerateRemoteFiles(path, null, enumerationOptions);
 
         FileCount = FolderCount = PhpFoundCount = FoundCount = 0;
         int messageLength = this.WriteStatus();
@@ -101,9 +99,9 @@ public class FtpChecker : IDisposable
     /// <summary> Uzavřít spojení k FTP serveru. </summary>
     public void Dispose()
     {
-        if (Session.Opened)
+        if (_session.Opened)
         {
-            Session.Close();
+            _session.Close();
         }
         GC.SuppressFinalize(this);
     }
