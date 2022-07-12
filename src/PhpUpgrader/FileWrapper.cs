@@ -48,10 +48,16 @@ public class FileWrapper
 
     /// <summary> Uložit modifikovaný obsah souboru. </summary>
     /// <remarks> Přesune soubor na cestu <see cref="MoveOnSavePath"/>, pokud není null. </remarks>
-    public void Save()
+    public void Save(string webName)
     {
         if (!IsModified)
             return;
+
+        var s = System.IO.Path.DirectorySeparatorChar;
+        var backupFile = new FileInfo(Path.Replace($"{s}{webName}{s}", $"{s}{webName}_backup{s}"));
+
+        backupFile.Directory.Create();
+        File.Copy(Path, backupFile.FullName, overwrite: false);
 
         File.WriteAllText(Path, Content.ToString());
 

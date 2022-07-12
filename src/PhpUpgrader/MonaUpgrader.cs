@@ -122,7 +122,7 @@ public class MonaUpgrader
 
             //upraveno, zapsat do souboru
             file.WriteStatus();
-            file.Save();
+            file.Save(WebName);
             ModifiedFilesCount += Convert.ToUInt32(file.IsModified);
 
             //po dodelani nahrazeni nize projit na retezec - mysql_
