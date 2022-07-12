@@ -99,7 +99,7 @@ public class RubiconUpgrader : MonaUpgrader
                     int paramsStartIndex = lineStr.IndexOf('(') + 1;
                     int paramsEndIndex = lineStr.LastIndexOf(')');
 
-                    var @params = lineStr[paramsStartIndex..paramsEndIndex];
+                    var @params = lineStr.AsSpan(paramsStartIndex, paramsEndIndex - paramsStartIndex);
 
                     line.Replace($"function {className}", "function __construct");
 
@@ -110,7 +110,7 @@ public class RubiconUpgrader : MonaUpgrader
                         .AppendLine( "    }")
                         .AppendLine();
 
-                    line.Insert(0, compatibilityConstructorBuilder.ToString());
+                    line.Insert(0, compatibilityConstructorBuilder);
                 }
             }
         }
@@ -121,9 +121,9 @@ public class RubiconUpgrader : MonaUpgrader
             file.Warnings.Remove(file.Warnings.FirstOrDefault(w => w.StartsWith("Large bracket count (")));
         }
 
-        static string _ParamsWithoutDefaultValues(string parameters)
+        static string _ParamsWithoutDefaultValues(ReadOnlySpan<char> parameters)
         {
-            var sb = new StringBuilder(parameters);
+            var sb = new StringBuilder().Append(parameters);
             var @params = sb.Split(',');
             for (int i = 0; i < @params.Count; i++)
             {
@@ -276,7 +276,7 @@ public class RubiconUpgrader : MonaUpgrader
     /// <summary> HTML tag &lt;script language="PHP"&gt;&lt;/script> deprecated => &lt;?php ?&gt; </summary>
     public static void UpgradeScriptLanguagePhp(FileWrapper file)
     {
-        if (!Regex.IsMatch(file.Content.ToString(), @"<script language=""PHP"">", _regexIgnoreCaseOpts))
+        if (!Regex.IsMatch(file.Content.ToString(), @"<script language=""PHP"">", _regexIgnoreCase))
         {
             return;
         }
@@ -287,10 +287,10 @@ public class RubiconUpgrader : MonaUpgrader
         {
             var line = lines[i];
             var lineStr = line.ToString();
-            if (Regex.IsMatch(lineStr, @"<script language=""PHP"">", _regexIgnoreCaseOpts))
+            if (Regex.IsMatch(lineStr, @"<script language=""PHP"">", _regexIgnoreCase))
             {
                 line.Clear();
-                line.Append(Regex.Replace(lineStr, @"<script language=""PHP"">", "<?php ", _regexIgnoreCaseOpts));
+                line.Append(Regex.Replace(lineStr, @"<script language=""PHP"">", "<?php ", _regexIgnoreCase));
                 insidePhpScriptTag = true;
             }
             if (insidePhpScriptTag && line.Contains("</script>"))
@@ -306,7 +306,7 @@ public class RubiconUpgrader : MonaUpgrader
     /// <summary> templates/.../product_detail.php, zakomentovaný blok HTML stále spouští broken PHP includy, zakomentovat </summary>
     public static void UpgradeIncludesInHtmlComments(FileWrapper file)
     {
-        if (!Regex.IsMatch(file.Path, @"(\\|/)templates(\\|/).+(\\|/)product_detail\.php", _regexCompiledOpts))
+        if (!Regex.IsMatch(file.Path, @"(\\|/)templates(\\|/).+(\\|/)product_detail\.php", _regexCompiled))
         {
             return;
         }

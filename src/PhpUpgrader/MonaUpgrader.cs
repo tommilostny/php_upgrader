@@ -4,10 +4,10 @@
 public class MonaUpgrader
 {
     /// <summary> Výchozí nastavení pro regulární výrazy. </summary>
-    protected const RegexOptions _regexCompiledOpts = RegexOptions.Compiled;
+    protected const RegexOptions _regexCompiled = RegexOptions.Compiled;
 
     /// <summary> Výchozí nastavení pro regulární výrazy ignorující velikost písmen. </summary>
-    protected const RegexOptions _regexIgnoreCaseOpts = RegexOptions.IgnoreCase | _regexCompiledOpts;
+    protected const RegexOptions _regexIgnoreCase = RegexOptions.IgnoreCase | _regexCompiled;
 
     /// <summary> Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce. </summary>
     public List<string> FilesContainingMysql { get; } = new();
@@ -126,7 +126,7 @@ public class MonaUpgrader
             ModifiedFilesCount += Convert.ToUInt32(file.IsModified);
 
             //po dodelani nahrazeni nize projit na retezec - mysql_
-            if (Regex.IsMatch(file.Content.ToString(), "[^//]mysql_", _regexIgnoreCaseOpts))
+            if (Regex.IsMatch(file.Content.ToString(), "[^//]mysql_", _regexIgnoreCase))
             {
                 FilesContainingMysql.Add(filePath);
             }
@@ -434,18 +434,18 @@ public class MonaUpgrader
             case { Content: var c } when !c.Contains("function predchozi_dalsi"):
                 return;
         }
-        foreach (var variant in _PredchoziDalsiVariants())
+        foreach (var (old, updated) in _PredchoziDalsiVariants())
         {
-            file.Content.Replace(variant.Item1, variant.Item2);
+            file.Content.Replace(old, updated);
 
-            if (file.Content.Contains(variant.Item2))
+            if (file.Content.Contains(updated))
                 return;
         }
         //zahlásit chybu při nalezení další varianty funkce predchozi_dalsi
         file.Warnings.Add("Nalezena neznámá varianta funkce predchozi_dalsi.");
 
         //iterátor dvojic 'co hledat?', 'čím to nahradit?' pro varianty funkce predchozi_dalsi
-        static IEnumerable<(string, string)> _PredchoziDalsiVariants()
+        static IEnumerable<(string old, string updated)> _PredchoziDalsiVariants()
         {
             yield return ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)",
                           "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)"
@@ -467,7 +467,7 @@ public class MonaUpgrader
     /// </summary>
     public static void UpgradeXmlFeeds(FileWrapper file)
     {
-        if (Regex.IsMatch(file.Path, "xml_feeds_[^edit]", _regexCompiledOpts))
+        if (Regex.IsMatch(file.Path, "xml_feeds_[^edit]", _regexCompiled))
         {
             file.Content.Replace("if($query_podmenu_all[\"casovani\"] == 1)", "if($data_podmenu_all[\"casovani\"] == 1)");
         }
@@ -518,7 +518,7 @@ public class MonaUpgrader
     {
         switch (file.Content)
         {
-            case var c0 when !Regex.IsMatch(c0.ToString(), "(?s)^(?=.*?function )(?=.*?mysqli_)", _regexCompiledOpts):
+            case var c0 when !Regex.IsMatch(c0.ToString(), "(?s)^(?=.*?function )(?=.*?mysqli_)", _regexCompiled):
             case var c1 when c1.Contains("$this"):
                 return;
         }
@@ -531,7 +531,7 @@ public class MonaUpgrader
             if (line.Contains("<script")) javascript = true;
             if (line.Contains("</script")) javascript = false;
 
-            if (Regex.IsMatch(line.ToString(), @"function\s", _regexCompiledOpts)
+            if (Regex.IsMatch(line.ToString(), @"function\s", _regexCompiled)
                 && !javascript
                 && _MysqliAndBetaInFunction(i))
             {
@@ -622,11 +622,11 @@ public class MonaUpgrader
 
             string content = file.Content.ToString();
 
-            content = Regex.Replace(content, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator, _regexCompiledOpts);
-            content = Regex.Replace(content, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator, _regexCompiledOpts);
+            content = Regex.Replace(content, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator, _regexCompiled);
+            content = Regex.Replace(content, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator, _regexCompiled);
 
-            content = Regex.Replace(content, @"ereg ?\( ?\$", "preg_match($", _regexCompiledOpts);
-            content = Regex.Replace(content, @"ereg_replace ?\( ?\$", "preg_replace($", _regexCompiledOpts);
+            content = Regex.Replace(content, @"ereg ?\( ?\$", "preg_match($", _regexCompiled);
+            content = Regex.Replace(content, @"ereg_replace ?\( ?\$", "preg_replace($", _regexCompiled);
 
             if (content.Contains("ereg"))
             {
@@ -653,14 +653,14 @@ public class MonaUpgrader
                 if (!javascript && !line.Contains(".split"))
                 {
                     var lineStr = line.ToString();
-                    lineStr = Regex.Replace(lineStr, @"\bsplit ?\('(\\'|[^'])*'", evaluator, _regexCompiledOpts);
-                    lineStr = Regex.Replace(lineStr, @"\bsplit ?\(""(\\""|[^""])*""", evaluator, _regexCompiledOpts);
+                    lineStr = Regex.Replace(lineStr, @"\bsplit ?\('(\\'|[^'])*'", evaluator, _regexCompiled);
+                    lineStr = Regex.Replace(lineStr, @"\bsplit ?\(""(\\""|[^""])*""", evaluator, _regexCompiled);
                     line.Clear();
                     line.Append(lineStr);
                 }
             }
             lines.JoinInto(file.Content);
-            if (Regex.IsMatch(file.Content.ToString(), @"[^_\.]split ?\(", _regexCompiledOpts))
+            if (Regex.IsMatch(file.Content.ToString(), @"[^_\.]split ?\(", _regexCompiled))
             {
                 file.Warnings.Add("Nemodifikovaná funkce split!");
             }
@@ -708,7 +708,7 @@ public class MonaUpgrader
         }
         while (renamedItems.Count > 0)
         {
-            (var oldKey, var newKey, var newValue) = renamedItems.Pop();
+            var (oldKey, newKey, newValue) = renamedItems.Pop();
             FindReplace.Remove(oldKey);
             FindReplace.Add(newKey, newValue);
         }

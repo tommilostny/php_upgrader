@@ -56,7 +56,7 @@ internal static class ConsoleOutput
         Console.ForegroundColor = ConsoleColor.DarkGray;
         Console.Write(timeStr);
 
-        _OutputSpaces(timeStr.Length + 6, 28);
+        _OutputSpaces(timeStr.Length + 6, 29);
 
         Console.ForegroundColor = isPhp ? ConsoleColor.Cyan : fc.DefaultColor;
         Console.Write(fileInfo.FullName);
