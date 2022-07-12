@@ -54,7 +54,7 @@ public class FileWrapper
             return;
 
         var s = System.IO.Path.DirectorySeparatorChar;
-        var backupFile = new FileInfo(Path.Replace($"{s}{webName}{s}", $"{s}{webName}_backup{s}"));
+        var backupFile = new FileInfo(Path.Replace($"{s}{webName}{s}", $"{s}_backup{s}{webName}{s}"));
 
         backupFile.Directory.Create();
         File.Copy(Path, backupFile.FullName, overwrite: false);
