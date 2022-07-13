@@ -264,13 +264,9 @@ public class RubiconUpgrader : MonaUpgrader
     }
 
     /// <summary> Přidá funkci pg_close na konec index.php. </summary>
-    public override void UpgradeMysqliClose(FileWrapper file)
+    public override void UpgradeCloseIndex(FileWrapper file)
     {
-        if (file.Path.EndsWith(Path.Join(WebName, "index.php")) && !file.Content.Contains("pg_close"))
-        {
-            file.Content.AppendLine();
-            file.Content.Append("<?php pg_close($beta); ?>");
-        }
+        UpgradeCloseIndex(file, "pg_close");
     }
 
     /// <summary> HTML tag &lt;script language="PHP"&gt;&lt;/script> deprecated => &lt;?php ?&gt; </summary>

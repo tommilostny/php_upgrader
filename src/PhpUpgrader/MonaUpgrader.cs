@@ -152,7 +152,7 @@ public class MonaUpgrader
             UpgradeClanekVypis(file);
             UpgradeFindReplace(file);
             UpgradeMysqliQueries(file);
-            UpgradeMysqliClose(file);
+            UpgradeCloseIndex(file);
             UpgradeAnketa(file);
             UpgradeChdir(file);
             UpgradeTableAddEdit(file);
@@ -370,16 +370,25 @@ public class MonaUpgrader
     }
 
     /// <summary> pridat mysqli_close($beta); do indexu nakonec </summary>
-    public virtual void UpgradeMysqliClose(FileWrapper file)
+    public virtual void UpgradeCloseIndex(FileWrapper file)
     {
-        if (_IsInRootFolder(file.Path) && !file.Content.Contains("mysqli_close"))
+        UpgradeCloseIndex(file, "mysqli_close");
+    }
+
+    /// <summary> Přidá "{closeFunction}($beta);" na konec soubor index.php. </summary>
+    protected void UpgradeCloseIndex(FileWrapper file, string closeFunction)
+    {
+        if (_IsInRootFolder(file.Path) && !file.Content.Contains(closeFunction))
         {
             file.Content.AppendLine();
-            file.Content.Append("<?php mysqli_close($beta); ?>");
+            file.Content.Append($"<?php {closeFunction}($beta); ?>");
         }
 
-        bool _IsInRootFolder(string path) => path.Contains(Path.Join(WebName, "index.php"))
-            || OtherRootFolders?.Any(rf => path.Contains(Path.Join(WebName, rf, "index.php"))) == true;
+        bool _IsInRootFolder(string path)
+        {
+            return path.EndsWith(Path.Join(WebName, "index.php"))
+                || OtherRootFolders?.Any(rf => path.EndsWith(Path.Join(WebName, rf, "index.php"))) == true;
+        }
     }
 
     /// <summary>
