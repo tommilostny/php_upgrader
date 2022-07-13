@@ -57,7 +57,10 @@ public class FileWrapper
         var backupFile = new FileInfo(Path.Replace($"{s}{webName}{s}", $"{s}_backup{s}{webName}{s}"));
 
         backupFile.Directory.Create();
-        File.Copy(Path, backupFile.FullName, overwrite: false);
+        if (!backupFile.Exists)
+        {
+            File.Copy(Path, backupFile.FullName);
+        }
 
         File.WriteAllText(Path, Content.ToString());
 

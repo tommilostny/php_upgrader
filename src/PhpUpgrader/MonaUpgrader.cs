@@ -369,7 +369,8 @@ public class MonaUpgrader
     /// <summary> pridat mysqli_close($beta); do indexu nakonec </summary>
     public virtual void UpgradeMysqliClose(FileWrapper file)
     {
-        if (file.Path.Contains(Path.Join(WebName, "index.php")) && !file.Content.Contains("mysqli_close"))
+        if ((file.Path.Contains(Path.Join(WebName, "index.php")) || file.Path.Contains(Path.Join(WebName, "web", "index.php")))
+            && !file.Content.Contains("mysqli_close"))
         {
             file.Content.AppendLine();
             file.Content.Append("<?php mysqli_close($beta); ?>");
@@ -535,7 +536,7 @@ public class MonaUpgrader
                 && !javascript
                 && _MysqliAndBetaInFunction(i))
             {
-                lines[++i].Append("\n    global $beta;\n\n");
+                lines[++i].Append("\n\n    global $beta;\n");
             }
         }
         lines.JoinInto(file.Content);
@@ -584,7 +585,10 @@ public class MonaUpgrader
         if ((newVarName ??= RenameBetaWith) is not null)
         {
             content.Replace($"${oldVarName}", $"${newVarName}");
-            content.Replace($"_{oldVarName}", $"_{newVarName}");
+            if (newVarName?.Contains("->") == false)
+            {
+                content.Replace($"_{oldVarName}", $"_{newVarName}");
+            }
         }
     }
 
@@ -597,7 +601,10 @@ public class MonaUpgrader
         if ((newVarName ??= RenameBetaWith) is not null)
         {
             content = content.Replace($"${oldVarName}", $"${newVarName}");
-            content = content.Replace($"_{oldVarName}", $"_{newVarName}");
+            if (newVarName?.Contains("->") == false)
+            {
+                content = content.Replace($"_{oldVarName}", $"_{newVarName}");
+            }
         }
         return content;
     }
@@ -660,7 +667,11 @@ public class MonaUpgrader
                 }
             }
             lines.JoinInto(file.Content);
-            if (Regex.IsMatch(file.Content.ToString(), @"[^_\.]split ?\(", _regexCompiled))
+
+            if (!file.Path.EndsWith(Path.Join("facebook", "src", "Facebook", "SignedRequest.php"))
+                && !file.Path.EndsWith(Path.Join("funkce", "qrkod", "qrsplit.php"))
+                && !file.Path.EndsWith(Path.Join("funkce", "qrkod", "phpqrcode.php"))
+                && Regex.IsMatch(file.Content.ToString(), @"[^_\.]split ?\(", _regexCompiled))
             {
                 file.Warnings.Add("Nemodifikovaná funkce split!");
             }
