@@ -35,26 +35,28 @@ class Program
             return;
         }
 
-        Console.Write($"Spuštěn PHP upgrade pro '{webName}'");
-        var upgrader = rubicon ? new RubiconUpgrader(baseFolder, webName)
-        {
-            Database = ignoreConnect ? null : db,
-            Username = ignoreConnect ? null : user,
-            Password = ignoreConnect ? null : password,
-            Hostname = ignoreConnect ? null : host
-        }
-        : new MonaUpgrader(baseFolder, webName)
+        var upgrader = !rubicon ? new MonaUpgrader(baseFolder, webName)
         {
             AdminFolders = adminFolders,
-            Database = ignoreConnect ? null : db,
-            Username = ignoreConnect ? null : user,
-            Password = ignoreConnect ? null : password,
-            Hostname = ignoreConnect ? null : host,
             RenameBetaWith = beta,
             ConnectionFile = connectionFile
-        };
-        Console.WriteLine($" použitím {(upgrader is RubiconUpgrader ? "Rubicon" : "Mona")} upgraderu...\n");
+        }
+        : new RubiconUpgrader(baseFolder, webName);
 
+        upgrader.Database = ignoreConnect ? null : db;
+        upgrader.Username = ignoreConnect ? null : user;
+        upgrader.Password = ignoreConnect ? null : password;
+        upgrader.Hostname = ignoreConnect ? null : host;
+
+        Console.Write($"Spuštěn PHP upgrade pro '{webName}' použitím ");
+        Console.Write(upgrader switch
+        {
+            RubiconUpgrader => "Rubicon",
+            MonaUpgrader => "Mona"
+        });
+        Console.WriteLine(" upgraderu...");
+
+        Console.WriteLine("\nOznačení zpracovaných souborů:");
         Console.WriteLine($"Modifikován:   {FileWrapper.ModifiedSymbol}");
         Console.WriteLine($"Nemodifikován: {FileWrapper.UnmodifiedSymbol}");
         Console.WriteLine($"Varování:      {FileWrapper.WarningSymbol}");
@@ -62,7 +64,11 @@ class Program
         Console.WriteLine("\nZpracované soubory:");
         upgrader.UpgradeAllFilesRecursively(workDir);
 
+        var color = Console.ForegroundColor;
+        Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine($"\nAutomatický upgrade PHP webu {webName} je dokončen!");
+        Console.ForegroundColor = color;
+
         Console.WriteLine($"Celkem upravených souborů: {upgrader.ModifiedFilesCount}/{upgrader.TotalFilesCount}");
         
         Console.WriteLine($"Soubory obsahující mysql_: {upgrader.FilesContainingMysql.Count}");
