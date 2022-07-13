@@ -26,6 +26,9 @@ public class MonaUpgrader
     }
     private string[] _adminFolders;
 
+    /// <summary> Root složky obsahující index.php, do kterého vložit mysqli_close na konec. </summary>
+    public string[]? OtherRootFolders { get; set; }
+
     /// <summary> URL k databázovému serveru. </summary>
     public string? Hostname { get; set; }
 
@@ -369,12 +372,14 @@ public class MonaUpgrader
     /// <summary> pridat mysqli_close($beta); do indexu nakonec </summary>
     public virtual void UpgradeMysqliClose(FileWrapper file)
     {
-        if ((file.Path.Contains(Path.Join(WebName, "index.php")) || file.Path.Contains(Path.Join(WebName, "web", "index.php")))
-            && !file.Content.Contains("mysqli_close"))
+        if (_IsInRootFolder(file.Path) && !file.Content.Contains("mysqli_close"))
         {
             file.Content.AppendLine();
             file.Content.Append("<?php mysqli_close($beta); ?>");
         }
+
+        bool _IsInRootFolder(string path) => path.Contains(Path.Join(WebName, "index.php"))
+            || OtherRootFolders?.Any(rf => path.Contains(Path.Join(WebName, rf, "index.php"))) == true;
     }
 
     /// <summary>

@@ -8,6 +8,7 @@ class Program
     /// </summary>
     /// <param name="webName">Název webu ve složce 'weby' (nesmí chybět).</param>
     /// <param name="adminFolders">Složky obsahující administraci RS Mona (default prázdné: 1 složka admin)</param>
+    /// <param name="rootFolders">Další "root" složky obsahující index.php, do kterého vložit mysqli_close na konec.</param>
     /// <param name="baseFolder">Absolutní cesta základní složky, kde jsou složky 'weby' a 'important'.</param>
     /// <param name="db">Název nové databáze na mcrai2. (nechat prázdné pokud se používá stejná databáze, zkopíruje se ze souboru)</param>
     /// <param name="user">Uživatelské jméno k nové databázi na mcrai2.</param>
@@ -17,10 +18,10 @@ class Program
     /// <param name="connectionFile">Název souboru ve složce "/connect".</param>
     /// <param name="rubicon">Upgrade systému Rubicon (nezadáno => Mona).</param>
     /// <param name="ignoreConnect">Ignore DB connection arguments (--host, --db, --user, --password).</param>
-    static void Main(string webName, string[]? adminFolders = null, string baseFolder = "/McRAI",
-        string? db = null, string? user = null, string? password = null, string host = "localhost",
-        string? beta = null, string connectionFile = "connection.php", bool rubicon = false,
-        bool ignoreConnect = false)
+    static void Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
+        string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
+        string host = "localhost", string? beta = null, string connectionFile = "connection.php",
+        bool rubicon = false, bool ignoreConnect = false)
     {
         var workDir = Path.Join(baseFolder, "weby", webName);
 
@@ -47,6 +48,7 @@ class Program
         upgrader.Username = ignoreConnect ? null : user;
         upgrader.Password = ignoreConnect ? null : password;
         upgrader.Hostname = ignoreConnect ? null : host;
+        upgrader.OtherRootFolders = rootFolders;
 
         Console.Write($"Spuštěn PHP upgrade pro '{webName}' použitím ");
         Console.Write(upgrader switch
