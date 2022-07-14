@@ -63,14 +63,16 @@ public class RubiconUpgrader : MonaUpgrader
 
             var className = lineStr[nameStartIndex..(nameEndIndex != -1 ? nameEndIndex : line.Length)].Trim();
 
-            int bracketCount = Convert.ToInt32(line.Contains('{'));
+            int bracketCount = line.Count('{');
 
             if (bracketCount == 0 && !lines[i + 1].Contains('{'))
+            {
                 continue;
-
+            }
             if (_LookAheadFor__construct(bracketCount, i + 1)) //třída obsahuje metodu __construct(), nehledat starý konstruktor
+            {
                 continue;
-
+            }
             bool inComment = line.Contains("/*");
             while (++i < lines.Count) //hledání a nahrazení starého konstruktoru uvnitř třídy
             {
@@ -83,12 +85,13 @@ public class RubiconUpgrader : MonaUpgrader
                 if (inComment || lineStr.TrimStart().StartsWith("//"))
                     continue;
 
-                if (line.Contains('{')) bracketCount++;
-                if (line.Contains('}')) bracketCount--;
+                bracketCount += line.Count('{');
+                bracketCount -= line.Count('}');
 
                 if (bracketCount == 0)
+                {
                     break;
-
+                }
                 if (bracketCount > 2 && lineStr.TrimStart().StartsWith("function"))
                 {
                     file.Warnings.Add($"Neočekávaný počet složených závorek ({bracketCount}), funkce okolo řádku {i + 1}. Zkontrolovat konstruktor(y) třídy {className}.");
@@ -142,14 +145,17 @@ public class RubiconUpgrader : MonaUpgrader
             {
                 var line = lines[linesIndex];
 
-                if (line.Contains('{')) bracketCount++;
-                if (line.Contains('}')) bracketCount--;
+                bracketCount += line.Count('{');
+                bracketCount -= line.Count('}');
 
                 if (bracketCount == 0)
+                {
                     break;
-
+                }
                 if (line.Contains("function __construct"))
+                {
                     return true;
+                }
             }
             return false;
         }
@@ -170,13 +176,11 @@ public class RubiconUpgrader : MonaUpgrader
         {
             return;
         }
-        var backup = (ConnectionFile, Username, Password, Database);
-        ConnectionFile = "rubicon_import.php";
-        Database = "eshop-products_n";
-        Username = "eshop-products_u";
-        Password = "bZcg386!";
-        
+        var backup = ConnectionFile;
+        ConnectionFile = "rubicon_import.php";        
         base.UpgradeConnect(file);
+        ConnectionFile = backup;
+
         RenameBeta(file.Content, "sportmall_import");
 
         var replacements = new StringBuilder()
@@ -186,8 +190,6 @@ public class RubiconUpgrader : MonaUpgrader
 
         file.Content.Replace("mysqli_query($sportmall_import, \"SET CHARACTER SET utf8\");",
                              replacements.ToString());
-
-        (ConnectionFile, Username, Password, Database) = backup;
     }
 
     /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
@@ -208,19 +210,24 @@ public class RubiconUpgrader : MonaUpgrader
         var content = file.Content.ToString();
         var evaluator = new MatchEvaluator(_NewCredentialAndComment);
 
-        content = Regex.Replace(content, @"\$setup_connect.*= ?"".*"";", evaluator);
+        content = Regex.Replace(content, @"\$setup_connect.*= ?"".*"";", evaluator, _regexCompiled);
         file.Content.Clear();
         file.Content.Append(content);
         file.Content.Replace("////", "//");
 
         if (!usernameLoaded)
+        {
             file.Warnings.Add("setup.php - nenačtené přihlašovací jméno.");
+        }
         if (!passwordLoaded)
+        {
             file.Warnings.Add("setup.php - nenačtené heslo.");
+        }
         if (!databaseLoaded)
+        {
             file.Warnings.Add("setup.php - nenačtený název databáze.");
-
-        file.Warnings.Add("setup.php - zkontrolovat připojení k databázi atd..");
+        }
+        file.Warnings.Add("setup.php - zkontrolovat připojení k databázi..");
 
         string _NewCredentialAndComment(Match match)
         {
@@ -247,7 +254,10 @@ public class RubiconUpgrader : MonaUpgrader
             && !file.Content.Contains($"$hostname_beta = \"{Hostname}\";"))
         {
             file.Content.Replace("$hostname_beta = \"93.185.102.228\";", $"//$hostname_beta = \"93.185.102.228\";\n\t$hostname_beta = \"{Hostname}\";");
-            file.Content.Replace("$hostname_beta = \"localhost\";", $"//$hostname_beta = \"localhost\";\n\t$hostname_beta = \"{Hostname}\";");
+            if (Hostname != "localhost")
+            {
+                file.Content.Replace("$hostname_beta = \"localhost\";", $"//$hostname_beta = \"localhost\";\n\t$hostname_beta = \"{Hostname}\";");
+            }
         }
         if (!file.Content.Contains($"Database::connect('{Hostname}'"))
         {

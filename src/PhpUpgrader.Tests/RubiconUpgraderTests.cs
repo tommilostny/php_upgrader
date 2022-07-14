@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System.Text;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace PhpUpgrader.Tests;
@@ -55,8 +56,8 @@ public class RubiconUpgraderTests
     public void RubiconImportTest()
     {
         //Arrange
-        var file = new FileWrapper("rubicon_import.php", "");
-        var upgrader = new RubiconUpgrader(string.Empty, string.Empty)
+        var file = new FileWrapper("Connections\\rubicon_import.php", "<?php\r\n# FileName=\"Connection_php_mysql.htm\"\r\n# Type=\"MYSQL\"\r\n# HTTP=\"true\"\r\n$hostname_sportmall_import = \"localhost\";\r\n$database_sportmall_import = \"eshop_products\";\r\n$username_sportmall_import = \"eshop_products\";\r\n$password_sportmall_import = \"heslo_k_databazi_:)\";\r\n$sportmall_import = mysql_pconnect($hostname_sportmall_import, $username_sportmall_import, $password_sportmall_import) or trigger_error(mysql_error(),E_USER_ERROR); \r\n\r\nmysql_query(\"SET character_set_connection=cp1250\");\r\nmysql_query(\"SET character_set_results=cp1250\");\r\nmysql_query(\"SET character_set_client=cp1250\");\r\n?>");
+        var upgrader = new RubiconUpgrader("/McRAI", string.Empty)
         { 
             ConnectionFile = "connect.php",
             RenameBetaWith = "alfa"
@@ -64,6 +65,7 @@ public class RubiconUpgraderTests
 
         //Act, Debug
         upgrader.UpgradeRubiconImport(file);
+        _output.WriteLine(file.Content.ToString());
     }
 
     [Fact]

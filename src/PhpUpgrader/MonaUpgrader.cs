@@ -210,19 +210,19 @@ public class MonaUpgrader
 
                 if (!inComment)
                 {
-                    if (line.Contains("$hostname_beta") && !line.Contains("//$hostname_beta"))
+                    if (line.Contains("$hostname_") && !line.Contains("//$hostname_"))
                     {
                         hostLoaded = true;
                     }
-                    else if (line.Contains("$database_beta") && !line.Contains("//$database_beta"))
+                    else if (line.Contains("$database_") && !line.Contains("//$database_"))
                     {
                         dbnameLoaded = true;
                     }
-                    else if (line.Contains("$username_beta") && !line.Contains("//$username_beta"))
+                    else if (line.Contains("$username_") && !line.Contains("//$username_"))
                     {
                         usernameLoaded = true;
                     }
-                    else if (line.Contains("$password_beta") && !line.Contains("//$password_beta"))
+                    else if (line.Contains("$password_") && !line.Contains("//$password_"))
                     {
                         passwdLoaded = true;
                     }
@@ -249,22 +249,22 @@ public class MonaUpgrader
 
             if (Hostname is not null && !file.Content.Contains(hostCreds.Value))
             {
-                file.Content.Replace("\n$hostname_beta", "\n//$hostname_beta");
+                file.Content.Replace("\n$hostname_", "\n//$hostname_");
                 file.Content.AppendLine(hostCreds.Value);
             }
             if (Database is not null && !file.Content.Contains(dbCreds.Value))
             {
-                file.Content.Replace("\n$database_beta", "\n//$database_beta");
+                file.Content.Replace("\n$database_", "\n//$database_");
                 file.Content.AppendLine(dbCreds.Value);
             }
             if (Username is not null && !file.Content.Contains(userCreds.Value))
             {
-                file.Content.Replace("\n$username_beta", "\n//$username_beta");
+                file.Content.Replace("\n$username_", "\n//$username_");
                 file.Content.AppendLine(userCreds.Value);
             }
             if (Password is not null && !file.Content.Contains(passwdCreds.Value))
             {
-                file.Content.Replace("\n$password_beta", "\n//$password_beta");
+                file.Content.Replace("\n$password_", "\n//$password_");
                 file.Content.AppendLine(passwdCreds.Value);
             }
             file.Content.Replace("////", "//"); //smazat zbytečná lomítka
@@ -580,8 +580,8 @@ public class MonaUpgrader
                     if (foundBeta && foundMysqli)
                         return true;
                 }
-                if (line.Contains('{')) bracketCount++;
-                if (line.Contains('}')) bracketCount--;
+                bracketCount += line.Count('{');
+                bracketCount -= line.Count('}');
 
                 if ((line.Contains("global $beta;") || bracketCount <= 0) && i > startIndex)
                     break;

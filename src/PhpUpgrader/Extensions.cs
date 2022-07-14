@@ -3,6 +3,25 @@
 internal static class Extensions
 {
     /// <summary>
+    /// Spočítá výskyty daného znaku v instanci <seealso cref="StringBuilder"/>.
+    /// </summary>
+    /// <param name="source">Řetězec, kde se počítá.</param>
+    /// <param name="value">Hledaná hodnota.</param>
+    /// <returns>Počet výskytů daného znaku.</returns>
+    internal static int Count(this StringBuilder source, char value)
+    {
+        int count = 0;
+        for (int i = 0; i < source.Length; i++)
+        {
+            if (source[i] == value)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /// <summary>
     /// Spojí řetězcovou reprezentaci prvků dané kolekce
     /// oddělenou daným znakem separátoru
     /// a nahradí tím obsah cílové instance <seealso cref="StringBuilder"/>.
