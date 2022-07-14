@@ -80,12 +80,15 @@ public class FileWrapper
         var symbol = modified ? ModifiedSymbol : UnmodifiedSymbol;
 
         Console.WriteLine($"{symbol} {displayName}");
-        foreach (var warning in Warnings)
+        if (!modified)
         {
-            var defaultColor = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.Error.WriteLine($"{WarningSymbol} {warning}");
-            Console.ForegroundColor = defaultColor;
+            foreach (var warning in Warnings)
+            {
+                var defaultColor = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.Error.WriteLine($"{WarningSymbol} {warning}");
+                Console.ForegroundColor = defaultColor;
+            }
         }
     }
 

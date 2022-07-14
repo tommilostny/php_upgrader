@@ -38,6 +38,8 @@ public class RubiconUpgrader : MonaUpgrader
             UpgradeAegisxDetail(file);
             UpgradeLoadData(file);
             UpgradeHomeTopProducts(file);
+            UpgradeUrlPromenne(file);
+            UpgradeInvalidPhpStart(file);
         }
         return file;
     }
@@ -195,17 +197,17 @@ public class RubiconUpgrader : MonaUpgrader
     /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
     public void UpgradeSetup(FileWrapper file)
     {
-        if (Database is null || Username is null || Password is null)
+        if (!file.Path.EndsWith(Path.Join(WebName, "setup.php")))
         {
             return;
         }
-        switch (file)
-        {
-            case { Path: var p } when !p.Contains(Path.Join(WebName, "setup.php")):
-            case { Content: var c } when c.Contains($"password = '{Password}';"):
-                return;
-        }
+        file.Content.Replace("$_SERVER[HTTP_HOST]", "$_SERVER['HTTP_HOST']");
 
+        if (Database is null || Username is null || Password is null
+            || file.Content.Contains($"password = '{Password}';"))
+        {
+            return;
+        }
         bool usernameLoaded = false, passwordLoaded = false, databaseLoaded = false;
         var content = file.Content.ToString();
         var evaluator = new MatchEvaluator(_NewCredentialAndComment);
@@ -343,7 +345,7 @@ public class RubiconUpgrader : MonaUpgrader
         }
     }
 
-    /// <summary> [Break => Return] v souboru aegisx\detail.php (není ve smyčce, ale included). </summary>
+    /// <summary> [Break => Return] v souboru aegisx\detail.php (není ve smyčce, ale v if). </summary>
     public static void UpgradeAegisxDetail(FileWrapper file)
     {
         if (!file.Path.EndsWith(Path.Join("aegisx", "detail.php")))
@@ -352,7 +354,7 @@ public class RubiconUpgrader : MonaUpgrader
         }
         var contentStr = file.Content.ToString();
         file.Content.Clear();
-        file.Content.Append(Regex.Replace(contentStr, @"if\s?\(\$presmeruj == ""NO""\)\s*\{\n\s*break;", "if ($presmeruj == \"NO\") {\n\t\t\treturn;"));
+        file.Content.Append(Regex.Replace(contentStr, @"if\s?\(\$presmeruj == ""NO""\)\s*\{\s*break;", "if ($presmeruj == \"NO\") {\n\t\t\treturn;"));
     }
 
     /// <summary> Úprava mysql a proměnné $beta v souboru aegisx\import\load_data.php. </summary>
@@ -397,5 +399,24 @@ public class RubiconUpgrader : MonaUpgrader
         file.Content.Replace("extends Object", "extends ObjectBase");
         file.Content.Replace("@param Object", "@param ObjectBase");
         file.Content.Replace("@property  Object", "@property  ObjectBase");
+    }
+
+    /// <summary> Opravuje chybně zapsanou proměnnou $modul v souboru funkce/url_promenne.php </summary>
+    public static void UpgradeUrlPromenne(FileWrapper file)
+    {
+        if (file.Path.EndsWith(Path.Join("funkce", "url_promene.php")))
+        {
+            file.Content.Replace("if($url != \"0\" AND modul != \"obsah\"):",
+                                 "if($url != \"0\" AND $modul != \"obsah\"):");
+        }
+    }
+
+    /// <summary> Using &lt;? causes the files to be unparsable and an error is thrown. </summary>
+    public static void UpgradeInvalidPhpStart(FileWrapper file)
+    {
+        file.Content.Replace("<? ", "<?php ");
+        file.Content.Replace("<?\n", "<?php\n");
+        file.Content.Replace("<?\r", "<?php\r");
+        file.Content.Replace("<?\t", "<?php\t");
     }
 }

@@ -170,7 +170,7 @@ public class RubiconUpgraderTests
     public void ReplacesBreakWithReturnInAegisxDetail()
     {
         //Arrange
-        var file = new FileWrapper("test-site\\aegisx\\detail.php", "if ($presmeruj == \"NO\")\n{\n\t\t\tbreak;");
+        var file = new FileWrapper("test-site\\aegisx\\detail.php", "if ($presmeruj == \"NO\") {\r\n\t\t\tbreak;");
 
         //Act
         RubiconUpgrader.UpgradeAegisxDetail(file);
