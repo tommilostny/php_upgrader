@@ -6,20 +6,18 @@ internal static class ConsoleOutput
     /// <summary> Outputs formatted message to stderr. </summary>
     internal static void WriteError(string message)
     {
-        var defaultColor = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Red;
         Console.Error.WriteLine($"❌ {message}");
-        Console.ForegroundColor = defaultColor;
+        Console.ResetColor();
         Console.Error.WriteLine("Spusťte s parametrem --help k zobrazení nápovědy.\n");
     }
 
     /// <summary> Outputs process completition message to stdout. </summary>
     internal static void WriteCompleted()
     {
-        var defaultColor = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("\n\n\r✅ Proces dokončen.\n");
-        Console.ForegroundColor = defaultColor;
+        Console.ResetColor();
     }
 
     /// <summary>
@@ -58,9 +56,12 @@ internal static class ConsoleOutput
 
         _OutputSpaces(timeStr.Length + 6, 29);
 
-        Console.ForegroundColor = isPhp ? ConsoleColor.Cyan : fc.DefaultColor;
+        if (isPhp)
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+        }
         Console.Write(fileInfo.FullName);
-        Console.ForegroundColor = fc.DefaultColor;
+        Console.ResetColor();
 
         _OutputSpaces(fileInfo.FullName.Length + 27, messageLength);
         Console.WriteLine();

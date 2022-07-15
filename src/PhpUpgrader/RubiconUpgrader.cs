@@ -25,10 +25,9 @@ public class RubiconUpgrader : MonaUpgrader
     /// <summary> Procedura aktualizace Rubicon souborů. </summary>
     /// <remarks> Použita ve volání metody <see cref="MonaUpgrader.UpgradeAllFilesRecursively"/>. </remarks>
     /// <returns> Upravený soubor. </returns>
-    protected override FileWrapper UpgradeProcedure(string filePath)
+    protected override FileWrapper? UpgradeProcedure(string filePath)
     {
         var file = base.UpgradeProcedure(filePath);
-
         if (file is not null)
         {
             UpgradeObjectClass(file);
@@ -354,7 +353,8 @@ public class RubiconUpgrader : MonaUpgrader
         }
         var contentStr = file.Content.ToString();
         file.Content.Clear();
-        file.Content.Append(Regex.Replace(contentStr, @"if\s?\(\$presmeruj == ""NO""\)\s*\{\s*break;", "if ($presmeruj == \"NO\") {\n\t\t\treturn;"));
+        file.Content.Append(Regex.Replace(contentStr, @"if\s?\(\$presmeruj == ""NO""\)\s*\{\s*break;",
+                                                       "if ($presmeruj == \"NO\") {\n\t\t\treturn;"));
     }
 
     /// <summary> Úprava mysql a proměnné $beta v souboru aegisx\import\load_data.php. </summary>

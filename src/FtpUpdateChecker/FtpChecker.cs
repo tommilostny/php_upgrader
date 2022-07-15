@@ -23,8 +23,6 @@ public class FtpChecker : IDisposable
     /// <summary> Počet PHP souborů přidaných po datu <see cref="FromDate"/>. </summary>
     public uint PhpFoundCount { get; private set; }
 
-    internal ConsoleColor DefaultColor { get; } = Console.ForegroundColor;
-
     /// <summary> Inicializace sezení spojení WinSCP, nastavení data. </summary>
     public FtpChecker(string username, string password, string hostname, DateTime fromDate)
     {

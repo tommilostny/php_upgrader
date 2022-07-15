@@ -118,16 +118,18 @@ public class MonaUpgrader
         foreach (var filePath in Directory.GetFiles(directoryPath, "*.php"))
         {
             TotalFilesCount++;
-            var file = UpgradeProcedure(filePath);
-
-            if (file is null)
+            FileWrapper? file;
+            if ((file = UpgradeProcedure(filePath)) is null)
+            {
                 continue;
-
+            }
             //upraveno, zapsat do souboru
             file.WriteStatus();
             file.Save(WebName);
-            ModifiedFilesCount += Convert.ToUInt32(file.IsModified);
-
+            if (file.IsModified)
+            {
+                ModifiedFilesCount++;
+            }
             //po dodelani nahrazeni nize projit na retezec - mysql_
             if (Regex.IsMatch(file.Content.ToString(), "[^//]mysql_", _regexIgnoreCase))
             {
@@ -138,11 +140,12 @@ public class MonaUpgrader
 
     /// <summary> Procedura aktualizace zadaného souboru. </summary>
     /// <returns> Upravený soubor, null v případě TinyAjaxBehavior. </returns>
-    protected virtual FileWrapper UpgradeProcedure(string filePath)
+    protected virtual FileWrapper? UpgradeProcedure(string filePath)
     {
         if (UpgradeTinyAjaxBehavior(filePath))
+        {
             return null;
-
+        }
         var file = new FileWrapper(filePath);
 
         if (!filePath.Contains("tiny_mce"))

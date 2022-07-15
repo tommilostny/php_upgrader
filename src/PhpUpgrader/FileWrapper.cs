@@ -42,7 +42,7 @@ public class FileWrapper
 
     /// <summary> Obsah souboru je načten z disku na zadané cestě. </summary>
     /// <param name="path"> Cesta k souboru. </param>
-    public FileWrapper(string path) : this(path, File.ReadAllText(path))
+    public FileWrapper(string path) : this(path, content: File.ReadAllText(path))
     {
     }
 
@@ -50,22 +50,26 @@ public class FileWrapper
     /// <remarks> Přesune soubor na cestu <see cref="MoveOnSavePath"/>, pokud není null. </remarks>
     public void Save(string webName)
     {
-        if (!IsModified)
+        if (!IsModified) //Nezapisovat, pokud neproběhly žádné změny.
+        {
             return;
-
+        }
+        //Vytvořit backup soubor.
         var s = System.IO.Path.DirectorySeparatorChar;
         var backupFile = new FileInfo(Path.Replace($"{s}{webName}{s}", $"{s}_backup{s}{webName}{s}"));
-
+        
         backupFile.Directory.Create();
         if (!backupFile.Exists)
         {
             File.Copy(Path, backupFile.FullName);
         }
-
+        //Zapsat změny.
         File.WriteAllText(Path, Content.ToString());
-
-        if (MoveOnSavePath is not null)
+        
+        if (MoveOnSavePath is not null) //Přesunout soubor, pokud je potřeba změnit jméno.
+        {
             File.Move(Path, MoveOnSavePath);
+        }
     }
 
     /// <summary> Vypíše název souboru a stav modifikace. </summary>
@@ -74,21 +78,22 @@ public class FileWrapper
     {
         var s = System.IO.Path.DirectorySeparatorChar;
         var webyIndex = Path.IndexOf($"{s}weby{s}");
-        
+
         var displayName = webyIndex != -1 ? Path.AsSpan(webyIndex + 6) : Path;
 
         var symbol = modified ? ModifiedSymbol : UnmodifiedSymbol;
 
         Console.WriteLine($"{symbol} {displayName}");
-        if (!modified)
+
+        if (!modified) //Výpis varování k souboru, pouze pokud je soubor nějak upraven.
         {
-            foreach (var warning in Warnings)
-            {
-                var defaultColor = Console.ForegroundColor;
-                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.Error.WriteLine($"{WarningSymbol} {warning}");
-                Console.ForegroundColor = defaultColor;
-            }
+            return;
+        }
+        foreach (var warning in Warnings)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.Error.WriteLine($"{WarningSymbol} {warning}");
+            Console.ResetColor();
         }
     }
 

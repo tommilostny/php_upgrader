@@ -66,10 +66,9 @@ class Program
         Console.WriteLine("\nZpracované soubory:");
         upgrader.UpgradeAllFilesRecursively(workDir);
 
-        var color = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine($"\nAutomatický upgrade PHP webu {webName} je dokončen!");
-        Console.ForegroundColor = color;
+        Console.ResetColor();
 
         Console.WriteLine($"Celkem upravených souborů: {upgrader.ModifiedFilesCount}/{upgrader.TotalFilesCount}");
         
