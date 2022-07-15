@@ -41,7 +41,7 @@ internal static class ConsoleOutput
     /// <param name="fc">Running FTP checker intance.</param>
     /// <param name="fileInfo">WinSCP file info.</param>
     /// <param name="messageLength">The lenghth of space printed message needs to overwrite with spaces.</param>
-    /// <param name="isPhp">PHP files are printed to console in cyan, others in <see cref="FtpChecker.DefaultColor"/>.</param>
+    /// <param name="isPhp">PHP files are printed to console in cyan, others in default color.</param>
     internal static void WriteFoundFile(this FtpChecker fc, RemoteFileInfo fileInfo, int messageLength, bool isPhp)
     {
         var numberStr = $"{fc.FoundCount}.";
