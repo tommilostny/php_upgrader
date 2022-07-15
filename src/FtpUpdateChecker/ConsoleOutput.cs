@@ -57,11 +57,14 @@ internal static class ConsoleOutput
         _OutputSpaces(timeStr.Length + 6, 29);
 
         if (isPhp)
-        {
             Console.ForegroundColor = ConsoleColor.Cyan;
-        }
+        else
+            Console.ResetColor();
+        
         Console.Write(fileInfo.FullName);
-        Console.ResetColor();
+        
+        if (isPhp)
+            Console.ResetColor();
 
         _OutputSpaces(fileInfo.FullName.Length + 27, messageLength);
         Console.WriteLine();
