@@ -60,7 +60,7 @@ public class RubiconUpgrader : MonaUpgrader
             new("MySQL_error()",
                 "mysqli_error($DBLink)"
             ),
-            //Using <? ... ?> causes the files to be unparsable and an error is thrown.
+            //Použití <? ... ?> způsobuje, že kód neprojde PHP parserem, který vyhodí chybu.
             new("<? ", "<?php "),
             new("<?\n", "<?php\n"),
             new("<?\r", "<?php\r"),
@@ -458,7 +458,10 @@ public class RubiconUpgrader : MonaUpgrader
         }
     }
 
-    /// <summary> </summary>
+    /// <summary>
+    /// Nalezeno v importy/_importy_old/DB_connect.php.
+    /// (Raději také aktualizovat. Stejný soubor se někde může ještě používat.)
+    /// </summary>
     public void UpgradeOldDbConnect(FileWrapper file)
     {
         if (file.Path.EndsWith("DB_connect.php"))
