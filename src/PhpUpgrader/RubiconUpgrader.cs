@@ -10,14 +10,56 @@ public class RubiconUpgrader : MonaUpgrader
     /// <remarks> Přidá specifické případy pro Rubicon do <see cref="MonaUpgrader.FindReplace"/>. </remarks>
     public RubiconUpgrader(string baseFolder, string webName) : base(baseFolder, webName)
     {
-        FindReplace.Add("mysql_select_db($database_beta);", "//mysql_select_db($database_beta);");
-        FindReplace.Add("////mysql_select_db($database_beta);", "//mysql_select_db($database_beta);");
-        FindReplace.Add("function_exists(\"mysqli_real_escape_string\") ? mysqli_real_escape_string($theValue) : mysql_escape_string($theValue)",
-                        "mysqli_real_escape_string($beta, $theValue)");
-        FindReplace.Add("mysql_select_db($database_sportmall_import, $sportmall_import);", "mysqli_select_db($sportmall_import, $database_sportmall_import);");
-        FindReplace.Add("mysqli_query($beta,$query_import_univarzal, $sportmall_import) or die(mysqli_error($beta))", "mysqli_query($sportmall_import, $query_import_univarzal) or die(mysqli_error($sportmall_import))");
-        FindReplace.Add(@"preg_match(""^$atom+(\\.$atom+)*@($domain?\\.)+$domain\$"", $email)", @"preg_match("";^$atom+(\\.$atom+)*@($domain?\\.)+$domain\$;"", $email)");
-        FindReplace.Add("emptiable(strip_tags($obj->category_name.', '.$obj->style_name)), $title)", "emptiable(strip_tags($obj->category_name.', '.$obj->style_name), $title))");
+        var additionalFindReplace = new List<KeyValuePair<string, string>>()
+        {
+            new("mysql_select_db($database_beta);",
+                "//mysql_select_db($database_beta);"
+            ),
+            new("////mysql_select_db($database_beta);",
+                "//mysql_select_db($database_beta);"
+            ),
+            new("function_exists(\"mysqli_real_escape_string\") ? mysqli_real_escape_string($theValue) : mysql_escape_string($theValue)",
+                "mysqli_real_escape_string($beta, $theValue)"
+            ),
+            new("mysql_select_db($database_sportmall_import, $sportmall_import);",
+                "mysqli_select_db($sportmall_import, $database_sportmall_import);"
+            ),
+            new("mysql_select_db($database_iviki_mysql, $iviki_mysql);",
+                "mysqli_select_db($iviki_mysql, $database_iviki_mysql);"
+            ),
+            new("mysqli_query($beta, $query_import_univarzal, $sportmall_import) or die(mysqli_error($beta))",
+                "mysqli_query($sportmall_import, $query_import_univarzal) or die(mysqli_error($sportmall_import))"
+            ),
+            new("mysqli_query($beta, $query_data_iviki, $iviki_mysql) or die(mysqli_error($beta))",
+                "mysqli_query($iviki_mysql, $query_data_iviki) or die(mysqli_error($iviki_mysql))"
+            ),
+            new("mysqli_query($beta, $query_data_druh, $iviki_mysql) or die(mysqli_error($beta))",
+                "mysqli_query($iviki_mysql, $query_data_druh) or die(mysqli_error($iviki_mysql))"
+            ),
+            new("emptiable(strip_tags($obj->category_name.', '.$obj->style_name)), $title)",
+                "emptiable(strip_tags($obj->category_name.', '.$obj->style_name), $title))"
+            ),
+            new(@"preg_match(""^$atom+(\\.$atom+)*@($domain?\\.)+$domain\$"", $email)",
+                @"preg_match("";^$atom+(\\.$atom+)*@($domain?\\.)+$domain\$;"", $email)"
+            ),
+            new("preg_match(\"ID\", $nazev)",
+                "preg_match('~ID~', $nazev)"
+            ),
+            new("MySQL_query($query, $DBLink)",
+                "mysqli_query($DBLink, $query)"
+            ),
+            new("MySQL_errno()",
+                "mysqli_errno($DBLink)"
+            ),
+            new("MySQL_errno($DBLink)",
+                "mysqli_errno($DBLink)"
+            ),
+            new("MySQL_error()",
+                "mysqli_error($DBLink)"
+            ),
+        };
+
+        additionalFindReplace.ForEach(afr => FindReplace[afr.Key] = afr.Value);
 
         _containsObjectClass = File.Exists(Path.Join(BaseFolder, "weby", WebName, "classes", "Object.php"));
     }
@@ -39,6 +81,7 @@ public class RubiconUpgrader : MonaUpgrader
             UpgradeHomeTopProducts(file);
             UpgradeUrlPromenne(file);
             UpgradeInvalidPhpStart(file);
+            UpgradeOldDbConnect(file);
         }
         return file;
     }
@@ -418,5 +461,19 @@ public class RubiconUpgrader : MonaUpgrader
         file.Content.Replace("<?\n", "<?php\n");
         file.Content.Replace("<?\r", "<?php\r");
         file.Content.Replace("<?\t", "<?php\t");
+    }
+
+    /// <summary> </summary>
+    public void UpgradeOldDbConnect(FileWrapper file)
+    {
+        if (file.Path.EndsWith("DB_connect.php"))
+        {
+            file.Content.Replace("$DBLink = mysqli_connect ($host,$user,$pass) or mysql_errno() + mysqli_error($beta);",
+                                 "$DBLink = mysqli_connect($host, $user, $pass);");
+            file.Content.Replace("if (!mysql_select_db( $DBname, $DBLink ))",
+                                 "mysqli_select_db($DBLink, $DBname);\nif (mysqli_connect_errno())");
+            file.Content.Replace("echo \"ERROR\";", "echo \"ERROR\";\nexit();");
+            RenameBeta(file.Content, "DBLink");
+        }
     }
 }

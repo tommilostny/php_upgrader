@@ -2,7 +2,7 @@
   "profiles": {
     "PhpUpgrader": {
       "commandName": "Project",
-      "commandLineArgs": "--web-name bily-kralik"
+      "commandLineArgs": "--web-name bily-kralik --rubicon"
     }
   }
 }

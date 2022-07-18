@@ -61,14 +61,18 @@ public class MonaUpgrader
     {
         { "=& new", "= new" },
         { "mysql_num_rows", "mysqli_num_rows" },
+        { "MySQL_num_rows", "mysqli_num_rows" },
         { "mysql_error()", "mysqli_error($beta)" },
         { "mysql_connect", "mysqli_connect" },
         { "mysql_close", "mysqli_close" },
         { "MySQL_Close", "mysqli_close" },
+        { "MySQL_close", "mysqli_close" },
         { "mysql_fetch_row", "mysqli_fetch_row" },
         { "mysql_Fetch_Row", "mysqli_fetch_row" },
         { "mysql_fetch_array", "mysqli_fetch_array" },
         { "mysql_fetch_assoc", "mysqli_fetch_assoc" },
+        { "mysql_fetch_object", "mysqli_fetch_object" },
+        { "MySQL_fetch_object", "mysqli_fetch_object" },
         { "MYSQL_ASSOC", "MYSQLI_ASSOC" },
         { "mysql_select_db(DB_DATABASE, $this->db)", "mysqli_select_db($this->db, DB_DATABASE)" },
         { "mysql_select_db($database_beta, $beta)", "mysqli_select_db($beta, $database_beta)" },
@@ -237,7 +241,7 @@ public class MonaUpgrader
                 }
             }
             lines.JoinInto(file.Content);
-            if (file.Content[file.Content.Length - 1] != '\n')
+            if (file.Content[^1] != '\n')
             {
                 file.Content.AppendLine();
             }
