@@ -10,7 +10,10 @@ public class RubiconUpgrader : MonaUpgrader
     /// <remarks> Přidá specifické případy pro Rubicon do <see cref="MonaUpgrader.FindReplace"/>. </remarks>
     public RubiconUpgrader(string baseFolder, string webName) : base(baseFolder, webName)
     {
-        var additionalFindReplace = new List<KeyValuePair<string, string>>()
+        _containsObjectClass = File.Exists(Path.Join(baseFolder, "weby", webName, "classes", "Object.php"));
+
+        //Přidat do FindReplace dvojice pro nahrazení specifické pro Rubicon.
+        new List<KeyValuePair<string, string>>
         {
             new("mysql_select_db($database_beta);",
                 "//mysql_select_db($database_beta);"
@@ -57,11 +60,13 @@ public class RubiconUpgrader : MonaUpgrader
             new("MySQL_error()",
                 "mysqli_error($DBLink)"
             ),
-        };
-
-        additionalFindReplace.ForEach(afr => FindReplace[afr.Key] = afr.Value);
-
-        _containsObjectClass = File.Exists(Path.Join(BaseFolder, "weby", WebName, "classes", "Object.php"));
+            //Using <? ... ?> causes the files to be unparsable and an error is thrown.
+            new("<? ", "<?php "),
+            new("<?\n", "<?php\n"),
+            new("<?\r", "<?php\r"),
+            new("<?\t", "<?php\t")
+        }
+        .ForEach(afr => FindReplace[afr.Key] = afr.Value);
     }
 
     /// <summary> Procedura aktualizace Rubicon souborů. </summary>
@@ -80,7 +85,6 @@ public class RubiconUpgrader : MonaUpgrader
             UpgradeLoadData(file);
             UpgradeHomeTopProducts(file);
             UpgradeUrlPromenne(file);
-            UpgradeInvalidPhpStart(file);
             UpgradeOldDbConnect(file);
         }
         return file;
@@ -454,15 +458,6 @@ public class RubiconUpgrader : MonaUpgrader
         }
     }
 
-    /// <summary> Using &lt;? causes the files to be unparsable and an error is thrown. </summary>
-    public static void UpgradeInvalidPhpStart(FileWrapper file)
-    {
-        file.Content.Replace("<? ", "<?php ");
-        file.Content.Replace("<?\n", "<?php\n");
-        file.Content.Replace("<?\r", "<?php\r");
-        file.Content.Replace("<?\t", "<?php\t");
-    }
-
     /// <summary> </summary>
     public void UpgradeOldDbConnect(FileWrapper file)
     {
@@ -472,7 +467,10 @@ public class RubiconUpgrader : MonaUpgrader
                                  "$DBLink = mysqli_connect($host, $user, $pass);");
             file.Content.Replace("if (!mysql_select_db( $DBname, $DBLink ))",
                                  "mysqli_select_db($DBLink, $DBname);\nif (mysqli_connect_errno())");
-            file.Content.Replace("echo \"ERROR\";", "echo \"ERROR\";\nexit();");
+            if (!file.Content.Contains("exit()"))
+            {
+                file.Content.Replace("echo \"ERROR\";", "echo \"ERROR\";\nexit();");
+            }
             RenameBeta(file.Content, "DBLink");
         }
     }
