@@ -39,6 +39,15 @@ public class RubiconUpgrader : MonaUpgrader
             new("mysqli_query($beta, $query_data_druh, $iviki_mysql) or die(mysqli_error($beta))",
                 "mysqli_query($iviki_mysql, $query_data_druh) or die(mysqli_error($iviki_mysql))"
             ),
+            new("mysqli_query($beta,$query_import_univarzal, $sportmall_import) or die(mysqli_error($beta))",
+                "mysqli_query($sportmall_import, $query_import_univarzal) or die(mysqli_error($sportmall_import))"
+            ),
+            new("mysqli_query($beta,$query_data_iviki, $iviki_mysql) or die(mysqli_error($beta))",
+                "mysqli_query($iviki_mysql, $query_data_iviki) or die(mysqli_error($iviki_mysql))"
+            ),
+            new("mysqli_query($beta,$query_data_druh, $iviki_mysql) or die(mysqli_error($beta))",
+                "mysqli_query($iviki_mysql, $query_data_druh) or die(mysqli_error($iviki_mysql))"
+            ),
             new("emptiable(strip_tags($obj->category_name.', '.$obj->style_name)), $title)",
                 "emptiable(strip_tags($obj->category_name.', '.$obj->style_name), $title))"
             ),
@@ -214,7 +223,7 @@ public class RubiconUpgrader : MonaUpgrader
     {
         UpgradeRubiconImport(file);
         UpgradeSetup(file);
-        UpgradeHostnameFromMcrai1IP(file);
+        UpgradeHostname(file);
     }
 
     /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php,  </summary>
@@ -295,29 +304,55 @@ public class RubiconUpgrader : MonaUpgrader
         }
     }
 
-    /// <summary> Aktualizace hostname z mcrai1 na server mcrai2. </summary>
-    public void UpgradeHostnameFromMcrai1IP(FileWrapper file)
+    /// <summary> Hodnoty <b>$hostname_beta</b>, které nahradit <see cref="MonaUpgrader.Hostname"/>. </summary>
+    private readonly string[] _hostnamesToReplace =
     {
-        if (file.Path.EndsWith(Path.Join("Connections", "beta.php"))
-            && !file.Content.Contains($"$hostname_beta = \"{Hostname}\";"))
+        "93.185.102.228", "mcrai.vshosting.cz", "217.16.184.116", "mcrai2.vshosting.cz", "localhost"
+    };
+
+    /// <summary> Aktualizace hostname z mcrai1 na server mcrai2. </summary>
+    public void UpgradeHostname(FileWrapper file)
+    {
+        var connBeta = file.Path.EndsWith(Path.Join("Connections", "beta.php"));
+        foreach (var hn in _hostnamesToReplace)
         {
-            file.Content.Replace("$hostname_beta = \"93.185.102.228\";", $"//$hostname_beta = \"93.185.102.228\";\n\t$hostname_beta = \"{Hostname}\";");
-            if (Hostname != "localhost")
+            if (Hostname == hn)
             {
-                file.Content.Replace("$hostname_beta = \"localhost\";", $"//$hostname_beta = \"localhost\";\n\t$hostname_beta = \"{Hostname}\";");
+                continue;
             }
+            if (connBeta && !file.Content.Contains($"//$hostname_beta = \"{hn}\";"))
+            {
+                file.Content.Replace($"$hostname_beta = \"{hn}\";",
+                    $"//$hostname_beta = \"{hn}\";\n\t$hostname_beta = \"{Hostname}\";");
+            }
+            if (!file.Content.Contains($"//$api = new RubiconAPI($_REQUEST['url'], '{hn}'"))
+            {
+                file.Content.Replace($"$api = new RubiconAPI($_REQUEST['url'], '{hn}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');",
+                    $"//$api = new RubiconAPI($_REQUEST['url'], '{hn}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');\n\t$api = new RubiconAPI($_REQUEST['url'], '{Hostname}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');");
+            }
+            UpgradeDatabaseConnectCall(file, hn, Hostname);
         }
-        if (!file.Content.Contains($"Database::connect('{Hostname}'"))
+    }
+
+    /// <summary> Aktualizace Database::connect. </summary>
+    public static void UpgradeDatabaseConnectCall(FileWrapper file, string oldHost, string newHost)
+    {
+        if (!file.Content.Contains($"//Database::connect('{oldHost}'"))
         {
-            file.Content.Replace("Database::connect('93.185.102.228', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');",
-                $"//Database::connect('93.185.102.228', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');\n\tDatabase::connect('{Hostname}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');");
-            file.Content.Replace("Database::connect('93.185.102.228', $username_beta, $password_beta, $database_beta, '5432');",
-                $"//Database::connect('93.185.102.228', $username_beta, $password_beta, $database_beta, '5432');\n\tDatabase::connect('{Hostname}', $username_beta, $password_beta, $database_beta, '5432');");
+            var content = file.Content.ToString();
+            var evaluator = new MatchEvaluator(_DCMatchEvaluator);
+            content = Regex.Replace(content, @$"Database::connect\('{oldHost}'.+\);", evaluator);
+
+            file.Content.Clear();
+            file.Content.Append(content);
         }
-        if (!file.Content.Contains($"$api = new RubiconAPI($_REQUEST['url'], '{Hostname}'"))
+
+        string _DCMatchEvaluator(Match match)
         {
-            file.Content.Replace("$api = new RubiconAPI($_REQUEST['url'], '93.185.102.228', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');",
-                $"//$api = new RubiconAPI($_REQUEST['url'], '93.185.102.228', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');\n\t$api = new RubiconAPI($_REQUEST['url'], '{Hostname}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');");
+            var startIndex = match.Value.IndexOf('(') + oldHost.Length + 2;
+            var afterOldHost = match.Value.AsSpan(startIndex);
+
+            return $"//{match.Value}\n\tDatabase::connect('{newHost}{afterOldHost}";
         }
     }
 

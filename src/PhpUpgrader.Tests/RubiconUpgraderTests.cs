@@ -108,7 +108,7 @@ public class RubiconUpgraderTests
         };
 
         //Act
-        upgrader.UpgradeHostnameFromMcrai1IP(file);
+        upgrader.UpgradeHostname(file);
 
         //Assert
         _output.WriteLine(file.Content.ToString());
@@ -181,5 +181,26 @@ public class RubiconUpgraderTests
         Assert.True(file.IsModified);
         Assert.DoesNotContain("break;", contentStr);
         Assert.Contains("return;", contentStr);
+    }
+
+    [Fact]
+    public void UpdatesHostnameInDatabaseConnect()
+    {
+        //Arrange
+        const string originalContent = "/* some stuff before */\n\nDatabase::connect('93.185.102.228', 'safety-jogger', 'Qhc1e2_5', 'safety-jogger', '5432');\n\n/* some stuff after */";
+        var file = new FileWrapper("test-site\\index.php", originalContent);
+
+        //Act
+        RubiconUpgrader.UpgradeDatabaseConnectCall(file, "93.185.102.228", "mcrai-upgrade.vshosting.cz");
+
+        //Assert
+        var contentStr = file.Content.ToString();
+        _output.WriteLine(originalContent);
+        _output.WriteLine("==============================");
+        _output.WriteLine(contentStr);
+        Assert.True(file.IsModified);
+        Assert.DoesNotContain("\nDatabase::connect('93.185.102.228', 'safety-jogger', 'Qhc1e2_5', 'safety-jogger', '5432');", contentStr);
+        Assert.Contains("//Database::connect('93.185.102.228', 'safety-jogger', 'Qhc1e2_5', 'safety-jogger', '5432');", contentStr);
+        Assert.Contains("\n\tDatabase::connect('mcrai-upgrade.vshosting.cz', 'safety-jogger', 'Qhc1e2_5', 'safety-jogger', '5432');", contentStr);
     }
 }
