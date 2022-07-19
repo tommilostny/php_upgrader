@@ -32,7 +32,7 @@ class Program
         }
         catch (System.Exception exception)
         {
-            ConsoleOutput.WriteError(exception.Message);
+            Output.WriteError(exception.Message);
             return;
         }
 

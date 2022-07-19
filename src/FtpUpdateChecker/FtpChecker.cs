@@ -5,6 +5,8 @@ namespace FtpUpdateChecker;
 /// <summary> Třída nad knihovnou WinSCP kontrolující soubory na FTP po určitém datu. </summary>
 public class FtpChecker : IDisposable
 {
+    private const string _phpLogsDir = ".phplogs";
+
     private readonly SessionOptions _sessionOptions;
     private readonly Session _session = new();
 
@@ -50,17 +52,25 @@ public class FtpChecker : IDisposable
             }
             catch (SessionRemoteException)
             {
-                ConsoleOutput.WriteError("Připojení k FTP serveru selhalo pro zadané uživatelské jméno a heslo.");
+                Output.WriteError("Připojení k FTP serveru selhalo pro zadané uživatelské jméno a heslo.");
                 return;
             }
         }
-
+        var phpLogFilePath = $"{_phpLogsDir}/{_sessionOptions.UserName}-{path}.txt";
+        if (File.Exists(phpLogFilePath))
+        {
+            File.Delete(phpLogFilePath);
+        }
+        else
+        {
+            Directory.CreateDirectory(_phpLogsDir);
+        }
         Console.WriteLine($"Probíhá kontrola '{path}'...");
         var enumerationOptions = EO.EnumerateDirectories | EO.AllDirectories;
         var fileInfos = _session.EnumerateRemoteFiles(path, null, enumerationOptions);
 
         FileCount = FolderCount = PhpFoundCount = FoundCount = 0;
-        int messageLength = this.WriteStatus();
+        int messageLength = Output.WriteStatus(this);
         try //Enumerate files
         {
             foreach (var fileInfo in fileInfos)
@@ -70,7 +80,7 @@ public class FtpChecker : IDisposable
                 if (fileInfo.IsDirectory)
                 {
                     FolderCount++;
-                    messageLength = this.WriteStatus();
+                    messageLength = Output.WriteStatus(this);
                     continue;
                 }
                 if (fileInfo.LastWriteTime >= FromDate)
@@ -81,17 +91,17 @@ public class FtpChecker : IDisposable
                     {
                         PhpFoundCount++;
                     }
-                    this.WriteFoundFile(fileInfo, messageLength, isPhp);
+                    Output.WriteFoundFile(this, fileInfo, messageLength, isPhp, phpLogFilePath);
                 }
                 FileCount++;
-                messageLength = this.WriteStatus();
+                messageLength = Output.WriteStatus(this);
             }
         }
         catch (SessionRemoteException)
         {
-            ConsoleOutput.WriteError($"Zadaná cesta '{path}' na serveru neexistuje.");
+            Output.WriteError($"Zadaná cesta '{path}' na serveru neexistuje.");
         }
-        ConsoleOutput.WriteCompleted();
+        Output.WriteCompleted(phpLogFilePath, PhpFoundCount);
     }
 
     /// <summary> Uzavřít spojení k FTP serveru. </summary>

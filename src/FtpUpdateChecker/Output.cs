@@ -1,7 +1,7 @@
 ﻿namespace FtpUpdateChecker;
 
 /// <summary> Internal console write methods and <seealso cref="FtpChecker"/> extensions. </summary>
-internal static class ConsoleOutput
+internal static class Output
 {
     /// <summary> Outputs formatted message to stderr. </summary>
     internal static void WriteError(string message)
@@ -13,18 +13,24 @@ internal static class ConsoleOutput
     }
 
     /// <summary> Outputs process completition message to stdout. </summary>
-    internal static void WriteCompleted()
+    internal static void WriteCompleted(string phpLogFilePath, uint phpFoundCount)
     {
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine("\n\n\r✅ Proces dokončen.\n");
+        Console.WriteLine("\n\n\r✅ Proces dokončen.");
         Console.ResetColor();
+        if (phpFoundCount > 0)
+        {
+            Console.WriteLine("Nalezené PHP soubory byly zaznamenány do souboru:");
+            Console.WriteLine(new FileInfo(phpLogFilePath).FullName);
+        }
+        Console.WriteLine();
     }
 
     /// <summary>
-    /// <seealso cref="FtpChecker"/> extension method that prints its current status.
+    /// Prints current status of given <seealso cref="FtpChecker"/>.
     /// </summary>
     /// <returns> Length of the message string. </returns>
-    internal static int WriteStatus(this FtpChecker fc)
+    internal static int WriteStatus(FtpChecker fc)
     {
         var messageBuilder = new StringBuilder()
             .Append($"Zkontrolováno {fc.FileCount} souborů v {fc.FolderCount} adresářích.")
@@ -42,37 +48,47 @@ internal static class ConsoleOutput
     /// <param name="fileInfo">WinSCP file info.</param>
     /// <param name="messageLength">The lenghth of space printed message needs to overwrite with spaces.</param>
     /// <param name="isPhp">PHP files are printed to console in cyan, others in default color.</param>
-    internal static void WriteFoundFile(this FtpChecker fc, RemoteFileInfo fileInfo, int messageLength, bool isPhp)
+    /// <param name="phpLogFilePath">If <paramref name="isPhp"/> then write line to this file.</param>
+    internal static void WriteFoundFile(FtpChecker fc, RemoteFileInfo fileInfo, int messageLength, bool isPhp, string phpLogFilePath)
     {
+        StreamWriter? sw = isPhp ? new(phpLogFilePath, append: true) : null;
+
         var numberStr = $"{fc.FoundCount}.";
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.Write(numberStr);
+        sw?.Write(numberStr);
 
-        _OutputSpaces(numberStr.Length, 6);
+        _OutputSpaces(numberStr.Length, 6, sw);
 
         var timeStr = fileInfo.LastWriteTime.ToString();
         Console.ForegroundColor = ConsoleColor.DarkGray;
         Console.Write(timeStr);
+        sw?.Write(timeStr);
 
-        _OutputSpaces(timeStr.Length + 6, 29);
+        _OutputSpaces(timeStr.Length + 6, 29, sw);
 
         if (isPhp)
             Console.ForegroundColor = ConsoleColor.Cyan;
         else
             Console.ResetColor();
-        
+
         Console.Write(fileInfo.FullName);
-        
+        sw?.WriteLine(fileInfo.FullName);
+        sw?.Close();
+
         if (isPhp)
             Console.ResetColor();
 
-        _OutputSpaces(fileInfo.FullName.Length + 27, messageLength);
+        _OutputSpaces(fileInfo.FullName.Length + 27, messageLength, null);
         Console.WriteLine();
 
-        static void _OutputSpaces(int fromIndex, int toIndex)
+        static void _OutputSpaces(int fromIndex, int toIndex, StreamWriter? sw)
         {
             for (int i = fromIndex; i < toIndex; i++)
+            {
                 Console.Write(' ');
+                sw?.Write(' ');
+            }
         }
     }
 }
