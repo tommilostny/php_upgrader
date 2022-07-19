@@ -67,6 +67,7 @@ public class MonaUpgrader
         { "mysql_close", "mysqli_close" },
         { "MySQL_Close", "mysqli_close" },
         { "MySQL_close", "mysqli_close" },
+        { "mysqli_close()", "mysqli_close($beta)" },
         { "mysql_fetch_row", "mysqli_fetch_row" },
         { "mysql_Fetch_Row", "mysqli_fetch_row" },
         { "mysql_fetch_array", "mysqli_fetch_array" },
@@ -175,6 +176,7 @@ public class MonaUpgrader
             UpgradeTinyMceUploaded(file);
         }
         UpgradeRegexFunctions(file);
+        RemoveTrailingWhitespaceFromEndOfFile(file);
 
         if (file.Content.Contains("93.185.102.228"))
         {
@@ -741,5 +743,17 @@ public class MonaUpgrader
             FindReplace.Remove(oldKey);
             FindReplace.Add(newKey, newValue);
         }
+    }
+
+    /// <summary>
+    /// PHPStan: File ends with a trailing whitespace.
+    /// This may cause problems when running the code in the web browser.
+    /// Remove the closing ?> mark or remove the whitespace.
+    /// </summary>
+    public static void RemoveTrailingWhitespaceFromEndOfFile(FileWrapper file)
+    {
+        var cwtw = Regex.Replace(file.Content.ToString(), @"\?>\s+$", "?>", _regexCompiled);
+        file.Content.Clear();
+        file.Content.Append(cwtw);
     }
 }
