@@ -1,15 +1,9 @@
-using Xunit;
-using Xunit.Abstractions;
-
 namespace PhpUpgrader.Tests;
 
-public class EregUnitTest
+public class EregUnitTest : UnitTestWithOutputBase
 {
-    private readonly ITestOutputHelper _output;
-
-    public EregUnitTest(ITestOutputHelper output)
+    public EregUnitTest(ITestOutputHelper output) : base(output)
     {
-        _output = output;
     }
 
     [Theory]

@@ -187,20 +187,22 @@ public class MonaUpgrader
     public virtual void UpgradeConnect(FileWrapper file)
     {
         //konec, pokud aktuální soubor nepatří mezi validní connection soubory
-        switch (file.Path)
+        if (_ConnectionPaths().Any(cf => file.Path.EndsWith(cf)))
         {
-            case var p0 when p0.Contains(Path.Join("connect", ConnectionFile)):
-            case var p1 when p1.Contains(Path.Join("system", ConnectionFile)):
-            case var p2 when p2.Contains(Path.Join("Connections", ConnectionFile)):
-                break;
-            default: return;
+            //načtení hlavičky connect souboru.
+            _LoadConnectHeader();
+            //generování nových údajů k databázi, pokud jsou všechny zadány
+            _GenerateNewCredentials();
+            //na konec přidání obsahu předpřipraveného souboru
+            file.Content.Append(File.ReadAllText(Path.Join(BaseFolder, "important", "connection.txt")));
         }
-        //načtení hlavičky connect souboru.
-        _LoadConnectHeader();
-        //generování nových údajů k databázi, pokud jsou všechny zadány
-        _GenerateNewCredentials();
-        //na konec přidání obsahu předpřipraveného souboru
-        file.Content.Append(File.ReadAllText(Path.Join(BaseFolder, "important", "connection.txt")));
+
+        IEnumerable<string> _ConnectionPaths()
+        {
+            yield return Path.Join("connect", ConnectionFile);
+            yield return Path.Join("system", ConnectionFile);
+            yield return Path.Join("Connections", ConnectionFile);
+        }
 
         void _LoadConnectHeader()
         {
@@ -332,23 +334,23 @@ public class MonaUpgrader
     /// </summary>
     public static void UpgradeClanekVypis(FileWrapper file)
     {
-        switch (file.Content)
-        {
-            case var c0 when !c0.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"):
-            case var c1 when c1.Contains("$p_sf = array();"):
-                return;
-        }
-        var lines = file.Content.Split();
+        const string lookingFor = "$vypis_table_clanek[\"sdileni_fotogalerii\"]";
+        const string adding = "$p_sf = array();";
+        const string addLine = $"        {adding}\n";
 
-        for (int i = 0; i < lines.Count; i++)
+        if (file.Content.Contains(lookingFor) && !file.Content.Contains(adding))
         {
-            var line = lines[i];
-            if (line.Contains("$vypis_table_clanek[\"sdileni_fotogalerii\"]"))
+            var lines = file.Content.Split();
+            for (int i = 0; i < lines.Count; i++)
             {
-                line.Insert(0, "        $p_sf = array();\n");
+                var line = lines[i];
+                if (line.Contains(lookingFor))
+                {
+                    line.Insert(0, addLine);
+                }
             }
+            lines.JoinInto(file.Content);
         }
-        lines.JoinInto(file.Content);
     }
 
     /// <summary>
@@ -431,17 +433,13 @@ public class MonaUpgrader
     /// </summary>
     public void UpgradeTableAddEdit(FileWrapper file)
     {
-        switch (AdminFolders)
+        if (!AdminFolders.Any(af => file.Path.Contains(Path.Join(af, "table_x_add.php"))
+                                 || file.Path.Contains(Path.Join(af, "table_x_edit.php")))
+            || file.Content.Contains("@$pocet_text_all"))
         {
-            case var afs0 when afs0.Any(af => file.Path.Contains(Path.Join(af, "table_x_add.php"))):
-            case var afs1 when afs1.Any(af => file.Path.Contains(Path.Join(af, "table_x_edit.php"))):
-                break;
-            default: return;
+            return;
         }
-        if (!file.Content.Contains("@$pocet_text_all"))
-        {
-            file.Content.Replace("$pocet_text_all = mysqli_num_rows", "@$pocet_text_all = mysqli_num_rows");
-        }
+        file.Content.Replace("$pocet_text_all = mysqli_num_rows", "@$pocet_text_all = mysqli_num_rows");
     }
 
     /// <summary>
@@ -502,14 +500,14 @@ public class MonaUpgrader
     /// </summary>
     public void UpgradeSitemapSave(FileWrapper file)
     {
-        if (!AdminFolders.Any(af => file.Path.Contains(Path.Join(af, "sitemap_save.php"))))
-            return;
+        const string lookingFor = "while($data_stranky_text_all = mysqli_fetch_array($query_text_all))";
+        const string adding = "if($query_text_all !== FALSE)";
+        const string addingLine = $"          {adding}\n          {{\n";
 
-        switch (file.Content)
+        if (!AdminFolders.Any(af => file.Path.EndsWith(Path.Join(af, "sitemap_save.php")))
+            || !file.Content.Contains(lookingFor) || file.Content.Contains(adding))
         {
-            case var c0 when !c0.Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))"):
-            case var c1 when c1.Contains("if($query_text_all !== FALSE)"):
-                return;
+            return;
         }
         bool sfBracket = false;
         var lines = file.Content.Split();
@@ -517,9 +515,9 @@ public class MonaUpgrader
         for (int i = 0; i < lines.Count; i++)
         {
             var line = lines[i];
-            if (line.Contains("while($data_stranky_text_all = mysqli_fetch_array($query_text_all))"))
+            if (line.Contains(lookingFor))
             {
-                line.Insert(0, "          if($query_text_all !== FALSE)\n          {\n");
+                line.Insert(0, addingLine);
                 sfBracket = true;
             }
             if (line.Contains('}') && sfBracket)
@@ -538,11 +536,10 @@ public class MonaUpgrader
     /// </summary>
     public static void UpgradeGlobalBeta(FileWrapper file)
     {
-        switch (file.Content)
+        if (file.Content.Contains("$this")
+            || !Regex.IsMatch(file.Content.ToString(), "(?s)^(?=.*?function )(?=.*?mysqli_)", _regexCompiled))
         {
-            case var c0 when !Regex.IsMatch(c0.ToString(), "(?s)^(?=.*?function )(?=.*?mysqli_)", _regexCompiled):
-            case var c1 when c1.Contains("$this"):
-                return;
+            return;
         }
         bool javascript = false;
         var lines = file.Content.Split();

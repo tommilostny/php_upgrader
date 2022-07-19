@@ -1,16 +1,9 @@
-﻿using PhpUpgrader.Tests.Fixtures;
-using Xunit;
-using Xunit.Abstractions;
+﻿namespace PhpUpgrader.Tests;
 
-namespace PhpUpgrader.Tests;
-
-public class RenameBetaUnitTest
+public class RenameBetaUnitTest : UnitTestWithOutputBase
 {
-    private readonly ITestOutputHelper _output;
-
-    public RenameBetaUnitTest(ITestOutputHelper output)
+    public RenameBetaUnitTest(ITestOutputHelper output) : base(output)
     {
-        _output = output;
     }
 
     [Fact]

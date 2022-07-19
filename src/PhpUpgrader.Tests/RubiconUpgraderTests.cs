@@ -1,16 +1,9 @@
-﻿using System.Text;
-using Xunit;
-using Xunit.Abstractions;
+﻿namespace PhpUpgrader.Tests;
 
-namespace PhpUpgrader.Tests;
-
-public class RubiconUpgraderTests
+public class RubiconUpgraderTests : UnitTestWithOutputBase
 {
-    private readonly ITestOutputHelper _output;
-
-    public RubiconUpgraderTests(ITestOutputHelper output)
+    public RubiconUpgraderTests(ITestOutputHelper output) : base(output)
     {
-        _output = output;
     }
 
     [Fact]

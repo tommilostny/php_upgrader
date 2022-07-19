@@ -1,15 +1,9 @@
-﻿using Xunit;
-using Xunit.Abstractions;
+﻿namespace PhpUpgrader.Tests;
 
-namespace PhpUpgrader.Tests;
-
-public class StrankovaniUnitTest
+public class StrankovaniUnitTest : UnitTestWithOutputBase
 {
-    private readonly ITestOutputHelper _output;
-
-    public StrankovaniUnitTest(ITestOutputHelper output)
+    public StrankovaniUnitTest(ITestOutputHelper output) : base(output)
     {
-        _output = output;
     }
 
     [Theory]
