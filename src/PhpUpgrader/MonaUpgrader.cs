@@ -755,9 +755,10 @@ public class MonaUpgrader
     /// </summary>
     public static void RemoveTrailingWhitespaceFromEndOfFile(FileWrapper file)
     {
-        var updated = Regex.Replace(file.Content.ToString(), @"\?>\s+$", "?>", _regexCompiled);
-        file.Content.Clear();
-        file.Content.Append(updated);
+        while (char.IsWhiteSpace(file.Content[^1]))
+        {
+            file.Content.Remove(file.Content.Length - 1, 1);
+        }
     }
 
     /// <summary> PHPStan: Right side of || is always false. </summary>
@@ -790,8 +791,8 @@ public class MonaUpgrader
     public static void UpgradeFloatExplodeConversions(FileWrapper file)
     {
         var updated = Regex.Replace(file.Content.ToString(),
-                                    @"\$stranka_end = \$stranka_pocet \/ 10;\s+\$stranka_end = explode\(""\."", \$stranka_end\);\s+\$stranka_end = \$stranka_end\[0\];\s+\$stranka_end = \$stranka_end \* 10 \+ 10;",
-                                    "$stranka_end = $stranka_pocet / 10;\n\t$stranka_end = (int)$stranka_end;\n\t$stranka_end = $stranka_end * 10 + 10;",
+                                    @"\s\$stranka_end = \$stranka_pocet \/ 10;\s+\$stranka_end = explode\(""\."", \$stranka_end\);\s+\$stranka_end = \$stranka_end\[0\];\s+\$stranka_end = \$stranka_end \* 10 \+ 10;",
+                                    "\n$stranka_end = (int)($stranka_pocet / 10);\n$stranka_end = $stranka_end * 10 + 10;",
                                     _regexCompiled);
         file.Content.Clear();
         file.Content.Append(updated);
