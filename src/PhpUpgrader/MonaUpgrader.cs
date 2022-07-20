@@ -177,6 +177,7 @@ public class MonaUpgrader
         }
         UpgradeRegexFunctions(file);
         RemoveTrailingWhitespaceFromEndOfFile(file);
+        UpgradeIfEmpty(file);
 
         if (file.Content.Contains("93.185.102.228"))
         {
@@ -752,8 +753,34 @@ public class MonaUpgrader
     /// </summary>
     public static void RemoveTrailingWhitespaceFromEndOfFile(FileWrapper file)
     {
-        var cwtw = Regex.Replace(file.Content.ToString(), @"\?>\s+$", "?>", _regexCompiled);
+        var updated = Regex.Replace(file.Content.ToString(), @"\?>\s+$", "?>", _regexCompiled);
         file.Content.Clear();
-        file.Content.Append(cwtw);
+        file.Content.Append(updated);
+    }
+
+    /// <summary> PHPStan: Right side of || is always false. </summary>
+    /// <remarks> if ($id != "" || $id != null) </remarks>
+    public static void UpgradeIfEmpty(FileWrapper file)
+    {
+        var evaluator = new MatchEvaluator(_IfEmptyMatchEvaluator);
+        var updated = Regex.Replace(file.Content.ToString(),
+                                    @"if\s?\(\$\w+\s?!=\s?""""\s?\|\|\s?\$\w+\s?!=\s?null\)",
+                                    evaluator,
+                                    _regexIgnoreCase);
+        file.Content.Clear();
+        file.Content.Append(updated);
+
+        static string _IfEmptyMatchEvaluator(Match match)
+        {
+            var varStartIndex = match.Value.IndexOf('$');
+            var varLength = match.Value.IndexOf('!') - 1 - varStartIndex;
+            var varValue1 = match.Value.AsSpan(varStartIndex, varLength);
+
+            varStartIndex = match.Value.IndexOf('|') + 3;
+            varLength = match.Value.LastIndexOf('!') - 1 - varStartIndex;
+            var varValue2 = match.Value.AsSpan(varStartIndex, varLength);
+
+            return varValue1.SequenceEqual(varValue2) ? $"if (!empty({varValue1}))" : match.Value;
+        }
     }
 }
