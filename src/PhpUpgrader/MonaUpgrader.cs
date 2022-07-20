@@ -316,15 +316,29 @@ public class MonaUpgrader
     public static void UpgradeMysqlResult(FileWrapper file)
     {
         if (!file.Content.Contains("mysql_result"))
+        {
             return;
-
+        }
+        if (file.Path.EndsWith(Path.Join("funkce", "secure", "login.php")))
+        {
+            var updated = Regex.Replace(file.Content.ToString(),
+                                        @"\$loginStrGroup\s*=\s*mysql_result\(\$LoginRS,\s*0,\s*'valid'\);\s*\n\s*\$loginUserid\s*=\s*mysql_result\(\$LoginRS,\s*0,\s*'user_id'\);",
+                                        "mysqli_field_seek($LoginRS, 0);\n    $field = mysqli_fetch_field($LoginRS);\n    $loginStrGroup = $field->valid;\n    $loginUserid  = $field->user_id;\n    mysqli_free_result($LoginRS);",
+                                        _regexCompiled);
+            file.Content.Clear();
+            file.Content.Append(updated);
+        }
         var lines = file.Content.Split();
-
         for (int i = 0; i < lines.Count; i++)
         {
             var line = lines[i];
             if (line.Contains("mysql_result"))
             {
+                if (!line.Contains("COUNT(*)"))
+                {
+                    file.Warnings.Add("Neobvyklé použití mysql_result!");
+                    continue;
+                }
                 line.Replace("COUNT(*)", "*");
                 line.Replace(", 0", string.Empty);
                 line.Replace("mysql_result", "mysqli_num_rows");
