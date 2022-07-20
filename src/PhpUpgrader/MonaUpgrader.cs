@@ -169,6 +169,7 @@ public class MonaUpgrader
             UpgradeSitemapSave(file);
             UpgradeGlobalBeta(file);
             RenameBeta(file);
+            UpgradeFloatExplodeConversions(file);
         }
         else
         {
@@ -377,7 +378,7 @@ public class MonaUpgrader
         if (file.Content.Contains("$this->db"))
         {
             file.Content.Replace("mysqli_query($beta, \"SET CHARACTER SET utf8\", $this->db);", "mysqli_query($this->db, \"SET CHARACTER SET utf8\");");
-            RenameBeta(file.Content, "this->db");
+            RenameVar(file.Content, "this->db");
         }
     }
 
@@ -544,8 +545,9 @@ public class MonaUpgrader
         {
             return;
         }
-        bool javascript = false;
+        var javascript = false;
         var lines = file.Content.Split();
+        const string globalBeta = "\n\n    global $beta;\n";
 
         for (int i = 0; i < lines.Count; i++)
         {
@@ -555,14 +557,19 @@ public class MonaUpgrader
 
             if (Regex.IsMatch(line.ToString(), @"function\s", _regexCompiled)
                 && !javascript
-                && _MysqliAndBetaInFunction(i))
+                && _MysqliAndBetaInFunction(i, lines))
             {
-                lines[++i].Append("\n\n    global $beta;\n");
+                if ((line = lines[++i]).Contains('{'))
+                {
+                    line.Append(globalBeta);
+                    continue;
+                }
+                line.Insert(0, globalBeta);
             }
         }
         lines.JoinInto(file.Content);
 
-        bool _MysqliAndBetaInFunction(int startIndex)
+        static bool _MysqliAndBetaInFunction(int startIndex, IReadOnlyList<StringBuilder> lines)
         {
             bool javascript = false, inComment = false, foundMysqli = false, foundBeta = false;
             int bracketCount = 0;
@@ -597,41 +604,36 @@ public class MonaUpgrader
         }
     }
 
-    /// <summary> Přejmenuje proměnnou $beta na přednastavenou hodnotu v instanci <see cref="StringBuilder"/>. </summary>
-    /// <param name="newVarName">null => použít vlastnost RenameBetaWith.</param>
-    /// <param name="oldVarName"></param>
-    /// <param name="content"></param>
-    public void RenameBeta(StringBuilder content, string? newVarName = null, string oldVarName = "beta")
+    /// <summary> Přejmenuje proměnnou $<paramref name="oldVarName"/> v instanci <see cref="StringBuilder"/>. </summary>
+    /// <param name="newVarName"> Nové jméno proměnné. null => použít vlastnost <see cref="RenameBetaWith"/>. </param>
+    /// <param name="oldVarName"> Jmené původní proměnné, která se bude přejmenovávat. </param>
+    /// <param name="content"> Obsah, ve kterém se proměnná přejmenovává. </param>
+    public void RenameVar(StringBuilder content, string? newVarName = null, string oldVarName = "beta")
     {
         if ((newVarName ??= RenameBetaWith) is not null)
         {
             content.Replace($"${oldVarName}", $"${newVarName}");
-            if (newVarName?.Contains("->") == false)
+            if (!newVarName.Contains("->"))
             {
                 content.Replace($"_{oldVarName}", $"_{newVarName}");
             }
         }
     }
 
-    /// <summary> Přejmenuje proměnnou $beta na přednastavenou hodnotu. </summary>
-    /// <param name="newVarName">null => použít vlastnost RenameBetaWith.</param>
-    /// <param name="oldVarName"></param>
-    /// <param name="content"></param>
-    public string RenameBeta(string content, string? newVarName = null, string oldVarName = "beta")
+    /// <summary> Přejmenuje proměnnou $<paramref name="oldVarName"/>. </summary>
+    /// <param name="newVarName"> Nové jméno proměnné. null => použít vlastnost <see cref="RenameBetaWith"/>. </param>
+    /// <param name="oldVarName"> Jmené původní proměnné, která se bude přejmenovávat. </param>
+    /// <param name="content"> Obsah, ve kterém se proměnná přejmenovává. </param>
+    /// <returns> Upravený <paramref name="content"/>. </returns>
+    public string RenameVar(string content, string? newVarName = null, string oldVarName = "beta")
     {
-        if ((newVarName ??= RenameBetaWith) is not null)
-        {
-            content = content.Replace($"${oldVarName}", $"${newVarName}");
-            if (newVarName?.Contains("->") == false)
-            {
-                content = content.Replace($"_{oldVarName}", $"_{newVarName}");
-            }
-        }
-        return content;
+        var csb = new StringBuilder(content);
+        RenameVar(csb, newVarName, oldVarName);
+        return csb.ToString();
     }
 
     /// <summary> Přejmenovat proměnnou $beta v souboru. </summary>
-    public void RenameBeta(FileWrapper file) => RenameBeta(file.Content);
+    public void RenameBeta(FileWrapper file) => RenameVar(file.Content);
 
     /// <summary>
     /// - funkci ereg nebo ereg_replace doplnit do prvního parametru delimetr na začátek a nakonec (if(ereg('.+@.+..+', $retezec))
@@ -733,8 +735,8 @@ public class MonaUpgrader
         {
             if (fr.Key.Contains(oldVarName) || fr.Value.Contains(oldVarName))
             {
-                var newKey = RenameBeta(fr.Key, newVarName, oldVarName);
-                var newValue = RenameBeta(fr.Value, newVarName, oldVarName);
+                var newKey = RenameVar(fr.Key, newVarName, oldVarName);
+                var newValue = RenameVar(fr.Value, newVarName, oldVarName);
                 renamedItems.Push((fr.Key, newKey, newValue));
             }
         }
@@ -782,5 +784,16 @@ public class MonaUpgrader
 
             return varValue1.SequenceEqual(varValue2) ? $"if (!empty({varValue1}))" : match.Value;
         }
+    }
+
+    /// <summary> PHPStan: Parameter #2 $str of function explode expects string, float|int&lt;0, max&gt; given. </summary>
+    public static void UpgradeFloatExplodeConversions(FileWrapper file)
+    {
+        var updated = Regex.Replace(file.Content.ToString(),
+                                    @"\$stranka_end = \$stranka_pocet \/ 10;\s+\$stranka_end = explode\(""\."", \$stranka_end\);\s+\$stranka_end = \$stranka_end\[0\];\s+\$stranka_end = \$stranka_end \* 10 \+ 10;",
+                                    "$stranka_end = $stranka_pocet / 10;\n\t$stranka_end = (int)$stranka_end;\n\t$stranka_end = $stranka_end * 10 + 10;",
+                                    _regexCompiled);
+        file.Content.Clear();
+        file.Content.Append(updated);
     }
 }

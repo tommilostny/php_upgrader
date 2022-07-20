@@ -260,7 +260,7 @@ public class RubiconUpgrader : MonaUpgrader
         base.UpgradeConnect(file);
         ConnectionFile = backup;
 
-        RenameBeta(file.Content, "sportmall_import");
+        RenameVar(file.Content, "sportmall_import");
 
         var replacements = new StringBuilder()
             .AppendLine("mysqli_query($sportmall_import, \"SET character_set_connection = cp1250\");")
@@ -531,7 +531,7 @@ public class RubiconUpgrader : MonaUpgrader
             {
                 file.Content.Replace("echo \"ERROR\";", "echo \"ERROR\";\nexit();");
             }
-            RenameBeta(file.Content, "DBLink");
+            RenameVar(file.Content, "DBLink");
         }
     }
 }

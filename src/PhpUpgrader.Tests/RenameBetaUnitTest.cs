@@ -14,7 +14,7 @@ public class RenameBetaUnitTest : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture();
 
         //Act
-        content = upgrader.RenameBeta(content, "gama");
+        content = upgrader.RenameVar(content, "gama");
 
         //Assert
         var expected = "mysqli_query($gama, $query);";
@@ -31,7 +31,7 @@ public class RenameBetaUnitTest : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture { RenameBetaWith = "gama" };
 
         //Act
-        content = upgrader.RenameBeta(content);
+        content = upgrader.RenameVar(content);
 
         //Assert
         var expected = "mysqli_query($gama, $query);";
@@ -48,7 +48,7 @@ public class RenameBetaUnitTest : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture();
 
         //Act
-        content = upgrader.RenameBeta(content);
+        content = upgrader.RenameVar(content);
 
         //Assert
         Assert.Equal("mysqli_query($beta, $query);", content);
@@ -62,7 +62,7 @@ public class RenameBetaUnitTest : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture { RenameBetaWith = "gama" };
 
         //Act
-        content = upgrader.RenameBeta(content, "alfa");
+        content = upgrader.RenameVar(content, "alfa");
 
         //Assert
         var expected = "mysqli_query($alfa, $query);";
