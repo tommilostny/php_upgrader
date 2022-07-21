@@ -190,13 +190,27 @@ public class MonaUpgrader
     /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
     public virtual void UpgradeConnect(FileWrapper file)
     {
+        const string hostnameVarPart = "$hostname_";
+        const string databaseVarPart = "$database_";
+        const string usernameVarPart = "$username_";
+        const string passwordVarPart = "$password_";
+
         //konec, pokud aktuální soubor nepatří mezi validní connection soubory
         if (_ConnectionPaths().Any(cf => file.Path.EndsWith(cf)))
         {
             //načtení hlavičky connect souboru.
             _LoadConnectHeader();
+
             //generování nových údajů k databázi, pokud jsou všechny zadány
-            _GenerateNewCredentials();
+            _GenerateNewCredential(hostnameVarPart, Hostname);
+            _GenerateNewCredential(databaseVarPart, Database);
+            _GenerateNewCredential(usernameVarPart, Username);
+            _GenerateNewCredential(passwordVarPart, Password);
+
+            //smazat zbytečné znaky
+            file.Content.Replace("////", "//");
+            file.Content.Replace("\r\r", "\r");
+
             //na konec přidání obsahu předpřipraveného souboru
             file.Content.Append(File.ReadAllText(Path.Join(BaseFolder, "important", "connection.txt")));
         }
@@ -223,19 +237,19 @@ public class MonaUpgrader
 
                 if (!inComment)
                 {
-                    if (line.Contains("$hostname_") && !line.Contains("//$hostname_"))
+                    if (line.Contains(hostnameVarPart) && !line.Contains($"//{hostnameVarPart}"))
                     {
                         hostLoaded = true;
                     }
-                    else if (line.Contains("$database_") && !line.Contains("//$database_"))
+                    else if (line.Contains(databaseVarPart) && !line.Contains($"//{databaseVarPart}"))
                     {
                         dbnameLoaded = true;
                     }
-                    else if (line.Contains("$username_") && !line.Contains("//$username_"))
+                    else if (line.Contains(usernameVarPart) && !line.Contains($"//{usernameVarPart}"))
                     {
                         usernameLoaded = true;
                     }
-                    else if (line.Contains("$password_") && !line.Contains("//$password_"))
+                    else if (line.Contains(passwordVarPart) && !line.Contains($"//{passwordVarPart}"))
                     {
                         passwdLoaded = true;
                     }
@@ -253,35 +267,15 @@ public class MonaUpgrader
             }
         }
 
-        void _GenerateNewCredentials()
+        void _GenerateNewCredential(string varPart, string? varValue)
         {
-            Lazy<string> hostCreds = new(() => $"$hostname_beta = '{Hostname}';");
-            Lazy<string> dbCreds = new(() => $"$database_beta = '{Database}';");
-            Lazy<string> userCreds = new(() => $"$username_beta = '{Username}';");
-            Lazy<string> passwdCreds = new(() => $"$password_beta = '{Password}';");
+            Lazy<string> cred = new(() => $"{varPart}beta = '{varValue}';");
 
-            if (Hostname is not null && !file.Content.Contains(hostCreds.Value))
+            if (varValue is not null && !file.Content.Contains(cred.Value))
             {
-                file.Content.Replace("\n$hostname_", "\n//$hostname_");
-                file.Content.AppendLine(hostCreds.Value);
+                file.Content.Replace($"\n{varPart}", $"\n//{varPart}");
+                file.Content.AppendLine(cred.Value);
             }
-            if (Database is not null && !file.Content.Contains(dbCreds.Value))
-            {
-                file.Content.Replace("\n$database_", "\n//$database_");
-                file.Content.AppendLine(dbCreds.Value);
-            }
-            if (Username is not null && !file.Content.Contains(userCreds.Value))
-            {
-                file.Content.Replace("\n$username_", "\n//$username_");
-                file.Content.AppendLine(userCreds.Value);
-            }
-            if (Password is not null && !file.Content.Contains(passwdCreds.Value))
-            {
-                file.Content.Replace("\n$password_", "\n//$password_");
-                file.Content.AppendLine(passwdCreds.Value);
-            }
-            file.Content.Replace("////", "//"); //smazat zbytečná lomítka
-            file.Content.Replace("\r\r", "\r"); //smazat zbytečné \r
         }
     }
 
@@ -315,7 +309,10 @@ public class MonaUpgrader
     /// </summary>
     public static void UpgradeMysqlResult(FileWrapper file)
     {
-        if (!file.Content.Contains("mysql_result"))
+        const string mysqlResult = "mysql_result";
+        const string mysqliNumRows = "mysqli_num_rows";
+
+        if (!file.Content.Contains(mysqlResult))
         {
             return;
         }
@@ -328,21 +325,23 @@ public class MonaUpgrader
             file.Content.Clear();
             file.Content.Append(updated);
         }
+
         var lines = file.Content.Split();
         for (int i = 0; i < lines.Count; i++)
         {
             var line = lines[i];
-            if (line.Contains("mysql_result"))
+            if (line.Contains(mysqlResult))
             {
-                var countIndex = line.IndexOf("COUNT(*)");
+                const string countFunc = "COUNT(*)";
+                var countIndex = line.IndexOf(countFunc);
                 if (countIndex == -1)
                 {
-                    file.Warnings.Add("Neobvyklé použití mysql_result!");
+                    file.Warnings.Add($"Neobvyklé použití {mysqlResult}!");
                     continue;
                 }
-                line.Replace("COUNT(*)", "*", countIndex);
+                line.Replace(countFunc, "*", countIndex);
                 line.Replace(", 0", string.Empty);
-                line.Replace("mysql_result", "mysqli_num_rows");
+                line.Replace(mysqlResult, mysqliNumRows);
             }
         }
         lines.JoinInto(file.Content);
@@ -390,10 +389,11 @@ public class MonaUpgrader
     /// </summary>
     public void UpgradeMysqliQueries(FileWrapper file)
     {
-        if (file.Content.Contains("$this->db"))
+        const string thisDB = "$this->db";
+        if (file.Content.Contains(thisDB))
         {
-            file.Content.Replace("mysqli_query($beta, \"SET CHARACTER SET utf8\", $this->db);", "mysqli_query($this->db, \"SET CHARACTER SET utf8\");");
-            RenameVar(file.Content, "this->db");
+            file.Content.Replace($"mysqli_query($beta, \"SET CHARACTER SET utf8\", {thisDB});", $"mysqli_query({thisDB}, \"SET CHARACTER SET utf8\");");
+            RenameVar(file.Content, thisDB);
         }
     }
 
@@ -414,8 +414,9 @@ public class MonaUpgrader
 
         bool _IsInRootFolder(string path)
         {
-            return path.EndsWith(Path.Join(WebName, "index.php"))
-                || OtherRootFolders?.Any(rf => path.EndsWith(Path.Join(WebName, rf, "index.php"))) == true;
+            const string indexFile = "index.php";
+            return path.EndsWith(Path.Join(WebName, indexFile))
+                || OtherRootFolders?.Any(rf => path.EndsWith(Path.Join(WebName, rf, indexFile))) == true;
         }
     }
 
@@ -438,9 +439,11 @@ public class MonaUpgrader
         {
             return;
         }
-        if (!file.Content.Contains("//chdir"))
+        const string chdir = "chdir";
+        const string commentedChdir = $"//{chdir}";
+        if (!file.Content.Contains(commentedChdir))
         {
-            file.Content.Replace("chdir", "//chdir");
+            file.Content.Replace(chdir, commentedChdir);
         }
     }
 
@@ -452,13 +455,16 @@ public class MonaUpgrader
     /// </summary>
     public void UpgradeTableAddEdit(FileWrapper file)
     {
+        const string variable = "$pocet_text_all";
+        const string variableWithAtSign = $"@{variable}";
+
         if (!AdminFolders.Any(af => file.Path.Contains(Path.Join(af, "table_x_add.php"))
                                  || file.Path.Contains(Path.Join(af, "table_x_edit.php")))
-            || file.Content.Contains("@$pocet_text_all"))
+            || file.Content.Contains(variableWithAtSign))
         {
             return;
         }
-        file.Content.Replace("$pocet_text_all = mysqli_num_rows", "@$pocet_text_all = mysqli_num_rows");
+        file.Content.Replace($"{variable} = mysqli_num_rows", $"{variableWithAtSign} = mysqli_num_rows");
     }
 
     /// <summary>
@@ -467,10 +473,11 @@ public class MonaUpgrader
     /// </summary>
     public static void UpgradeStrankovani(FileWrapper file)
     {
+        const string pdFunc = "function predchozi_dalsi";
         switch (file)
         {
             case { Path: var p } when !p.Contains(Path.Join("funkce", "strankovani.php")):
-            case { Content: var c } when !c.Contains("function predchozi_dalsi"):
+            case { Content: var c } when !c.Contains(pdFunc):
                 return;
         }
         foreach (var (old, updated) in _PredchoziDalsiVariants())
@@ -486,17 +493,17 @@ public class MonaUpgrader
         //iterátor dvojic 'co hledat?', 'čím to nahradit?' pro varianty funkce predchozi_dalsi
         static IEnumerable<(string old, string updated)> _PredchoziDalsiVariants()
         {
-            yield return ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)",
-                          "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)"
+            yield return ($"{pdFunc}($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)",
+                          $"{pdFunc}($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)"
             );
-            yield return ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext, $prenext_2)",
-                          "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null, $prenext_2 = null)"
+            yield return ($"{pdFunc}($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext, $prenext_2)",
+                          $"{pdFunc}($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null, $prenext_2 = null)"
             );
-            yield return ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $pre, $next)",
-                          "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $pre = null, $next = null)"
+            yield return ($"{pdFunc}($zobrazena_strana, $pocet_stran, $textact, $texta, $pre, $next)",
+                          $"{pdFunc}($zobrazena_strana, $pocet_stran, $textact, $texta = null, $pre = null, $next = null)"
             );
-            yield return ("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext, $filter)",
-                          "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null, $filter = null)"
+            yield return ($"{pdFunc}($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext, $filter)",
+                          $"{pdFunc}($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null, $filter = null)"
             );
         }
     }

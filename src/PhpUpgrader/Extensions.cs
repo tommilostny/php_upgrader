@@ -180,6 +180,6 @@ internal static class Extensions
     /// <param name="startIndex">Od jakého indexu začít hledat <paramref name="oldValue"/>.</param>
     internal static void Replace(this StringBuilder source, string oldValue, string? newValue, int startIndex)
     {
-        source.Replace(oldValue, newValue, startIndex, source.Length - startIndex);
+        source.Replace(oldValue, newValue, startIndex, count: source.Length - startIndex);
     }
 }
