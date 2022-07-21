@@ -334,12 +334,13 @@ public class MonaUpgrader
             var line = lines[i];
             if (line.Contains("mysql_result"))
             {
-                if (!line.Contains("COUNT(*)"))
+                var countIndex = line.IndexOf("COUNT(*)");
+                if (countIndex == -1)
                 {
                     file.Warnings.Add("Neobvyklé použití mysql_result!");
                     continue;
                 }
-                line.Replace("COUNT(*)", "*");
+                line.Replace("COUNT(*)", "*", countIndex);
                 line.Replace(", 0", string.Empty);
                 line.Replace("mysql_result", "mysqli_num_rows");
             }
