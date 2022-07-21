@@ -156,7 +156,7 @@ public class MonaUpgrader
         if (!filePath.Contains("tiny_mce"))
         {
             UpgradeConnect(file);
-            UpgradeMysqlResult(file);
+            UpgradeResultFunc(file);
             UpgradeClanekVypis(file);
             UpgradeFindReplace(file);
             UpgradeMysqliQueries(file);
@@ -307,42 +307,50 @@ public class MonaUpgrader
     /// <summary>
     /// mysql_result >>> mysqli_num_rows + odmazat druhy parametr (vetsinou - , 0) + predelat COUNT(*) na *
     /// </summary>
-    public static void UpgradeMysqlResult(FileWrapper file)
+    public void UpgradeResultFunc(FileWrapper file)
     {
-        const string mysqlResult = "mysql_result";
-        const string mysqliNumRows = "mysqli_num_rows";
-
-        if (!file.Content.Contains(mysqlResult))
-        {
-            return;
-        }
         if (file.Path.EndsWith(Path.Join("funkce", "secure", "login.php")))
         {
             var updated = Regex.Replace(file.Content.ToString(),
                                         @"\$loginStrGroup\s*=\s*mysql_result\(\$LoginRS,\s*0,\s*'valid'\);\s*\n\s*\$loginUserid\s*=\s*mysql_result\(\$LoginRS,\s*0,\s*'user_id'\);",
-                                        "mysqli_field_seek($LoginRS, 0);\n    $field = mysqli_fetch_field($LoginRS);\n    $loginStrGroup = $field->valid;\n    $loginUserid  = $field->user_id;\n    mysqli_free_result($LoginRS);",
-                                        _regexCompiled);
+                                        "mysqli_field_seek($LoginRS, 0);\n    $field = mysqli_fetch_field($LoginRS);\n    $loginStrGroup = $field->valid;\n    $loginUserid  = $field->user_id;\n    mysqli_free_result($LoginRS);");
             file.Content.Clear();
             file.Content.Append(updated);
         }
 
+        var (oldResultFunc, newNumRowsFunc) = this switch
+        {
+            RubiconUpgrader => ("pg_result", "pg_num_rows"),
+            MonaUpgrader => ("mysql_result", "mysqli_num_rows")
+        };
+        if (!file.Content.Contains(oldResultFunc))
+        {
+            return;
+        }
         var lines = file.Content.Split();
+        StringBuilder currentLine;
+
         for (int i = 0; i < lines.Count; i++)
         {
-            var line = lines[i];
-            if (line.Contains(mysqlResult))
+            if (!(currentLine = lines[i]).Contains(oldResultFunc))
             {
-                const string countFunc = "COUNT(*)";
-                var countIndex = line.IndexOf(countFunc);
-                if (countIndex == -1)
+                continue;
+            }
+            const string countFunc = "COUNT(*)";
+            var countIndex = currentLine.IndexOf(countFunc);
+            if (countIndex == -1)
+            {
+                if (this is not RubiconUpgrader)
                 {
-                    file.Warnings.Add($"Neobvyklé použití {mysqlResult}!");
+                    file.Warnings.Add($"Neobvyklé použití {oldResultFunc}!");
                     continue;
                 }
-                line.Replace(countFunc, "*", countIndex);
-                line.Replace(", 0", string.Empty);
-                line.Replace(mysqlResult, mysqliNumRows);
+                currentLine.Replace(oldResultFunc, "pg_fetch_result");
+                continue;
             }
+            currentLine.Replace(countFunc, "*", countIndex);
+            currentLine.Replace(", 0", string.Empty);
+            currentLine.Replace(oldResultFunc, newNumRowsFunc);
         }
         lines.JoinInto(file.Content);
     }
