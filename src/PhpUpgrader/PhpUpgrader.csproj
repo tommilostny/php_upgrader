@@ -4,7 +4,7 @@
       <OutputType>Exe</OutputType>
       <TargetFramework>net6.0</TargetFramework>
 	  <Nullable>annotations</Nullable>
-	  <Version>1.2.136</Version>
+	  <Version>1.2.137</Version>
 	  <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 

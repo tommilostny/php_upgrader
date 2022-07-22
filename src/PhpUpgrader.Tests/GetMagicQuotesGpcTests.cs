@@ -13,6 +13,7 @@ public class GetMagicQuotesGpcTests : UnitTestWithOutputBase
     [InlineData("if ( ( !is_string($value) && !is_numeric($value) ) || !is_string($key) )\r\n\t\t\tcontinue;\r\n\r\n\t\tif ( get_magic_quotes_gpc() )\r\n\t\t\t$value = htmlspecialchars( stripslashes((string)$value) );\r\n\t\telse\r\n\t\t\t$value = htmlspecialchars( (string)$value );\r\n?>")]
     [InlineData("<?php\r\n      if((isset($_REQUEST['search'])) && ($_REQUEST['search'] != \"\"))\r\n        {\r\n          $hledany_retezec = (get_magic_quotes_gpc()) ? $_POST['search'] : addslashes($_POST['search']);\r\n          $zaznam_exist = 0;\r\n     ?>   \r\n          <h1><?php echo $hledat_vysledek_vyrazu; ?> \"<?php echo $hledany_retezec; ?>\"</h1>\r\n              <img src=\"<?php echo $cesta_vystup; ?>img/line.gif\" alt=\"line\" class=\"line\" />\r\n          <p>&nbsp;</p>\r\n          <div class=\"spacer\"></div><br />")]
     [InlineData("if ( ( !is_string($value) && !is_numeric($value) ) || !is_string($key) )\r\n\t\t\tcontinue;\r\n\r\n\t\tif ( get_magic_quotes_gpc() )\r\n\t\t{\r\n\t\t\t$value = htmlspecialchars( stripslashes((string)$value) );\r\n\t\t}\r\n\t\telse\r\n\t\t{\r\n\t\t\t$value = htmlspecialchars( (string)$value );\r\n\t\t}\r\n?>")]
+    [InlineData(", get_magic_quotes_gpc() ? /*$password : addslashes($password));*/ $hashed_pwd : addslashes($hashed_pwd)); ")]
     public void UpgradesValidFile(string content)
     {
         //Arrange
@@ -57,9 +58,7 @@ public class GetMagicQuotesGpcTests : UnitTestWithOutputBase
     [InlineData("if ( ( !is_string($value) && !is_numeric($value) ) || !is_string($key) )\r\n\t\t\tcontinue;\r\n\r\n\t\t/*if ( get_magic_quotes_gpc() )\r\n\t\t\t$value = htmlspecialchars( stripslashes((string)$value) );\r\n\t\telse*/\r\n\t\t\t$value = htmlspecialchars( (string)$value );\r\n?>")]
     [InlineData("if ( ( !is_string($value) && !is_numeric($value) ) || !is_string($key) )\r\n\t\t\tcontinue;\r\n\r\n\t\t/*if ( get_magic_quotes_gpc() )\r\n\t\t{\r\n\t\t\t$value = htmlspecialchars( stripslashes((string)$value) );\r\n\t\t}\r\n\t\telse*/\r\n\t\t{\r\n\t\t\t$value = htmlspecialchars( (string)$value );\r\n\t\t}\r\n?>")]
     [InlineData("<table border=\"1\" cellspacing=\"0\" id=\"outputSample\">\r\n\t\t<colgroup><col width=\"120\"></colgroup>\r\n\t\t<thead>\r\n\t\t\t<tr>\r\n\t\t\t\t<th>Field&nbsp;Name</th>\r\n\t\t\t\t<th>Value</th>\r\n\t\t\t</tr>\r\n\t\t</thead>\r\n<?php\r\n\r\nif (!empty($_POST))\r\n{\r\n\tforeach ( $_POST as $key => $value )\r\n\t{\r\n\t\tif ( ( !is_string($value) && !is_numeric($value) ) || !is_string($key) )\r\n\t\t\tcontinue;")]
-    [InlineData("// get_magic_quotes_gpc()")]
     [InlineData("/* get_magic_quotes_gpc() */")]
-    [InlineData("# get_magic_quotes_gpc()")]
     public void DoesNotUpgradeUpdatedOrNotContainingFile(string content)
     {
         //Arrange

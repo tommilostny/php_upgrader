@@ -312,11 +312,12 @@ public class RubiconUpgrader : MonaUpgrader
 
         string _NewCredentialAndComment(Match match)
         {
-            if (content[..match.Index].EndsWith("//"))
+            if (content.AsSpan(0, match.Index).EndsWith("//"))
             {
                 return match.Value;
             }
-            var varName = match.Value.Split('=')[0].Trim();
+            var eqIndex = match.ValueSpan.IndexOf('=');
+            var varName = match.ValueSpan[..eqIndex].Trim(); 
             var credential = varName switch
             {
                 var vn when vn.EndsWith("username") && (usernameLoaded = true) => Username,
@@ -361,21 +362,26 @@ public class RubiconUpgrader : MonaUpgrader
     /// <summary> Aktualizace Database::connect. </summary>
     public static void UpgradeDatabaseConnectCall(FileWrapper file, string oldHost, string newHost)
     {
-        if (!file.Content.Contains($"//Database::connect('{oldHost}'"))
+        var lookingFor = $"Database::connect('{oldHost}'";
+        var commented = $"//{lookingFor}";
+
+        if (file.Content.Contains(lookingFor) && !file.Content.Contains(commented))
         {
             var content = file.Content.ToString();
             var evaluator = new MatchEvaluator(_DCMatchEvaluator);
-            var updated = Regex.Replace(content, @$"Database::connect\('{oldHost}'.+\);", evaluator);
+            var updated = Regex.Replace(content, @$"( |\t)*Database::connect\('{oldHost}'.+\);", evaluator);
 
             file.Content.Replace(content, updated);
         }
 
         string _DCMatchEvaluator(Match match)
         {
-            var startIndex = match.Value.IndexOf('(') + oldHost.Length + 2;
-            var afterOldHost = match.Value.AsSpan(startIndex);
+            var startIndex = match.ValueSpan.IndexOf('(') + oldHost.Length + 2;
+            var afterOldHost = match.ValueSpan[startIndex..];
 
-            return $"//{match.Value}\n\tDatabase::connect('{newHost}{afterOldHost}";
+            var spaces = match.ValueSpan[..match.ValueSpan.IndexOf('D')];
+
+            return $"{spaces}//{match.ValueSpan.TrimStart()}\n{spaces}Database::connect('{newHost}{afterOldHost}";
         }
     }
 

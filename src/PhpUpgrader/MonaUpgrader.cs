@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader;
+﻿using System;
+
+namespace PhpUpgrader;
 
 /// <summary> PHP upgrader pro RS Mona z verze 5 na verzi 7. </summary>
 public class MonaUpgrader
@@ -737,16 +739,16 @@ public class MonaUpgrader
 
         static string _PregMatchEvaluator(Match match)
         {
-            int bracketIndex = match.Value.IndexOf('(');
+            var bracketIndex = match.ValueSpan.IndexOf('(');
 
-            string pregFunction = match.Value[..bracketIndex].TrimEnd() switch
+            var pregFunction = match.ValueSpan[..bracketIndex].TrimEnd() switch
             {
-                "ereg_replace" => "preg_replace",
-                "split" => "preg_split",
+                var x when x.SequenceEqual("ereg_replace") => "preg_replace",
+                var x when x.SequenceEqual("split") => "preg_split",
                 _ => "preg_match"
             };
-            char quote = match.Value[++bracketIndex];
-            string insidePattern = match.Value[++bracketIndex..(match.Value.Length - 1)];
+            var quote = match.ValueSpan[++bracketIndex];
+            var insidePattern = match.ValueSpan[++bracketIndex..(match.ValueSpan.Length - 1)];
 
             return $"{pregFunction}({quote}~{insidePattern}~{quote}";
         }
@@ -810,13 +812,13 @@ public class MonaUpgrader
 
         static string _IfEmptyMatchEvaluator(Match match)
         {
-            var varStartIndex = match.Value.IndexOf('$');
-            var varLength = match.Value.IndexOf('!') - 1 - varStartIndex;
-            var varValue1 = match.Value.AsSpan(varStartIndex, varLength);
+            var varStartIndex = match.ValueSpan.IndexOf('$');
+            var varEndIndex = match.ValueSpan.IndexOf('!') - 1;
+            var varValue1 = match.ValueSpan[varStartIndex..varEndIndex];
 
-            varStartIndex = match.Value.IndexOf('|') + 3;
-            varLength = match.Value.LastIndexOf('!') - 1 - varStartIndex;
-            var varValue2 = match.Value.AsSpan(varStartIndex, varLength);
+            varStartIndex = match.ValueSpan.LastIndexOf('|') + 2;
+            varEndIndex = match.ValueSpan.LastIndexOf('!') - 1;
+            var varValue2 = match.ValueSpan[varStartIndex..varEndIndex];
 
             return varValue1.SequenceEqual(varValue2) ? $"if (!empty({varValue1}))" : match.Value;
         }
@@ -850,7 +852,7 @@ public class MonaUpgrader
         //Zpracování výrazu s ternárním operátorem.
         var evaluator = new MatchEvaluator(_GetMagicQuotesGpcTernaryEvaluator);
         var updated = Regex.Replace(contentStr.Value,
-                                    @"\(?!?get_magic_quotes_gpc\(\)\)?\s?\?\s?(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s?:\s?(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))",
+                                    @"\(?!?get_magic_quotes_gpc\(\)\)?\s{0,5}\?\s{0,5}(/\*.*\*/)?\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s{0,5}:\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))",
                                     evaluator,
                                     _regexCompiled);
         //Pokud výraz s get_magic_quotes_gpc nebyl aktualizován, jedná se pravděpodobně o variantu s if else.
@@ -858,7 +860,7 @@ public class MonaUpgrader
         {
             evaluator = new MatchEvaluator(_GetMagicQuotesGpcIfElseEvaluator);
             updated = Regex.Replace(contentStr.Value,
-                                    @"if\s?\(\s?get_magic_quotes_gpc\(\)\s?\)(\s|.){1,150}else(\s|.){1,150};",
+                                    @"if\s?\(\s?get_magic_quotes_gpc\(\)\s?\)(\n|.){0,236}else(\n|.){0,236};",
                                     evaluator);
 
             if (!_Is_GMQG_Commented(updated))
@@ -871,32 +873,36 @@ public class MonaUpgrader
 
         static bool _Is_GMQG_Commented(string str)
         {
-            return Regex.IsMatch(str, @"(/(\*|/)|#).{0,6}get_magic_quotes_gpc\(\)", _regexCompiled);
+            return Regex.IsMatch(str, @"/\*.{0,6}get_magic_quotes_gpc\(\)(\n|.){0,236}\*/", _regexCompiled);
         }
 
+        //get_magic_quotes_gpc vždy vrací false, tu vybere a zakomentuje zbytek.
         static string _GetMagicQuotesGpcTernaryEvaluator(Match match)
         {
-            var colonIndex = match.Value.IndexOf(':') + 1;
+            var colonIndex = match.ValueSpan.LastIndexOf(':') + 1;
             var afterColon = match.ValueSpan[colonIndex..];
 
-            //get_magic_quotes_gpc vždy vrací false.
-            if (match.Value.Contains("!get_")) //negovaný výraz, vybrat true část mezi '?' a ':'.
+            //negovaný výraz, vybrat true část mezi '?' a ':'.
+            if (match.ValueSpan.Contains("!get_", StringComparison.Ordinal))
             {
-                var qmarkIndex = match.Value.IndexOf('?') + 1;
+                var qmarkIndex = match.ValueSpan.IndexOf('?') + 1;
                 var beforeQMark = match.ValueSpan[..qmarkIndex];
                 var afterQMark = match.ValueSpan[qmarkIndex..(colonIndex - 1)];
                 return $"/*{beforeQMark}*/ {afterQMark} /*:{afterColon}*/";
             }
 
             //běžný podmíněný výraz, vybrat false část za ':'.
-            var beforeColon = match.ValueSpan[..colonIndex];
+            var beforeColon = match.ValueSpan.Contains("*/", StringComparison.Ordinal)
+                ? match.Value[..colonIndex].Replace("*/", "*//*") //volat string replace jen pokud je opravdu potřeba
+                : match.ValueSpan[..colonIndex];
+
             return $"/*{beforeColon}*/{afterColon}";
         }
 
         static string _GetMagicQuotesGpcIfElseEvaluator(Match match)
         {
             //zakomentovat if else s get_magic_quotes_gpc a ponechat pouze else část.
-            var elseIndex = match.Value.IndexOf("else") + 4;
+            var elseIndex = match.ValueSpan.IndexOf("else") + 4;
             var beforeElse = match.ValueSpan[..elseIndex];
             var afterElse = match.ValueSpan[elseIndex..];
 

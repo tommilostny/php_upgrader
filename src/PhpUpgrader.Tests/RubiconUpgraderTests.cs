@@ -180,7 +180,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
     public void UpdatesHostnameInDatabaseConnect()
     {
         //Arrange
-        const string originalContent = "/* some stuff before */\n\nDatabase::connect('93.185.102.228', 'safety-jogger', 'Qhc1e2_5', 'safety-jogger', '5432');\n\n/* some stuff after */";
+        const string originalContent = "/* some stuff before */\n\n\tDatabase::connect('93.185.102.228', 'safety-jogger', 'Qhc1e2_5', 'safety-jogger', '5432');\n\n/* some stuff after */";
         var file = new FileWrapper("test-site\\index.php", originalContent);
 
         //Act

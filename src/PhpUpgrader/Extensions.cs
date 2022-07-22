@@ -21,31 +21,7 @@ internal static class Extensions
             var maxCopyCount = source.Length - i;
             source.CopyTo(i, higherHalf, Math.Min(value.Length, maxCopyCount));
 
-            if (window.Contains(value))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /// <summary>
-    /// Zjistí existenci podřetězce v paměťovém rozsahu (<seealso cref="Span{T}"/>).
-    /// </summary>
-    /// <typeparam name="T">Typ prvku řetězce, který bude porovnáván (<seealso cref="EqualityComparer{T}"/>).</typeparam>
-    /// <param name="span">Pole/rozsah, ve kterém se vyhledává.</param>
-    /// <param name="value">Podřetězec k vyhledání.</param>
-    /// <returns>Příznak existence podřetězce.</returns>
-    private static bool Contains<T>(this Span<T> span, ReadOnlySpan<T> value)
-    {
-        for (int i = 0, j = 0; i < span.Length; i++)
-        {
-            if (!EqualityComparer<T>.Default.Equals(span[i], value[j]))
-            {
-                j = 0;
-                continue;
-            }
-            if (++j == value.Length)
+            if (((ReadOnlySpan<char>)window).Contains(value, StringComparison.Ordinal))
             {
                 return true;
             }
