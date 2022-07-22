@@ -21,7 +21,7 @@ internal static class Extensions
             var maxCopyCount = source.Length - i;
             source.CopyTo(i, higherHalf, Math.Min(value.Length, maxCopyCount));
 
-            if (((ReadOnlySpan<char>)window).Contains(value, StringComparison.Ordinal))
+            if (window.IndexOf(value) != -1)
             {
                 return true;
             }
