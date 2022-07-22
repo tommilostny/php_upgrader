@@ -291,9 +291,9 @@ public class RubiconUpgrader : MonaUpgrader
         var content = file.Content.ToString();
         var evaluator = new MatchEvaluator(_NewCredentialAndComment);
 
-        content = Regex.Replace(content, @"\$setup_connect.*= ?"".*"";", evaluator, _regexCompiled);
-        file.Content.Clear();
-        file.Content.Append(content);
+        var updated = Regex.Replace(content, @"\$setup_connect.*= ?"".*"";", evaluator, _regexCompiled);
+
+        file.Content.Replace(content, updated);
         file.Content.Replace("////", "//");
 
         if (!usernameLoaded)
@@ -365,10 +365,9 @@ public class RubiconUpgrader : MonaUpgrader
         {
             var content = file.Content.ToString();
             var evaluator = new MatchEvaluator(_DCMatchEvaluator);
-            content = Regex.Replace(content, @$"Database::connect\('{oldHost}'.+\);", evaluator);
+            var updated = Regex.Replace(content, @$"Database::connect\('{oldHost}'.+\);", evaluator);
 
-            file.Content.Clear();
-            file.Content.Append(content);
+            file.Content.Replace(content, updated);
         }
 
         string _DCMatchEvaluator(Match match)
@@ -402,8 +401,8 @@ public class RubiconUpgrader : MonaUpgrader
             var lineStr = line.ToString();
             if (Regex.IsMatch(lineStr, @"<script language=""PHP"">", _regexIgnoreCase))
             {
-                line.Clear();
-                line.Append(Regex.Replace(lineStr, @"<script language=""PHP"">", "<?php ", _regexIgnoreCase));
+                var updated = Regex.Replace(lineStr, @"<script language=""PHP"">", "<?php ", _regexIgnoreCase);
+                line.Replace(lineStr, updated);
                 insidePhpScriptTag = true;
             }
             if (insidePhpScriptTag && line.Contains("</script>"))
@@ -457,10 +456,10 @@ public class RubiconUpgrader : MonaUpgrader
         {
             return;
         }
-        var contentStr = file.Content.ToString();
-        file.Content.Clear();
-        file.Content.Append(Regex.Replace(contentStr, @"if\s?\(\$presmeruj == ""NO""\)\s*\{\s*break;",
-                                                       "if ($presmeruj == \"NO\") {\n\t\t\treturn;"));
+        var content = file.Content.ToString();
+        var updated = Regex.Replace(content, @"if\s?\(\$presmeruj == ""NO""\)\s*\{\s*break;",
+                                              "if ($presmeruj == \"NO\") {\n\t\t\treturn;");
+        file.Content.Replace(content, updated);
     }
 
     /// <summary> Úprava mysql a proměnné $beta v souboru aegisx\import\load_data.php. </summary>
@@ -496,9 +495,11 @@ public class RubiconUpgrader : MonaUpgrader
         if (file.Path.EndsWith(Path.Join("classes", "Object.php")) && file.Content.Contains("abstract class Object"))
         {
             file.Content.Replace("abstract class Object", "abstract class ObjectBase");
-            var contentStr = file.Content.ToString();
-            file.Content.Clear();
-            file.Content.Append(Regex.Replace(contentStr, @"function\s+Object\s*\(", "function ObjectBase("));
+            var content = file.Content.ToString();
+
+            var updated = Regex.Replace(content, @"function\s+Object\s*\(", "function ObjectBase(");
+            file.Content.Replace(content, updated);
+
             file.MoveOnSavePath = file.Path.Replace(Path.Join("classes", "Object.php"),
                                                     Path.Join("classes", "ObjectBase.php"));
         }

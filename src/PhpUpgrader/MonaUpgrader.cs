@@ -179,6 +179,7 @@ public class MonaUpgrader
         UpgradeRegexFunctions(file);
         RemoveTrailingWhitespaceFromEndOfFile(file);
         UpgradeIfEmpty(file);
+        UpgradeGetMagicQuotesGpc(file);
 
         if (file.Content.Contains("93.185.102.228"))
         {
@@ -311,11 +312,11 @@ public class MonaUpgrader
     {
         if (file.Path.EndsWith(Path.Join("funkce", "secure", "login.php")))
         {
-            var updated = Regex.Replace(file.Content.ToString(),
+            var content = file.Content.ToString();
+            var updated = Regex.Replace(content,
                                         @"\$loginStrGroup\s*=\s*mysql_result\(\$LoginRS,\s*0,\s*'valid'\);\s*\n\s*\$loginUserid\s*=\s*mysql_result\(\$LoginRS,\s*0,\s*'user_id'\);",
                                         "mysqli_field_seek($LoginRS, 0);\n    $field = mysqli_fetch_field($LoginRS);\n    $loginStrGroup = $field->valid;\n    $loginUserid  = $field->user_id;\n    mysqli_free_result($LoginRS);");
-            file.Content.Clear();
-            file.Content.Append(updated);
+            file.Content.Replace(content, updated);
         }
 
         var (oldResultFunc, newNumRowsFunc) = this switch
@@ -680,20 +681,19 @@ public class MonaUpgrader
             if (!file.Content.Contains("ereg"))
                 return;
 
-            string content = file.Content.ToString();
+            var content = file.Content.ToString();
 
-            content = Regex.Replace(content, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator, _regexCompiled);
-            content = Regex.Replace(content, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator, _regexCompiled);
+            var updated = Regex.Replace(content, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator, _regexCompiled);
+            updated = Regex.Replace(updated, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator, _regexCompiled);
 
-            content = Regex.Replace(content, @"ereg ?\( ?\$", "preg_match($", _regexCompiled);
-            content = Regex.Replace(content, @"ereg_replace ?\( ?\$", "preg_replace($", _regexCompiled);
+            updated = Regex.Replace(updated, @"ereg ?\( ?\$", "preg_match($", _regexCompiled);
+            updated = Regex.Replace(updated, @"ereg_replace ?\( ?\$", "preg_replace($", _regexCompiled);
 
-            if (content.Contains("ereg"))
+            if (updated.Contains("ereg"))
             {
                 file.Warnings.Add("Nemodifikovaná funkce ereg!");
             }
-            file.Content.Clear();
-            file.Content.Append(content);
+            file.Content.Replace(content, updated);
         }
 
         void _UpgradeSplit()
@@ -713,10 +713,10 @@ public class MonaUpgrader
                 if (!javascript && !line.Contains(".split"))
                 {
                     var lineStr = line.ToString();
-                    lineStr = Regex.Replace(lineStr, @"\bsplit ?\('(\\'|[^'])*'", evaluator, _regexCompiled);
-                    lineStr = Regex.Replace(lineStr, @"\bsplit ?\(""(\\""|[^""])*""", evaluator, _regexCompiled);
-                    line.Clear();
-                    line.Append(lineStr);
+                    var updated = Regex.Replace(lineStr, @"\bsplit ?\('(\\'|[^'])*'", evaluator, _regexCompiled);
+                    updated = Regex.Replace(updated, @"\bsplit ?\(""(\\""|[^""])*""", evaluator, _regexCompiled);
+                    
+                    line.Replace(lineStr, updated);
                 }
             }
             lines.JoinInto(file.Content);
@@ -796,12 +796,12 @@ public class MonaUpgrader
     public static void UpgradeIfEmpty(FileWrapper file)
     {
         var evaluator = new MatchEvaluator(_IfEmptyMatchEvaluator);
-        var updated = Regex.Replace(file.Content.ToString(),
+        var content = file.Content.ToString();
+        var updated = Regex.Replace(content,
                                     @"if\s?\(\$\w+\s?!=\s?""""\s?\|\|\s?\$\w+\s?!=\s?null\)",
                                     evaluator,
                                     _regexIgnoreCase);
-        file.Content.Clear();
-        file.Content.Append(updated);
+        file.Content.Replace(content, updated);
 
         static string _IfEmptyMatchEvaluator(Match match)
         {
@@ -820,11 +820,82 @@ public class MonaUpgrader
     /// <summary> PHPStan: Parameter #2 $str of function explode expects string, float|int&lt;0, max&gt; given. </summary>
     public static void UpgradeFloatExplodeConversions(FileWrapper file)
     {
-        var updated = Regex.Replace(file.Content.ToString(),
+        if (!file.Content.Contains("$stranka_end = explode"))
+        {
+            return;
+        }
+        var content = file.Content.ToString();
+        var updated = Regex.Replace(content,
                                     @"\s\$stranka_end = \$stranka_pocet \/ 10;\s+\$stranka_end = explode\(""\."", \$stranka_end\);\s+\$stranka_end = \$stranka_end\[0\];\s+\$stranka_end = \$stranka_end \* 10 \+ 10;",
-                                    "\n$stranka_end = (int)($stranka_pocet / 10);\n$stranka_end = $stranka_end * 10 + 10;",
+                                    "\n$stranka_end = (int)($stranka_pocet / 10);\n$stranka_end = $stranka_end * 10 + 10;");
+        file.Content.Replace(content, updated);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public static void UpgradeGetMagicQuotesGpc(FileWrapper file)
+    {
+        Lazy<string> contentStr = new(() => file.Content.ToString());
+        if (!file.Content.Contains("get_magic_quotes_gpc()") || _Is_GMQG_Commented(contentStr.Value))
+        {
+            return;
+        }
+
+        //Zpracování výrazu s ternárním operátorem.
+        var evaluator = new MatchEvaluator(_GetMagicQuotesGpcTernaryEvaluator);
+        var updated = Regex.Replace(contentStr.Value,
+                                    @"\(?!?get_magic_quotes_gpc\(\)\)?\s*\?\s*(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s*:\s*(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))",
+                                    evaluator,
                                     _regexCompiled);
-        file.Content.Clear();
-        file.Content.Append(updated);
+        //Pokud výraz s get_magic_quotes_gpc nebyl aktualizován, jedná se pravděpodobně o variantu s if else.
+        if (!_Is_GMQG_Commented(updated))
+        {
+            evaluator = new MatchEvaluator(_GetMagicQuotesGpcIfElseEvaluator);
+            updated = Regex.Replace(contentStr.Value,
+                                    @"if\s?\(\s?get_magic_quotes_gpc\(\)\s?\)(\s|.)+else(\s|.)+;",
+                                    evaluator);
+
+            if (!_Is_GMQG_Commented(updated))
+            {
+                file.Warnings.Add("Nezakomentovaná funkce get_magic_quotes_gpc().");
+                return;
+            }
+        }
+        file.Content.Replace(contentStr.Value, updated);
+
+        static bool _Is_GMQG_Commented(string str)
+        {
+            return Regex.IsMatch(str, @"(/(\*|/)|#).{0,6}get_magic_quotes_gpc\(\)", _regexCompiled);
+        }
+
+        static string _GetMagicQuotesGpcTernaryEvaluator(Match match)
+        {
+            var colonIndex = match.Value.IndexOf(':') + 1;
+            var afterColon = match.ValueSpan[colonIndex..];
+
+            //get_magic_quotes_gpc vždy vrací false.
+            if (match.Value.Contains("!get_")) //negovaný výraz, vybrat true část mezi '?' a ':'.
+            {
+                var qmarkIndex = match.Value.IndexOf('?') + 1;
+                var beforeQMark = match.ValueSpan[..qmarkIndex];
+                var afterQMark = match.ValueSpan[qmarkIndex..(colonIndex - 1)];
+                return $"/*{beforeQMark}*/ {afterQMark} /*:{afterColon}*/";
+            }
+
+            //běžný podmíněný výraz, vybrat false část za ':'.
+            var beforeColon = match.ValueSpan[..colonIndex];
+            return $"/*{beforeColon}*/{afterColon}";
+        }
+
+        static string _GetMagicQuotesGpcIfElseEvaluator(Match match)
+        {
+            //zakomentovat if else s get_magic_quotes_gpc a ponechat pouze else část.
+            var elseIndex = match.Value.IndexOf("else") + 4;
+            var beforeElse = match.ValueSpan[..elseIndex];
+            var afterElse = match.ValueSpan[elseIndex..];
+
+            return $"/*{beforeElse}*/{afterElse}";
+        }
     }
 }
