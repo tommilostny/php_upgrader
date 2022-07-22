@@ -147,6 +147,11 @@ public class MonaUpgrader
     /// <returns> Upravený soubor, null v případě TinyAjaxBehavior. </returns>
     protected virtual FileWrapper? UpgradeProcedure(string filePath)
     {
+#if DEBUG
+        Console.Write("   ");
+        Console.Write(filePath);
+        Console.Write('\r');
+#endif
         if (UpgradeTinyAjaxBehavior(filePath))
         {
             return null;
@@ -710,7 +715,7 @@ public class MonaUpgrader
                 if (line.Contains("<script")) javascript = true;
                 if (line.Contains("</script")) javascript = false;
 
-                if (!javascript && !line.Contains(".split"))
+                if (!javascript && !line.Contains(".split") && line.Length > 7)
                 {
                     var lineStr = line.ToString();
                     var updated = Regex.Replace(lineStr, @"\bsplit ?\('(\\'|[^'])*'", evaluator, _regexCompiled);
@@ -845,7 +850,7 @@ public class MonaUpgrader
         //Zpracování výrazu s ternárním operátorem.
         var evaluator = new MatchEvaluator(_GetMagicQuotesGpcTernaryEvaluator);
         var updated = Regex.Replace(contentStr.Value,
-                                    @"\(?!?get_magic_quotes_gpc\(\)\)?\s*\?\s*(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s*:\s*(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))",
+                                    @"\(?!?get_magic_quotes_gpc\(\)\)?\s?\?\s?(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s?:\s?(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))",
                                     evaluator,
                                     _regexCompiled);
         //Pokud výraz s get_magic_quotes_gpc nebyl aktualizován, jedná se pravděpodobně o variantu s if else.
@@ -853,7 +858,7 @@ public class MonaUpgrader
         {
             evaluator = new MatchEvaluator(_GetMagicQuotesGpcIfElseEvaluator);
             updated = Regex.Replace(contentStr.Value,
-                                    @"if\s?\(\s?get_magic_quotes_gpc\(\)\s?\)(\s|.)+else(\s|.)+;",
+                                    @"if\s?\(\s?get_magic_quotes_gpc\(\)\s?\)(\s|.){1,150}else(\s|.){1,150};",
                                     evaluator);
 
             if (!_Is_GMQG_Commented(updated))
