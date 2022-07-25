@@ -36,7 +36,7 @@ class Program
             return;
         }
 
-        bool modifiedDate = year != _defaultYear || month != _defaultMonth || day != _defaultDay;
+        var modifiedDate = year != _defaultYear || month != _defaultMonth || day != _defaultDay;
         var webPath = Path.Join(baseFolder, "weby", webName);
         var date = webName switch
         {
@@ -51,7 +51,7 @@ class Program
             checker.Run(path);
             return;
         }
-        for (int i = 0; i < login.Paths?.Length; i++)
+        for (var i = 0; i < login.Paths?.Length; i++)
         {
             checker.Run(login.Paths[i]);
         }

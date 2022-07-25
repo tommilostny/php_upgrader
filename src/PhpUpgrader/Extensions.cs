@@ -7,12 +7,13 @@ internal static class Extensions
     /// </summary>
     /// <param name="source">Kde se vyhledává?</param>
     /// <param name="value">Jaký podřetězec se vyhledává?</param>
+    /// <param name="cmpType"></param>
     /// <returns>Příznak existence podřetězce.</returns>
-    internal static bool Contains(this StringBuilder source, ReadOnlySpan<char> value)
+    internal static bool Contains(this StringBuilder source, ReadOnlySpan<char> value, StringComparison cmpType = StringComparison.Ordinal)
     {
         Span<char> window = stackalloc char[value.Length << 1];
 
-        for (int i = 0; i < source.Length; i += value.Length)
+        for (var i = 0; i < source.Length; i += value.Length)
         {
             Span<char> higherHalf = window[value.Length..];
             higherHalf.CopyTo(window);
@@ -21,7 +22,7 @@ internal static class Extensions
             var maxCopyCount = source.Length - i;
             source.CopyTo(i, higherHalf, Math.Min(value.Length, maxCopyCount));
 
-            if (window.IndexOf(value) != -1)
+            if (((ReadOnlySpan<char>)window).Contains(value, cmpType))
             {
                 return true;
             }
@@ -37,7 +38,7 @@ internal static class Extensions
     /// <returns>Příznak existence znaku.</returns>
     internal static bool Contains(this StringBuilder source, char value)
     {
-        for (int i = 0; i < source.Length; i++)
+        for (var i = 0; i < source.Length; i++)
         {
             if (source[i] == value)
             {
@@ -59,7 +60,7 @@ internal static class Extensions
         var current = new StringBuilder();
         var collection = new List<StringBuilder>();
 
-        for (int i = 0; i < source.Length; i++)
+        for (var i = 0; i < source.Length; i++)
         {
             var character = source[i];
             if (character == delimiter)
@@ -114,7 +115,7 @@ internal static class Extensions
     internal static int Count(this StringBuilder source, char value)
     {
         int count = 0;
-        for (int i = 0; i < source.Length; i++)
+        for (var i = 0; i < source.Length; i++)
         {
             if (source[i] == value)
             {

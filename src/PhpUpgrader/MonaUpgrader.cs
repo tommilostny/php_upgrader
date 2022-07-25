@@ -5,12 +5,6 @@ namespace PhpUpgrader;
 /// <summary> PHP upgrader pro RS Mona z verze 5 na verzi 7. </summary>
 public class MonaUpgrader
 {
-    /// <summary> Výchozí nastavení pro regulární výrazy. </summary>
-    protected const RegexOptions _regexCompiled = RegexOptions.Compiled;
-
-    /// <summary> Výchozí nastavení pro regulární výrazy ignorující velikost písmen. </summary>
-    protected const RegexOptions _regexIgnoreCase = RegexOptions.IgnoreCase | _regexCompiled;
-
     /// <summary> Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce. </summary>
     public List<string> FilesContainingMysql { get; } = new();
 
@@ -138,7 +132,7 @@ public class MonaUpgrader
                 ModifiedFilesCount++;
             }
             //po dodelani nahrazeni nize projit na retezec - mysql_
-            if (Regex.IsMatch(file.Content.ToString(), "[^//]mysql_", _regexIgnoreCase))
+            if (Regex.IsMatch(file.Content.ToString(), "[^//]mysql_", RegexOptions.IgnoreCase | RegexOptions.Compiled))
             {
                 FilesContainingMysql.Add(filePath);
             }
@@ -239,7 +233,7 @@ public class MonaUpgrader
             inComment = hostLoaded = dbnameLoaded = usernameLoaded = passwdLoaded = false;
             var lines = file.Content.Split();
 
-            for (int i = 0; i < lines.Count; i++)
+            for (var i = 0; i < lines.Count; i++)
             {
                 var line = lines[i];
 
@@ -341,7 +335,7 @@ public class MonaUpgrader
         var lines = file.Content.Split();
         StringBuilder currentLine;
 
-        for (int i = 0; i < lines.Count; i++)
+        for (var i = 0; i < lines.Count; i++)
         {
             if (!(currentLine = lines[i]).Contains(oldResultFunc))
             {
@@ -378,7 +372,7 @@ public class MonaUpgrader
         if (file.Content.Contains(lookingFor) && !file.Content.Contains(adding))
         {
             var lines = file.Content.Split();
-            for (int i = 0; i < lines.Count; i++)
+            for (var i = 0; i < lines.Count; i++)
             {
                 var line = lines[i];
                 if (line.Contains(lookingFor))
@@ -532,7 +526,7 @@ public class MonaUpgrader
     /// </summary>
     public static void UpgradeXmlFeeds(FileWrapper file)
     {
-        if (Regex.IsMatch(file.Path, "xml_feeds_[^edit]", _regexCompiled))
+        if (Regex.IsMatch(file.Path, "xml_feeds_[^edit]", RegexOptions.Compiled))
         {
             file.Content.Replace("if($query_podmenu_all[\"casovani\"] == 1)", "if($data_podmenu_all[\"casovani\"] == 1)");
         }
@@ -557,7 +551,7 @@ public class MonaUpgrader
         bool sfBracket = false;
         var lines = file.Content.Split();
 
-        for (int i = 0; i < lines.Count; i++)
+        for (var i = 0; i < lines.Count; i++)
         {
             var line = lines[i];
             if (line.Contains(lookingFor))
@@ -582,7 +576,7 @@ public class MonaUpgrader
     public static void UpgradeGlobalBeta(FileWrapper file)
     {
         if (file.Content.Contains("$this")
-            || !Regex.IsMatch(file.Content.ToString(), "(?s)^(?=.*?function )(?=.*?mysqli_)", _regexCompiled))
+            || !Regex.IsMatch(file.Content.ToString(), "(?s)^(?=.*?function )(?=.*?mysqli_)", RegexOptions.Compiled))
         {
             return;
         }
@@ -590,13 +584,13 @@ public class MonaUpgrader
         var lines = file.Content.Split();
         const string globalBeta = "\n\n    global $beta;\n";
 
-        for (int i = 0; i < lines.Count; i++)
+        for (var i = 0; i < lines.Count; i++)
         {
             var line = lines[i];
             if (line.Contains("<script")) javascript = true;
             if (line.Contains("</script")) javascript = false;
 
-            if (Regex.IsMatch(line.ToString(), @"function\s", _regexCompiled)
+            if (Regex.IsMatch(line.ToString(), @"function\s", RegexOptions.Compiled)
                 && !javascript
                 && _MysqliAndBetaInFunction(i, lines))
             {
@@ -693,11 +687,11 @@ public class MonaUpgrader
 
             var content = file.Content.ToString();
 
-            var updated = Regex.Replace(content, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator, _regexCompiled);
-            updated = Regex.Replace(updated, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator, _regexCompiled);
+            var updated = Regex.Replace(content, @"ereg(_replace)? ?\('(\\'|[^'])*'", evaluator, RegexOptions.Compiled);
+            updated = Regex.Replace(updated, @"ereg(_replace)? ?\(""(\\""|[^""])*""", evaluator, RegexOptions.Compiled);
 
-            updated = Regex.Replace(updated, @"ereg ?\( ?\$", "preg_match($", _regexCompiled);
-            updated = Regex.Replace(updated, @"ereg_replace ?\( ?\$", "preg_replace($", _regexCompiled);
+            updated = Regex.Replace(updated, @"ereg ?\( ?\$", "preg_match($", RegexOptions.Compiled);
+            updated = Regex.Replace(updated, @"ereg_replace ?\( ?\$", "preg_replace($", RegexOptions.Compiled);
 
             if (updated.Contains("ereg"))
             {
@@ -714,7 +708,7 @@ public class MonaUpgrader
             bool javascript = false;
             var lines = file.Content.Split();
 
-            for (int i = 0; i < lines.Count; i++)
+            for (var i = 0; i < lines.Count; i++)
             {
                 var line = lines[i];
                 if (line.Contains("<script")) javascript = true;
@@ -723,8 +717,8 @@ public class MonaUpgrader
                 if (!javascript && !line.Contains(".split") && line.Length > 7)
                 {
                     var lineStr = line.ToString();
-                    var updated = Regex.Replace(lineStr, @"\bsplit ?\('(\\'|[^'])*'", evaluator, _regexCompiled);
-                    updated = Regex.Replace(updated, @"\bsplit ?\(""(\\""|[^""])*""", evaluator, _regexCompiled);
+                    var updated = Regex.Replace(lineStr, @"\bsplit ?\('(\\'|[^'])*'", evaluator, RegexOptions.Compiled);
+                    updated = Regex.Replace(updated, @"\bsplit ?\(""(\\""|[^""])*""", evaluator, RegexOptions.Compiled);
                     
                     line.Replace(lineStr, updated);
                 }
@@ -734,7 +728,7 @@ public class MonaUpgrader
             if (!file.Path.EndsWith(Path.Join("facebook", "src", "Facebook", "SignedRequest.php"))
                 && !file.Path.EndsWith(Path.Join("funkce", "qrkod", "qrsplit.php"))
                 && !file.Path.EndsWith(Path.Join("funkce", "qrkod", "phpqrcode.php"))
-                && Regex.IsMatch(file.Content.ToString(), @"[^_\.]split ?\(", _regexCompiled))
+                && Regex.IsMatch(file.Content.ToString(), @"[^_\.]split ?\(", RegexOptions.Compiled))
             {
                 file.Warnings.Add("Nemodifikovaná funkce split!");
             }
@@ -810,7 +804,7 @@ public class MonaUpgrader
         var updated = Regex.Replace(content,
                                     @"if\s?\(\$\w+\s?!=\s?""""\s?\|\|\s?\$\w+\s?!=\s?null\)",
                                     evaluator,
-                                    _regexIgnoreCase);
+                                    RegexOptions.IgnoreCase | RegexOptions.Compiled);
         file.Content.Replace(content, updated);
 
         static string _IfEmptyMatchEvaluator(Match match)
@@ -857,7 +851,7 @@ public class MonaUpgrader
         var updated = Regex.Replace(contentStr.Value,
                                     @"\(?!?get_magic_quotes_gpc\(\)\)?\s{0,5}\?\s{0,5}(/\*.*\*/)?\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s{0,5}:\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))",
                                     evaluator,
-                                    _regexCompiled);
+                                    RegexOptions.Compiled);
         //Pokud výraz s get_magic_quotes_gpc nebyl aktualizován, jedná se pravděpodobně o variantu s if else.
         if (!_Is_GMQG_Commented(updated))
         {
@@ -876,7 +870,7 @@ public class MonaUpgrader
 
         static bool _Is_GMQG_Commented(string str)
         {
-            return Regex.IsMatch(str, @"/\*.{0,6}get_magic_quotes_gpc\(\)(\n|.){0,236}\*/", _regexCompiled);
+            return Regex.IsMatch(str, @"/\*.{0,6}get_magic_quotes_gpc\(\)(\n|.){0,236}\*/", RegexOptions.Compiled);
         }
 
         //get_magic_quotes_gpc vždy vrací false, tu vybere a zakomentuje zbytek.

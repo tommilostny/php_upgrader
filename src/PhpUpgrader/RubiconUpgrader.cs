@@ -119,7 +119,7 @@ public class RubiconUpgrader : MonaUpgrader
     {
         var lines = file.Content.Split();
 
-        for (int i = 0; i < lines.Count; i++) //procházení řádků souboru
+        for (var i = 0; i < lines.Count; i++) //procházení řádků souboru
         {
             if (!lines[i].Contains("class "))
                 continue;
@@ -200,7 +200,7 @@ public class RubiconUpgrader : MonaUpgrader
         {
             var sb = new StringBuilder().Append(parameters);
             var @params = sb.Split(',');
-            for (int i = 0; i < @params.Count; i++)
+            for (var i = 0; i < @params.Count; i++)
             {
                 var param = @params[i];
                 var name = param.Split('=')[0].Replace(" ", string.Empty).Replace("&", string.Empty);
@@ -282,7 +282,7 @@ public class RubiconUpgrader : MonaUpgrader
         var content = file.Content.ToString();
         var evaluator = new MatchEvaluator(_NewCredentialAndComment);
 
-        var updated = Regex.Replace(content, @"\$setup_connect.*= ?"".*"";", evaluator, _regexCompiled);
+        var updated = Regex.Replace(content, @"\$setup_connect.*= ?"".*"";", evaluator, RegexOptions.Compiled);
 
         file.Content.Replace(content, updated);
         file.Content.Replace("////", "//");
@@ -385,37 +385,40 @@ public class RubiconUpgrader : MonaUpgrader
     /// <summary> HTML tag &lt;script language="PHP"&gt;&lt;/script> deprecated => &lt;?php ?&gt; </summary>
     public static void UpgradeScriptLanguagePhp(FileWrapper file)
     {
-        if (!Regex.IsMatch(file.Content.ToString(), @"<script language=""PHP"">", _regexIgnoreCase))
+        const string oldScriptTagStart = @"<script language=""PHP"">";
+        const string oldScriptTagEnd = "</script>";
+
+        if (!file.Content.Contains(oldScriptTagStart, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
         var lines = file.Content.Split();
-        bool insidePhpScriptTag = false;
+        var insidePhpScriptTag = false;
 
-        for (int i = 0; i < lines.Count; i++)
+        for (var i = 0; i < lines.Count; i++)
         {
             var line = lines[i];
-            var lineStr = line.ToString();
-            if (Regex.IsMatch(lineStr, @"<script language=""PHP"">", _regexIgnoreCase))
+            if (line.Contains(oldScriptTagStart, StringComparison.OrdinalIgnoreCase))
             {
-                var updated = Regex.Replace(lineStr, @"<script language=""PHP"">", "<?php ", _regexIgnoreCase);
+                var lineStr = line.ToString();
+                var updated = Regex.Replace(lineStr, oldScriptTagStart, "<?php ", RegexOptions.IgnoreCase);
                 line.Replace(lineStr, updated);
                 insidePhpScriptTag = true;
             }
-            if (insidePhpScriptTag && line.Contains("</script>"))
+            if (insidePhpScriptTag && line.Contains(oldScriptTagEnd))
             {
-                line.Replace("</script>", " ?>");
+                line.Replace(oldScriptTagEnd, " ?>");
                 insidePhpScriptTag = false;
             }
         }
         lines.JoinInto(file.Content);
-        file.Warnings.Add("Nalezena značka <script language=\"PHP\">. Zkontrolovat možný Javascript.");
+        file.Warnings.Add($"Nalezena značka {oldScriptTagEnd}. Zkontrolovat možný Javascript.");
     }
 
     /// <summary> templates/.../product_detail.php, zakomentovaný blok HTML stále spouští broken PHP includy, zakomentovat </summary>
     public static void UpgradeIncludesInHtmlComments(FileWrapper file)
     {
-        if (!Regex.IsMatch(file.Path, @"(\\|/)templates(\\|/).+(\\|/)product_detail\.php", _regexCompiled))
+        if (!Regex.IsMatch(file.Path, @"(\\|/)templates(\\|/).+(\\|/)product_detail\.php", RegexOptions.Compiled))
         {
             return;
         }
@@ -423,7 +426,7 @@ public class RubiconUpgrader : MonaUpgrader
         bool insideHtmlComment = false;
         bool commentedAtLeastOneInclude = false;
 
-        for (int i = 0; i < lines.Count; i++)
+        for (var i = 0; i < lines.Count; i++)
         {
             if (lines[i].Contains("<!--"))
             {
@@ -543,7 +546,7 @@ public class RubiconUpgrader : MonaUpgrader
         var updated = Regex.Replace(content,
                                     @"\$(cz_)?osetreni(_url)?\s?=\s?array\((""([^""]|\\""){0,9}""\s?=>\s?""([^""]|\\""){0,9}"",? ?)+\)",
                                     evaluator,
-                                    _regexCompiled);
+                                    RegexOptions.Compiled);
 
         file.Content.Replace(content, updated);
 
@@ -553,7 +556,7 @@ public class RubiconUpgrader : MonaUpgrader
             var kvExpressions = new Stack<string>();
             var matches = Regex.Matches(match.Value,
                                         @"""([^""]|\\""){0,9}""\s?=>\s?""([^""]|\\""){0,9}""",
-                                        _regexCompiled);
+                                        RegexOptions.Compiled);
 
             foreach (var kv in matches.Reverse())
             {
