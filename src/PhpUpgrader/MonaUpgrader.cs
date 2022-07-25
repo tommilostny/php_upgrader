@@ -132,7 +132,7 @@ public class MonaUpgrader
             }
             //upraveno, zapsat do souboru
             file.WriteStatus();
-            file.Save(WebName);
+            file.Save(WebName, BaseFolder);
             if (file.IsModified)
             {
                 ModifiedFilesCount++;
@@ -150,15 +150,18 @@ public class MonaUpgrader
     protected virtual FileWrapper? UpgradeProcedure(string filePath)
     {
 #if DEBUG
+        Console.ForegroundColor = ConsoleColor.DarkGray;
         Console.Write("   ");
-        Console.Write(filePath);
-        Console.Write('\r');
+        Console.WriteLine(filePath);
+        Console.ResetColor();
 #endif
         if (UpgradeTinyAjaxBehavior(filePath))
-        {
             return null;
-        }
+
         var file = new FileWrapper(filePath);
+
+        if (file.Content.Length == 0)
+            return null;
 
         if (!filePath.Contains("tiny_mce"))
         {

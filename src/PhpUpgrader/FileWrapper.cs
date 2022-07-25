@@ -48,7 +48,7 @@ public class FileWrapper
 
     /// <summary> Uložit modifikovaný obsah souboru. </summary>
     /// <remarks> Přesune soubor na cestu <see cref="MoveOnSavePath"/>, pokud není null. </remarks>
-    public void Save(string webName)
+    public void Save(string webName, string baseFolder)
     {
         if (!IsModified) //Nezapisovat, pokud neproběhly žádné změny.
         {
@@ -56,8 +56,8 @@ public class FileWrapper
         }
         //Vytvořit backup soubor.
         var s = System.IO.Path.DirectorySeparatorChar;
-        var backupFile = new FileInfo(Path.Replace($"{s}{webName}{s}", $"{s}_backup{s}{webName}{s}"));
-        
+        var backupFile = new FileInfo(Path.Replace($"{baseFolder}{s}weby{s}{webName}{s}",
+                                                   $"{baseFolder}{s}weby{s}_backup{s}{webName}{s}"));
         backupFile.Directory.Create();
         if (!backupFile.Exists)
         {
@@ -68,7 +68,7 @@ public class FileWrapper
         
         if (MoveOnSavePath is not null) //Přesunout soubor, pokud je potřeba změnit jméno.
         {
-            File.Move(Path, MoveOnSavePath);
+            File.Move(Path, MoveOnSavePath, overwrite: true);
         }
     }
 
