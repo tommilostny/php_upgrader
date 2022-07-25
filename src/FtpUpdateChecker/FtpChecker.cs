@@ -70,7 +70,7 @@ public class FtpChecker : IDisposable
         var fileInfos = _session.EnumerateRemoteFiles(path, null, enumerationOptions);
 
         FileCount = FolderCount = PhpFoundCount = FoundCount = 0;
-        int messageLength = Output.WriteStatus(this);
+        var messageLength = Output.WriteStatus(this);
         try //Enumerate files
         {
             foreach (var fileInfo in fileInfos)

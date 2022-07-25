@@ -84,7 +84,7 @@ internal static class Output
 
         static void _OutputSpaces(int fromIndex, int toIndex, StreamWriter? sw)
         {
-            for (int i = fromIndex; i < toIndex; i++)
+            for (var i = fromIndex; i < toIndex; i++)
             {
                 Console.Write(' ');
                 sw?.Write(' ');

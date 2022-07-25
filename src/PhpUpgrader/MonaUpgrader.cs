@@ -548,7 +548,7 @@ public class MonaUpgrader
         {
             return;
         }
-        bool sfBracket = false;
+        var sfBracket = false;
         var lines = file.Content.Split();
 
         for (var i = 0; i < lines.Count; i++)
@@ -607,9 +607,9 @@ public class MonaUpgrader
         static bool _MysqliAndBetaInFunction(int startIndex, IReadOnlyList<StringBuilder> lines)
         {
             bool javascript = false, inComment = false, foundMysqli = false, foundBeta = false;
-            int bracketCount = 0;
+            var bracketCount = 0;
 
-            for (int i = startIndex; i < lines.Count; i++)
+            for (var i = startIndex; i < lines.Count; i++)
             {
                 var line = lines[i];
                 if (line.Contains("<script")) javascript = true;
@@ -705,7 +705,7 @@ public class MonaUpgrader
             if (!file.Content.Contains("split") || file.Content.Contains("preg_split"))
                 return;
 
-            bool javascript = false;
+            var javascript = false;
             var lines = file.Content.Split();
 
             for (var i = 0; i < lines.Count; i++)

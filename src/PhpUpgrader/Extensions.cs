@@ -7,7 +7,7 @@ internal static class Extensions
     /// </summary>
     /// <param name="source">Kde se vyhledává?</param>
     /// <param name="value">Jaký podřetězec se vyhledává?</param>
-    /// <param name="cmpType"></param>
+    /// <param name="cmpType">Způsob porovnání řetězců (<seealso cref="StringComparison.Ordinal"/> je dobrý rychlý default).</param>
     /// <returns>Příznak existence podřetězce.</returns>
     internal static bool Contains(this StringBuilder source, ReadOnlySpan<char> value, StringComparison cmpType = StringComparison.Ordinal)
     {
@@ -114,7 +114,7 @@ internal static class Extensions
     /// <returns>Počet výskytů daného znaku.</returns>
     internal static int Count(this StringBuilder source, char value)
     {
-        int count = 0;
+        var count = 0;
         for (var i = 0; i < source.Length; i++)
         {
             if (source[i] == value)

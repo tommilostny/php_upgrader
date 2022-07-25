@@ -127,15 +127,15 @@ public class RubiconUpgrader : MonaUpgrader
             var line = lines[i];
             var lineStr = lines[i].ToString();
 
-            int nameStartIndex = lineStr.IndexOf("class ") + 6;
+            var nameStartIndex = lineStr.IndexOf("class ") + 6;
 
-            int nameEndIndex = lineStr.IndexOf(' ', nameStartIndex);
+            var nameEndIndex = lineStr.IndexOf(' ', nameStartIndex);
             if (nameEndIndex == -1)
                 nameEndIndex = lineStr.IndexOf('{', nameStartIndex);
 
             var className = lineStr[nameStartIndex..(nameEndIndex != -1 ? nameEndIndex : line.Length)].Trim();
 
-            int bracketCount = line.Count('{');
+            var bracketCount = line.Count('{');
 
             if (bracketCount == 0 && !lines[i + 1].Contains('{'))
             {
@@ -145,7 +145,7 @@ public class RubiconUpgrader : MonaUpgrader
             {
                 continue;
             }
-            bool inComment = line.Contains("/*");
+            var inComment = line.Contains("/*");
             while (++i < lines.Count) //hledání a nahrazení starého konstruktoru uvnitř třídy
             {
                 line = lines[i];
@@ -171,8 +171,8 @@ public class RubiconUpgrader : MonaUpgrader
                 }
                 if (Regex.IsMatch(lineStr, $@"function {className}\s?\(.*\)"))
                 {
-                    int paramsStartIndex = lineStr.IndexOf('(') + 1;
-                    int paramsEndIndex = lineStr.LastIndexOf(')');
+                    var paramsStartIndex = lineStr.IndexOf('(') + 1;
+                    var paramsEndIndex = lineStr.LastIndexOf(')');
 
                     var @params = lineStr.AsSpan(paramsStartIndex, paramsEndIndex - paramsStartIndex);
 
@@ -412,7 +412,7 @@ public class RubiconUpgrader : MonaUpgrader
             }
         }
         lines.JoinInto(file.Content);
-        file.Warnings.Add($"Nalezena značka {oldScriptTagEnd}. Zkontrolovat možný Javascript.");
+        file.Warnings.Add($"Nalezena značka {oldScriptTagStart}. Zkontrolovat možný Javascript.");
     }
 
     /// <summary> templates/.../product_detail.php, zakomentovaný blok HTML stále spouští broken PHP includy, zakomentovat </summary>
@@ -423,8 +423,8 @@ public class RubiconUpgrader : MonaUpgrader
             return;
         }
         var lines = file.Content.Split();
-        bool insideHtmlComment = false;
-        bool commentedAtLeastOneInclude = false;
+        var insideHtmlComment = false;
+        var commentedAtLeastOneInclude = false;
 
         for (var i = 0; i < lines.Count; i++)
         {
