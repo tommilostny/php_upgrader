@@ -109,7 +109,7 @@ public class MonaUpgrader
     {
         BaseFolder = baseFolder;
         WebName = webName;
-        Regex.CacheSize = 20;
+        Regex.CacheSize = 25;
     }
 
     /// <summary> Rekurzivní upgrade .php souborů ve všech podadresářích. </summary>
