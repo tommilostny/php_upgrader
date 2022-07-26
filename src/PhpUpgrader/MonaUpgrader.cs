@@ -185,7 +185,9 @@ public class MonaUpgrader
         UpgradeIfEmpty(file);
         UpgradeGetMagicQuotesGpc(file);
 
-        if (file.Content.Contains("93.185.102.228"))
+        //Zahlásit IP adresu serveru mcrai1, pokud není zakomentovaná.
+        if (file.Content.Contains("93.185.102.228")
+            && !Regex.IsMatch(file.Content.ToString(), @"//.*93\.185\.102\.228"))
         {
             file.Warnings.Add("Soubor obsahuje IP adresu mcrai1 (93.185.102.228).");
         }
