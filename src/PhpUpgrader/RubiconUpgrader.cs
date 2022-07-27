@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader;
+﻿using System.Text.RegularExpressions;
+
+namespace PhpUpgrader;
 
 /// <summary> PHP upgrader pro systém Rubicon, založený na upgraderu pro systém Mona. </summary>
 public class RubiconUpgrader : MonaUpgrader
@@ -115,88 +117,200 @@ public class RubiconUpgrader : MonaUpgrader
     }
 
     /// <summary> Old style constructor function ClassName() => function __construct() </summary>
+    /// <remarks> Deprecated: Methods with the same name as their class will not be constructors in a future version of PHP; </remarks>
     public static void UpgradeConstructors(FileWrapper file)
     {
-        var lines = file.Content.Split();
-
-        for (var i = 0; i < lines.Count; i++) //procházení řádků souboru
+        if (!file.Content.Contains("class"))
         {
-            if (!lines[i].Contains("class "))
-                continue;
+            return;
+        }
+        var contentStr = file.Content.ToString();
+        var contentAhead = contentStr;
+        var initialContent = contentStr;
+        //procházíme soubor po znacích.
+        for (var i = 0; i < file.Content.Length; i++)
+        {
+            //nalézt další třídu v souboru a přesunout se na její index.
+            var classMatch = Regex.Match(contentAhead, @"class\s.+\s*\{", RegexOptions.Multiline | RegexOptions.Compiled);
+            if (!classMatch.Success) //skončit, pokud kód neobsahuje další třídu.
+            {
+                break;
+            }
+            i += classMatch.Index + classMatch.Value.Length;
+            contentAhead = contentStr[i..];
 
-            var line = lines[i];
-            var lineStr = lines[i].ToString();
-
-            var nameStartIndex = lineStr.IndexOf("class ") + 6;
-
-            var nameEndIndex = lineStr.IndexOf(' ', nameStartIndex);
-            if (nameEndIndex == -1)
-                nameEndIndex = lineStr.IndexOf('{', nameStartIndex);
-
-            var className = lineStr[nameStartIndex..(nameEndIndex != -1 ? nameEndIndex : line.Length)].Trim();
-
-            var bracketCount = line.Count('{');
-
-            if (bracketCount == 0 && !lines[i + 1].Contains('{'))
+            //jméno třídy, jejíž konstruktory hledáme a upravujeme.
+            var className = _LoadClassName(classMatch.ValueSpan).ToString();
+            //parametry všech konstruktorů (jak nového __construct, který se neupravuje, tak {className})
+            //a uloží jejich příznak upravenosti (funkce je __construct).
+            var constructors = _LoadContructorsParameters(contentAhead, className);
+            //není nutné procházet třídu znovu, pokud jsou všechny její konstruktory již aktualizovány.
+            if (constructors.All(x => x.Value))
             {
                 continue;
             }
-            if (_LookAheadFor__construct(bracketCount, i + 1)) //třída obsahuje metodu __construct(), nehledat starý konstruktor
+            //prochází třídu, dokud nenarazí na funkci, zde se zavolá následující akce,
+            //která zkontroluje, zda se jedná o konstruktor a případně jej aktualizuje.
+            _GoThroughClass(contentStr, i, onFunctionFindAction: (int j) =>
             {
-                continue;
+                var lowerHalf = contentStr.AsSpan(0, j + 2);
+                var higherHalf = contentStr[(j + 2)..];
+                //jedná se o funkci {className}, aka starý konstruktor?
+                var match = Regex.Match(higherHalf, $@"^{className}\s?\(.*\)\s");
+                if (match.Success)
+                {
+                    //ano, jedná se o starý konstruktor. Pokud neexistuje jeho aktualizovaná varianta __construct, doplň.
+                    var @params = _LoadParameters(match.Value);
+                    if (!constructors[_ParametersKey(@params)])
+                    {
+                        var oldConstructor = $"{className}({@params})";
+                        higherHalf = $"__construct{higherHalf.AsSpan(className.Length)}";
+
+                        var compatibilityConstructorBuilder = new StringBuilder(oldConstructor)
+                            .AppendLine()
+                            .AppendLine("    {")
+                            .AppendLine($"        self::__construct({_ParametersWithoutDefaultValues(@params)});")
+                            .AppendLine("    }")
+                            .AppendLine();
+
+                        contentStr = $"{lowerHalf}{compatibilityConstructorBuilder}    public function {higherHalf}";
+                    }
+                }
+            });
+            //uložit aktualizovaný kód třídy do "souboru" před přesunem na další.
+            file.Content.Replace(initialContent, contentStr);
+            initialContent = contentStr;
+        }
+
+        static ReadOnlySpan<char> _LoadClassName(ReadOnlySpan<char> classMatchVal)
+        {
+            var afterClassKW = classMatchVal[6..];
+            for (var i = 0; i < afterClassKW.Length; i++)
+            {
+                var currentChar = afterClassKW[i];
+                if (char.IsWhiteSpace(currentChar) || currentChar == '{')
+                {
+                    return afterClassKW[..i];
+                }
             }
-            var inComment = line.Contains("/*");
-            while (++i < lines.Count) //hledání a nahrazení starého konstruktoru uvnitř třídy
+            return afterClassKW;
+        }
+
+        static IReadOnlyDictionary<string, bool> _LoadContructorsParameters(string content, string className)
+        {
+            var result = new Dictionary<string, bool>();
+
+            _GoThroughClass(content, 0, onFunctionFindAction: (int i) =>
             {
-                line = lines[i];
-                lineStr = line.ToString();
+                var match = Regex.Match(content[(i + 2)..], $@"^(__construct|{className})\s?\(.*\)\s");
+                if (match.Success)
+                {
+                    var @params = _LoadParameters(match.Value);
+                    var key = _ParametersKey(@params);
 
-                if (line.Contains("/*")) inComment = true;
-                if (line.Contains("*/")) inComment = false;
+                    if (match.Value.StartsWith("__construct"))
+                    {
+                        result[key] = true;
+                        return;
+                    }
+                    result[key] = result.ContainsKey(key);
+                }
+            });
+            return result;
+        }
 
-                if (inComment || lineStr.TrimStart().StartsWith("//"))
+        static string _LoadParameters(string functionMatch)
+        {
+            var paramsStartIndex = functionMatch.IndexOf('(') + 1;
+            var paramsEndIndex = functionMatch.LastIndexOf(')');
+            return functionMatch[paramsStartIndex..paramsEndIndex];
+        }
+
+        static string _ParametersKey(string parameters) => parameters.Replace(" ", string.Empty);
+
+        static void _GoThroughClass(string content, int startIndex, Action<int> onFunctionFindAction)
+        {
+            short scope = 1;
+            byte functionCursor = 0;
+            bool functionFlag = false, inBlockComment = false, inLineComment = false;
+
+            for (var i = startIndex; i < content.Length; i++)
+            {
+                var currentChar = content[i];
+                //přeskočit komentáře.
+                if (inLineComment && currentChar == '\n')
+                {
+                    inLineComment = false;
                     continue;
-
-                bracketCount += line.Count('{');
-                bracketCount -= line.Count('}');
-
-                if (bracketCount == 0)
+                }
+                if (i < content.Length - 2)
+                {
+                    var twoCharSlice = $"{currentChar}{content[i + 1]}";
+                    if (_CommentCheck(twoCharSlice, ref inBlockComment, ref i, "/*")
+                        || _CommentCheck(twoCharSlice, ref inBlockComment, ref i, "*/", matchValue: false)
+                        || inBlockComment
+                        || _CommentCheck(twoCharSlice, ref inLineComment, ref i, "//", increment: false))
+                    {
+                        continue;
+                    }
+                }
+                //hlídání zda jsme uvnitř třídy na scope minimálně 1.
+                switch (currentChar)
+                {
+                    case '{': scope++; break;
+                    case '}': scope--; break;
+                }
+                if (scope == 0)
                 {
                     break;
                 }
-                if (bracketCount > 2 && lineStr.TrimStart().StartsWith("function"))
+                //jsme ve třídě mimo funkci, hledání řetězce "function".
+                if (scope == 1 && !functionFlag)
                 {
-                    file.Warnings.Add($"Neočekávaný počet složených závorek ({bracketCount}), funkce okolo řádku {i + 1}. Zkontrolovat konstruktor(y) třídy {className}.");
-                    bracketCount = 2;
+                    functionFlag = _InFunction(currentChar, ref functionCursor);
                 }
-                if (Regex.IsMatch(lineStr, $@"function {className}\s?\(.*\)"))
+                //nalezena funkce, načteme její jméno a zkontrolujeme, jestli se nejedná {className}.
+                if (functionFlag)
                 {
-                    var paramsStartIndex = lineStr.IndexOf('(') + 1;
-                    var paramsEndIndex = lineStr.LastIndexOf(')');
-
-                    var @params = lineStr.AsSpan(paramsStartIndex, paramsEndIndex - paramsStartIndex);
-
-                    line.Replace($"function {className}", "function __construct");
-
-                    var compatibilityConstructorBuilder = new StringBuilder()
-                        .AppendLine($"    public function {className}({@params})")
-                        .AppendLine( "    {")
-                        .AppendLine($"        self::__construct({_ParamsWithoutDefaultValues(@params)});")
-                        .AppendLine( "    }")
-                        .AppendLine();
-
-                    line.Insert(0, compatibilityConstructorBuilder);
+                    onFunctionFindAction(i);
+                    functionFlag = false;
                 }
             }
-        }
-        lines.JoinInto(file.Content);
 
-        if (!file.IsModified && file.Warnings.Count > 0)
-        {
-            file.Warnings.Remove(file.Warnings.FirstOrDefault(w => w.StartsWith("Large bracket count (")));
+            static bool _InFunction(char current, ref byte functionCursor)
+            {
+                //kurzor se posouvá po řetězci "function" dle aktuálního vstupního znaku.
+                if (functionCursor < 8)
+                {
+                    if (current != "function"[functionCursor++])
+                    {
+                        functionCursor = 0;
+                    }
+                    if (functionCursor != 8)
+                    {
+                        return false;
+                    }
+                }
+                functionCursor = 0;
+                return true;
+            }
+
+            static bool _CommentCheck(ReadOnlySpan<char> twoCharSlice, ref bool inComment, ref int i, ReadOnlySpan<char> commentStartSequence, bool matchValue = true, bool increment = true)
+            {
+                if (twoCharSlice.SequenceEqual(commentStartSequence))
+                {
+                    inComment = matchValue;
+                    if (increment)
+                    {
+                        i++;
+                    }
+                    return true;
+                }
+                return false;
+            }
         }
 
-        static string _ParamsWithoutDefaultValues(ReadOnlySpan<char> parameters)
+        static string _ParametersWithoutDefaultValues(ReadOnlySpan<char> parameters)
         {
             var sb = new StringBuilder().Append(parameters);
             var @params = sb.Split(',');
@@ -209,27 +323,6 @@ public class RubiconUpgrader : MonaUpgrader
             }
             @params.JoinInto(sb, ", ");
             return sb.ToString();
-        }
-
-        bool _LookAheadFor__construct(int bracketCount, int linesIndex)
-        {
-            for (; linesIndex < lines.Count; linesIndex++)
-            {
-                var line = lines[linesIndex];
-
-                bracketCount += line.Count('{');
-                bracketCount -= line.Count('}');
-
-                if (bracketCount == 0)
-                {
-                    break;
-                }
-                if (line.Contains("function __construct"))
-                {
-                    return true;
-                }
-            }
-            return false;
         }
     }
 
