@@ -15,7 +15,7 @@ public class TrailingWhitespaceTests : UnitTestWithOutputBase
         var file = new FileWrapper("file.php", content);
 
         //Act
-        MonaUpgrader.RemoveTrailingWhitespaceFromEndOfFile(file);
+        MonaUpgrader.RemoveTrailingWhitespace(file);
 
         //Assert
         var updatedContent = file.Content.ToString();
@@ -33,7 +33,7 @@ public class TrailingWhitespaceTests : UnitTestWithOutputBase
         var file = new FileWrapper("file.php", content);
 
         //Act
-        MonaUpgrader.RemoveTrailingWhitespaceFromEndOfFile(file);
+        MonaUpgrader.RemoveTrailingWhitespace(file);
 
         //Assert
         var updatedContent = file.Content.ToString();
