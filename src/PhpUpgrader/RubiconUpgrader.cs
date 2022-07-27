@@ -1,6 +1,4 @@
-﻿using System.Text.RegularExpressions;
-
-namespace PhpUpgrader;
+﻿namespace PhpUpgrader;
 
 /// <summary> PHP upgrader pro systém Rubicon, založený na upgraderu pro systém Mona. </summary>
 public class RubiconUpgrader : MonaUpgrader
