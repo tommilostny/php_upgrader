@@ -8,17 +8,15 @@ public class UpgradeTableAddEditTests : UnitTestWithOutputBase
     {
     }
 
-    private const string _content = "<?php\n\n$pocet_text_all = mysqli_num_rows(...)\n\n?>";
-    private const string _fileOfInterest1 = "admin\\table_x_add.php";
-    private const string _fileOfInterest2 = "admin\\table_x_edit.php";
+    private const string _upgradableContent = "<?php\n\n$pocet_text_all = mysqli_num_rows(...)\n\n?>";
 
     [Theory]
-    [InlineData(_fileOfInterest1)]
-    [InlineData(_fileOfInterest2)]
-    public void UpgradesValidFile(string filePath)
+    [InlineData("admin", "table_x_add.php")]
+    [InlineData("admin", "table_x_edit.php")]
+    public void UpgradesValidFile(string folder, string fileName)
     {
         //Arrange
-        var file = new FileWrapper(filePath, _content);
+        var file = new FileWrapper(Path.Join(folder, fileName), _upgradableContent);
         var upgrader = new MonaUpgraderFixture();
 
         //Act
@@ -28,20 +26,20 @@ public class UpgradeTableAddEditTests : UnitTestWithOutputBase
         _output.WriteLine(file.Path);
         _output.WriteLine(file.Content.ToString());
         Assert.True(file.IsModified);
-        Assert.NotEqual(_content, file.Content.ToString());
+        Assert.NotEqual(_upgradableContent, file.Content.ToString());
     }
 
     [Theory]
-    [InlineData(_fileOfInterest1,  "<?php\n\n@$pocet_text_all = mysqli_num_rows(...)\n\n?>")]
-    [InlineData(_fileOfInterest2, "<?php\n\n@$pocet_text_all = mysqli_num_rows(...)\n\n?>")]
-    [InlineData("aeiouy\\randomfile.php",  _content)]
-    [InlineData("aeiouy\\randomfile.php",  "<?php\n\n$beta = mysqli_connect(...)\n\n?>")]
-    [InlineData(_fileOfInterest1,  "<?php\n\n$beta = mysqli_connect(...)\n\n?>")]
-    [InlineData(_fileOfInterest2, "<?php\n\n$beta = mysqli_connect(...)\n\n?>")]
-    public void DoesNotUpgradeInvalidFile(string filePath, string content)
+    [InlineData("admin", "table_x_add.php",  "<?php\n\n@$pocet_text_all = mysqli_num_rows(...)\n\n?>")]
+    [InlineData("admin", "table_x_edit.php", "<?php\n\n@$pocet_text_all = mysqli_num_rows(...)\n\n?>")]
+    [InlineData("aeiouy", "randomfile.php",  _upgradableContent)]
+    [InlineData("aeiouy", "randomfile.php",  "<?php\n\n$beta = mysqli_connect(...)\n\n?>")]
+    [InlineData("admin", "table_x_add.php", "<?php\n\n$beta = mysqli_connect(...)\n\n?>")]
+    [InlineData("admin", "table_x_edit.php", "<?php\n\n$beta = mysqli_connect(...)\n\n?>")]
+    public void DoesNotUpgradeInvalidFile(string folder, string fileName, string content)
     {
         //Arrange
-        var file = new FileWrapper(filePath, content);
+        var file = new FileWrapper(Path.Join(folder, fileName), content);
         var upgrader = new MonaUpgraderFixture();
 
         //Act

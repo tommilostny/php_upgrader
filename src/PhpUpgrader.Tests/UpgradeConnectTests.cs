@@ -1,9 +1,14 @@
 ﻿using PhpUpgrader.Mona.UpgradeRoutines;
+using System.Runtime.InteropServices;
 
 namespace PhpUpgrader.Tests;
 
 public class UpgradeConnectTests
 {
+    private static bool IsLinux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
+    private static string CorrectPath(string path) => IsLinux ? path.Replace('\\', '/') : path;
+
     [Theory]
     [InlineData("connect\\connection.php")]
     [InlineData("system\\connection.php")]
@@ -14,8 +19,8 @@ public class UpgradeConnectTests
     public void UpgradeConnect_ValidFileTest(string path)
     {
         //Arrange
-        var file1 = new FileWrapper(path, string.Empty);
-        var file2 = new FileWrapper(path, "<?php echo(\"some random PHP code\"); ?>");
+        var file1 = new FileWrapper(CorrectPath(path), string.Empty);
+        var file2 = new FileWrapper(CorrectPath(path), "<?php echo(\"some random PHP code\"); ?>");
         var upgrader1 = new MonaUpgraderFixture();
         var upgrader2 = new MonaUpgraderFixture(baseFolder: "/McRAI", "test-site");
         upgrader1.ConnectionFile = upgrader2.ConnectionFile = "connection.php";
@@ -46,7 +51,7 @@ public class UpgradeConnectTests
     public void UpgradeConnect_InvalidFileTest()
     {
         //Arrange
-        var file = new FileWrapper("admin\\index.php", "");
+        var file = new FileWrapper(Path.Join("admin", "index.php"), "");
         var upgrader = new MonaUpgraderFixture()
         {
             ConnectionFile = "connection.php"

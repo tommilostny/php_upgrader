@@ -14,7 +14,7 @@ public class StrankovaniUnitTest : UnitTestWithOutputBase
     [InlineData("function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $pre, $next)")]
     public void ModifiesKnownVariants(string input)
     {
-        var file = new FileWrapper(@"test-site\funkce\strankovani.php", input);
+        var file = new FileWrapper(Path.Join("test-site", "funkce", "strankovani.php"), input);
 
         file.UpgradeStrankovani();
 
@@ -28,7 +28,7 @@ public class StrankovaniUnitTest : UnitTestWithOutputBase
     public void DoesNotModifyUnknownVariant()
     {
         string input = "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $vz_vypis)";
-        var file = new FileWrapper(@"test-site\funkce\strankovani.php", input);
+        var file = new FileWrapper(Path.Join("test-site", "funkce", "strankovani.php"), input);
 
         file.UpgradeStrankovani();
 
@@ -42,7 +42,7 @@ public class StrankovaniUnitTest : UnitTestWithOutputBase
     public void DoesNotModifyNotContainingPredchoziDalsi()
     {
         string input = "mysqli_query($beta, $query);";
-        var file = new FileWrapper(@"test-site\funkce\strankovani.php", input);
+        var file = new FileWrapper(Path.Join("test-site", "funkce", "strankovani.php"), input);
 
         file.UpgradeStrankovani();
 
@@ -56,7 +56,7 @@ public class StrankovaniUnitTest : UnitTestWithOutputBase
     public void DoesNotModifyOtherFiles()
     {
         string input = "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)";
-        var file = new FileWrapper(@"path-to\admin\table_x_edit.php", input);
+        var file = new FileWrapper(Path.Join("path-to", "admin", "table_x_edit.php"), input);
 
         file.UpgradeStrankovani();
 

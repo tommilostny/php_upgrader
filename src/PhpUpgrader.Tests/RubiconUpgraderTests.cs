@@ -32,7 +32,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
     public void RubiconImportTest()
     {
         //Arrange
-        var file = new FileWrapper("Connections\\rubicon_import.php", "<?php\r\n# FileName=\"Connection_php_mysql.htm\"\r\n# Type=\"MYSQL\"\r\n# HTTP=\"true\"\r\n$hostname_sportmall_import = \"localhost\";\r\n$database_sportmall_import = \"eshop_products\";\r\n$username_sportmall_import = \"eshop_products\";\r\n$password_sportmall_import = \"heslo_k_databazi_:)\";\r\n$sportmall_import = mysql_pconnect($hostname_sportmall_import, $username_sportmall_import, $password_sportmall_import) or trigger_error(mysql_error(),E_USER_ERROR); \r\n\r\nmysql_query(\"SET character_set_connection=cp1250\");\r\nmysql_query(\"SET character_set_results=cp1250\");\r\nmysql_query(\"SET character_set_client=cp1250\");\r\n?>");
+        var file = new FileWrapper(Path.Join("Connections", "rubicon_import.php"), "<?php\r\n# FileName=\"Connection_php_mysql.htm\"\r\n# Type=\"MYSQL\"\r\n# HTTP=\"true\"\r\n$hostname_sportmall_import = \"localhost\";\r\n$database_sportmall_import = \"eshop_products\";\r\n$username_sportmall_import = \"eshop_products\";\r\n$password_sportmall_import = \"heslo_k_databazi_:)\";\r\n$sportmall_import = mysql_pconnect($hostname_sportmall_import, $username_sportmall_import, $password_sportmall_import) or trigger_error(mysql_error(),E_USER_ERROR); \r\n\r\nmysql_query(\"SET character_set_connection=cp1250\");\r\nmysql_query(\"SET character_set_results=cp1250\");\r\nmysql_query(\"SET character_set_client=cp1250\");\r\n?>");
         var upgrader = new RubiconUpgrader("/McRAI", string.Empty)
         { 
             ConnectionFile = "connect.php",
@@ -48,7 +48,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
     public void FillInDbLoginToSetup()
     {
         //Arrange
-        var file = new FileWrapper("test-web\\setup.php",
+        var file = new FileWrapper(Path.Join("test-web", "setup.php"),
                                    "\n\n$setup_connect_db = \"olejemaziva\";\n" +
                                    "//$setup_connect_db = \"hasici-pristroje\";\n" +
                                    "$setup_connect_username = \"olejemaziva_use\";\n" +
@@ -71,7 +71,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
     public void UpdatesBetaHostnameToMcrai2()
     {
         //Arrange
-        var file = new FileWrapper("Connections\\beta.php",
+        var file = new FileWrapper(Path.Join("Connections", "beta.php"),
                                    "\t$hostname_beta = \"93.185.102.228\";		//server(host)\n" +
 	                                   "\t$database_beta = $setup_connect_db;	//databaze\n" +
 	                                   "\t$username_beta = $setup_connect_username;	//login(user)\n" +
@@ -119,7 +119,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
     public void CommentsIncludesInProductDetail()
     {
         //Arrange
-        var file = new FileWrapper(@"test-site\templates\amt\product_detail.php",
+        var file = new FileWrapper(Path.Join("test-site", "templates", "amt", "product_detail.php"),
             "</div>\n<?php include \"rubicon/modules/category/menu1.php\";?>\n" +
             "<div class=\"clear\"></div>\n</div>\n</div>\n" +
             "<!--div class=\"obsah_detail\">\n" +
@@ -146,7 +146,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
     public void ReplacesBreakWithReturnInAegisxDetail()
     {
         //Arrange
-        var file = new FileWrapper("test-site\\aegisx\\detail.php", "if ($presmeruj == \"NO\") {\r\n\t\t\tbreak;");
+        var file = new FileWrapper(Path.Join("test-site", "aegisx", "detail.php"), "if ($presmeruj == \"NO\") {\r\n\t\t\tbreak;");
 
         //Act
         file.UpgradeAegisxDetail();
@@ -164,7 +164,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
     {
         //Arrange
         const string originalContent = "/* some stuff before */\n\n\tDatabase::connect('93.185.102.228', 'safety-jogger', 'Qhc1e2_5', 'safety-jogger', '5432');\n\n/* some stuff after */";
-        var file = new FileWrapper("test-site\\index.php", originalContent);
+        var file = new FileWrapper(Path.Join("test-site", "index.php"), originalContent);
 
         //Act
         file.UpgradeDatabaseConnectCall("93.185.102.228", "mcrai-upgrade.vshosting.cz");
