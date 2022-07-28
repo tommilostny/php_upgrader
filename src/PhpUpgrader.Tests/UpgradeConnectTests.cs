@@ -22,7 +22,7 @@ public class UpgradeConnectTests
         var file1 = new FileWrapper(CorrectPath(path), string.Empty);
         var file2 = new FileWrapper(CorrectPath(path), "<?php echo(\"some random PHP code\"); ?>");
         var upgrader1 = new MonaUpgraderFixture();
-        var upgrader2 = new MonaUpgraderFixture(baseFolder: "/McRAI", "test-site");
+        var upgrader2 = new MonaUpgraderFixture(baseFolder: "../../../../..", "test-site");
         upgrader1.ConnectionFile = upgrader2.ConnectionFile = "connection.php";
 
         //Act & Assert
