@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Tests;
+﻿using PhpUpgrader.Mona.UpgradeRoutines;
+
+namespace PhpUpgrader.Tests;
 
 public class UpgradePgMysqlResultTests : UnitTestWithOutputBase
 {
@@ -20,7 +22,7 @@ public class UpgradePgMysqlResultTests : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture();
 
         //Act
-        upgrader.UpgradeResultFunc(file);
+        file.UpgradeResultFunc(upgrader);
 
         //Assert
         var updatedContent = file.Content.ToString();
@@ -46,7 +48,7 @@ public class UpgradePgMysqlResultTests : UnitTestWithOutputBase
         var upgrader = new RubiconUpgrader(null, null);
 
         //Act
-        upgrader.UpgradeResultFunc(file);
+        file.UpgradeResultFunc(upgrader);
 
         //Assert
         var updatedContent = file.Content.ToString();
@@ -68,7 +70,7 @@ public class UpgradePgMysqlResultTests : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture();
 
         //Act
-        upgrader.UpgradeResultFunc(file);
+        file.UpgradeResultFunc(upgrader);
 
         //Assert
         var updatedContent = file.Content.ToString();

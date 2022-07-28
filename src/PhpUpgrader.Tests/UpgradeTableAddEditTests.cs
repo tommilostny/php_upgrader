@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Tests;
+﻿using PhpUpgrader.Mona.UpgradeRoutines;
+
+namespace PhpUpgrader.Tests;
 
 public class UpgradeTableAddEditTests : UnitTestWithOutputBase
 {
@@ -20,7 +22,7 @@ public class UpgradeTableAddEditTests : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture();
 
         //Act
-        upgrader.UpgradeTableAddEdit(file);
+        file.UpgradeTableAddEdit(upgrader.AdminFolders);
 
         //Assert
         _output.WriteLine(file.Path);
@@ -43,7 +45,7 @@ public class UpgradeTableAddEditTests : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture();
 
         //Act
-        upgrader.UpgradeTableAddEdit(file);
+        file.UpgradeTableAddEdit(upgrader.AdminFolders);
 
         //Assert
         _output.WriteLine(file.Path);

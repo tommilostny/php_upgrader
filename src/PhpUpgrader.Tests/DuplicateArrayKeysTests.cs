@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Tests;
+﻿using PhpUpgrader.Rubicon.UpgradeRoutines;
+
+namespace PhpUpgrader.Tests;
 
 public class DuplicateArrayKeysTests : UnitTestWithOutputBase
 {
@@ -19,7 +21,7 @@ public class DuplicateArrayKeysTests : UnitTestWithOutputBase
         var file = new FileWrapper("somefile.php", input);
 
         //Act
-        RubiconUpgrader.UpgradeDuplicateArrayKeys(file);
+        file.UpgradeDuplicateArrayKeys();
 
         //Assert
         _output.WriteLine(input);

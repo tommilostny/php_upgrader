@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Tests;
+﻿using PhpUpgrader.Mona.UpgradeRoutines;
+
+namespace PhpUpgrader.Tests;
 
 public class UpgradeClanekVypisTests : UnitTestWithOutputBase
 {
@@ -13,7 +15,7 @@ public class UpgradeClanekVypisTests : UnitTestWithOutputBase
         var file = new FileWrapper("system\\clanek.php", "Some other stuff\n\n\t$vypis_table_clanek[\"sdileni_fotogalerii\"]\nHello");
 
         //Act
-        MonaUpgrader.UpgradeClanekVypis(file);
+        file.UpgradeClanekVypis();
 
         //Assert
         _output.WriteLine(file.Content.ToString());
@@ -29,7 +31,7 @@ public class UpgradeClanekVypisTests : UnitTestWithOutputBase
         var file = new FileWrapper("system\\clanek.php", content);
 
         //Act
-        MonaUpgrader.UpgradeClanekVypis(file);
+        file.UpgradeClanekVypis();
 
         //Assert
         _output.WriteLine(file.Content.ToString());

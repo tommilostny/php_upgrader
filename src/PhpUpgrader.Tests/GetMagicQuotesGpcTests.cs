@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Tests;
+﻿using PhpUpgrader.Mona.UpgradeRoutines;
+
+namespace PhpUpgrader.Tests;
 
 public class GetMagicQuotesGpcTests : UnitTestWithOutputBase
 {
@@ -20,7 +22,7 @@ public class GetMagicQuotesGpcTests : UnitTestWithOutputBase
         var file = new FileWrapper("somefile.php", content);
 
         //Act
-        MonaUpgrader.UpgradeGetMagicQuotesGpc(file);
+        file.UpgradeGetMagicQuotesGpc();
 
         //Assert
         var updatedContent = file.Content.ToString();
@@ -41,7 +43,7 @@ public class GetMagicQuotesGpcTests : UnitTestWithOutputBase
         var file = new FileWrapper("somefile.php", content);
 
         //Act
-        MonaUpgrader.UpgradeGetMagicQuotesGpc(file);
+        file.UpgradeGetMagicQuotesGpc();
 
         //Assert
         _output.WriteLine(file.Warnings.FirstOrDefault());
@@ -65,7 +67,7 @@ public class GetMagicQuotesGpcTests : UnitTestWithOutputBase
         var file = new FileWrapper("somefile.php", content);
 
         //Act
-        MonaUpgrader.UpgradeGetMagicQuotesGpc(file);
+        file.UpgradeGetMagicQuotesGpc();
 
         //Assert
         var updatedContent = file.Content.ToString();

@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Tests;
+﻿using PhpUpgrader.Mona.UpgradeRoutines;
+
+namespace PhpUpgrader.Tests;
 
 public class UpgradeFloatExplodeConversionsTests : UnitTestWithOutputBase
 {
@@ -15,7 +17,7 @@ public class UpgradeFloatExplodeConversionsTests : UnitTestWithOutputBase
         _output.WriteLine(file.Content.ToString());
 
         //Act
-        MonaUpgrader.UpgradeFloatExplodeConversions(file);
+        file.UpgradeFloatExplodeConversions();
 
         //Assert
         var updatedContent = file.Content.ToString();

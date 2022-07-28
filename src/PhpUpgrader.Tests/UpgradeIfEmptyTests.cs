@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Tests;
+﻿using PhpUpgrader.Mona.UpgradeRoutines;
+
+namespace PhpUpgrader.Tests;
 
 public class UpgradeIfEmptyTests : UnitTestWithOutputBase
 {
@@ -18,7 +20,7 @@ public class UpgradeIfEmptyTests : UnitTestWithOutputBase
         _output.WriteLine(file.Content.ToString());
 
         //Act
-        RubiconUpgrader.UpgradeIfEmpty(file);
+        file.UpgradeIfEmpty();
 
         //Assert
         var updatedContent = file.Content.ToString();
@@ -40,7 +42,7 @@ public class UpgradeIfEmptyTests : UnitTestWithOutputBase
         _output.WriteLine(file.Content.ToString());
 
         //Act
-        RubiconUpgrader.UpgradeIfEmpty(file);
+        file.UpgradeIfEmpty();
 
         //Assert
         var updatedContent = file.Content.ToString();

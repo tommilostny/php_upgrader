@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Tests;
+﻿using PhpUpgrader.Mona.UpgradeRoutines;
+
+namespace PhpUpgrader.Tests;
 
 public class StrankovaniUnitTest : UnitTestWithOutputBase
 {
@@ -14,7 +16,7 @@ public class StrankovaniUnitTest : UnitTestWithOutputBase
     {
         var file = new FileWrapper(@"test-site\funkce\strankovani.php", input);
 
-        MonaUpgrader.UpgradeStrankovani(file);
+        file.UpgradeStrankovani();
 
         var contentStr = file.Content.ToString();
         _output.WriteLine(contentStr);
@@ -28,7 +30,7 @@ public class StrankovaniUnitTest : UnitTestWithOutputBase
         string input = "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $vz_vypis)";
         var file = new FileWrapper(@"test-site\funkce\strankovani.php", input);
 
-        MonaUpgrader.UpgradeStrankovani(file);
+        file.UpgradeStrankovani();
 
         var contentStr = file.Content.ToString();
         _output.WriteLine(contentStr);
@@ -42,7 +44,7 @@ public class StrankovaniUnitTest : UnitTestWithOutputBase
         string input = "mysqli_query($beta, $query);";
         var file = new FileWrapper(@"test-site\funkce\strankovani.php", input);
 
-        MonaUpgrader.UpgradeStrankovani(file);
+        file.UpgradeStrankovani();
 
         var contentStr = file.Content.ToString();
         _output.WriteLine(contentStr);
@@ -56,7 +58,7 @@ public class StrankovaniUnitTest : UnitTestWithOutputBase
         string input = "function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta, $prenext)";
         var file = new FileWrapper(@"path-to\admin\table_x_edit.php", input);
 
-        MonaUpgrader.UpgradeStrankovani(file);
+        file.UpgradeStrankovani();
 
         var contentStr = file.Content.ToString();
         _output.WriteLine(contentStr);

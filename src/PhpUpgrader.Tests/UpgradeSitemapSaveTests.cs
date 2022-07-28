@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Tests;
+﻿using PhpUpgrader.Mona.UpgradeRoutines;
+
+namespace PhpUpgrader.Tests;
 
 public class UpgradeSitemapSaveTests : UnitTestWithOutputBase
 {
@@ -17,7 +19,7 @@ public class UpgradeSitemapSaveTests : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture();
 
         //Act
-        upgrader.UpgradeSitemapSave(file);
+        file.UpgradeSitemapSave(upgrader.AdminFolders);
 
         //Assert
         _output.WriteLine(file.Path);
@@ -38,7 +40,7 @@ public class UpgradeSitemapSaveTests : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture();
 
         //Act
-        upgrader.UpgradeSitemapSave(file);
+        file.UpgradeSitemapSave(upgrader.AdminFolders);
 
         //Assert
         _output.WriteLine(file.Path);

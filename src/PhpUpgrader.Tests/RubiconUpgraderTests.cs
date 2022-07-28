@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Tests;
+﻿using PhpUpgrader.Rubicon.UpgradeRoutines;
+
+namespace PhpUpgrader.Tests;
 
 public class RubiconUpgraderTests : UnitTestWithOutputBase
 {
@@ -17,7 +19,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         var file = new FileWrapper("somefile.php", content);
 
         //Act
-        RubiconUpgrader.UpgradeConstructors(file);
+        file.UpgradeConstructors();
 
         //Assert
         _output.WriteLine(file.IsModified.ToString());
@@ -38,7 +40,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         };
 
         //Act, Debug
-        upgrader.UpgradeRubiconImport(file);
+        file.UpgradeRubiconImport(upgrader);
         _output.WriteLine(file.Content.ToString());
     }
 
@@ -58,7 +60,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         };
 
         //Act
-        upgrader.UpgradeSetup(file);
+        file.UpgradeSetup(upgrader);
 
         //Assert
         _output.WriteLine(file.Content.ToString());
@@ -82,7 +84,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         };
 
         //Act
-        upgrader.UpgradeHostname(file);
+        file.UpgradeHostname(upgrader);
 
         //Assert
         _output.WriteLine(file.Content.ToString());
@@ -99,9 +101,9 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
                                                  "<script language=\"php\">\n" +
                                                  "\techo 'some PHP code';\n" +
                                                  "</script>\n");
-        
+
         //Act
-        RubiconUpgrader.UpgradeScriptLanguagePhp(file);
+        file.UpgradeScriptLanguagePhp();
 
         //Assert
         var contentStr = file.Content.ToString();
@@ -130,7 +132,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
             "</div>-->\n\n<?php include TML_URL.\"/product/product_detail_detail.php\";?>");
 
         //Act
-        RubiconUpgrader.UpgradeIncludesInHtmlComments(file);
+        file.UpgradeIncludesInHtmlComments();
 
         //Assert
         var contentStr = file.Content.ToString();
@@ -147,7 +149,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         var file = new FileWrapper("test-site\\aegisx\\detail.php", "if ($presmeruj == \"NO\") {\r\n\t\t\tbreak;");
 
         //Act
-        RubiconUpgrader.UpgradeAegisxDetail(file);
+        file.UpgradeAegisxDetail();
 
         //Assert
         var contentStr = file.Content.ToString();
@@ -165,7 +167,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         var file = new FileWrapper("test-site\\index.php", originalContent);
 
         //Act
-        RubiconUpgrader.UpgradeDatabaseConnectCall(file, "93.185.102.228", "mcrai-upgrade.vshosting.cz");
+        file.UpgradeDatabaseConnectCall("93.185.102.228", "mcrai-upgrade.vshosting.cz");
 
         //Assert
         var contentStr = file.Content.ToString();

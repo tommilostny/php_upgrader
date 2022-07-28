@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Tests;
+﻿using PhpUpgrader.Mona.UpgradeRoutines;
+
+namespace PhpUpgrader.Tests;
 
 public class UpgradeGlobalBetaTests : UnitTestWithOutputBase
 {
@@ -18,7 +20,7 @@ public class UpgradeGlobalBetaTests : UnitTestWithOutputBase
         var file = new FileWrapper("somefile.php", content);
 
         //Act
-        MonaUpgrader.UpgradeGlobalBeta(file);
+        file.UpgradeGlobalBeta();
 
         //Assert
         var updatedContent = file.Content.ToString();
@@ -42,7 +44,7 @@ public class UpgradeGlobalBetaTests : UnitTestWithOutputBase
         var file = new FileWrapper("somefile.php", content);
 
         //Act
-        MonaUpgrader.UpgradeGlobalBeta(file);
+        file.UpgradeGlobalBeta();
 
         //Assert
         _output.WriteLine(file.Path);

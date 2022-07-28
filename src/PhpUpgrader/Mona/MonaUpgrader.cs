@@ -1,7 +1,9 @@
-﻿namespace PhpUpgrader.Mona;
+﻿using PhpUpgrader.Mona.UpgradeRoutines;
+
+namespace PhpUpgrader.Mona;
 
 /// <summary> PHP upgrader pro RS Mona z verze 5 na verzi 7. </summary>
-public partial class MonaUpgrader
+public class MonaUpgrader
 {
     /// <summary> Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce. </summary>
     public List<string> FilesContainingMysql { get; } = new();
@@ -45,7 +47,9 @@ public partial class MonaUpgrader
         set
         {
             if ((_replaceBetaWith = value) is not null)
-                RenameVariableInFindReplace("beta", value);
+            {
+                this.RenameVarInFindReplace("beta", value);
+            }
         }
     }
     private string? _replaceBetaWith;
@@ -91,7 +95,7 @@ public partial class MonaUpgrader
     };
 
     /// <summary> Počet modifikovaných souborů během procesu aktualizace. </summary>
-    public uint ModifiedFilesCount { get; private set; } = 0;
+    public uint ModifiedFilesCount { get; internal set; } = 0;
 
     /// <summary> Celkový počet zpracovaných souborů. </summary>
     public uint TotalFilesCount { get; private set; } = 0;
@@ -101,7 +105,7 @@ public partial class MonaUpgrader
     {
         BaseFolder = baseFolder;
         WebName = webName;
-        Regex.CacheSize = 25;
+        Regex.CacheSize = 30;
     }
 
     /// <summary> Rekurzivní upgrade .php souborů ve všech podadresářích. </summary>
@@ -147,41 +151,42 @@ public partial class MonaUpgrader
         Console.WriteLine(filePath);
         Console.ResetColor();
 #endif
-        if (UpgradeTinyAjaxBehavior(filePath))
+        if (this.UpgradeTinyAjaxBehavior(filePath))
+        {
             return null;
-
+        }
         var file = new FileWrapper(filePath);
-
         if (file.Content.Length == 0)
+        {
             return null;
-
+        }
         if (!filePath.Contains("tiny_mce"))
         {
-            UpgradeConnect(file);
-            UpgradeResultFunc(file);
-            UpgradeClanekVypis(file);
-            UpgradeFindReplace(file);
-            UpgradeMysqliQueries(file);
-            UpgradeCloseIndex(file);
-            UpgradeAnketa(file);
-            UpgradeChdir(file);
-            UpgradeTableAddEdit(file);
-            UpgradeStrankovani(file);
-            UpgradeXmlFeeds(file);
-            UpgradeSitemapSave(file);
-            UpgradeGlobalBeta(file);
-            RenameBeta(file);
-            UpgradeFloatExplodeConversions(file);
+            file.UpgradeConnect(this);
+            file.UpgradeResultFunc(this);
+            file.UpgradeClanekVypis();
+            file.UpgradeFindReplace(this);
+            file.UpgradeMysqliQueries(this);
+            file.UpgradeCloseIndex(this);
+            file.UpgradeAnketa();
+            file.UpgradeChdir(AdminFolders);
+            file.UpgradeTableAddEdit(AdminFolders);
+            file.UpgradeStrankovani();
+            file.UpgradeXmlFeeds();
+            file.UpgradeSitemapSave(AdminFolders);
+            file.UpgradeGlobalBeta();
+            file.RenameBeta(this);
+            file.UpgradeFloatExplodeConversions();
         }
         else
         {
-            UpgradeFindReplace(file);
-            UpgradeTinyMceUploaded(file);
+            file.UpgradeFindReplace(this);
+            file.UpgradeTinyMceUploaded();
         }
-        UpgradeRegexFunctions(file);
-        RemoveTrailingWhitespace(file);
-        UpgradeIfEmpty(file);
-        UpgradeGetMagicQuotesGpc(file);
+        file.UpgradeRegexFunctions();
+        file.RemoveTrailingWhitespaces();
+        file.UpgradeIfEmpty();
+        file.UpgradeGetMagicQuotesGpc();
 
         //Zahlásit IP adresu serveru mcrai1, pokud není zakomentovaná.
         if (file.Content.Contains("93.185.102.228")
@@ -190,16 +195,5 @@ public partial class MonaUpgrader
             file.Warnings.Add("Soubor obsahuje IP adresu mcrai1 (93.185.102.228).");
         }
         return file;
-    }
-
-    /// <summary>
-    /// predelat soubory nahrazenim viz. >>> část Hledat >>> Nahradit
-    /// </summary>
-    public void UpgradeFindReplace(FileWrapper file)
-    {
-        foreach (var fr in FindReplace)
-        {
-            file.Content.Replace(fr.Key, fr.Value);
-        }
     }
 }

@@ -1,7 +1,9 @@
-﻿namespace PhpUpgrader.Rubicon;
+﻿using PhpUpgrader.Rubicon.UpgradeRoutines;
+
+namespace PhpUpgrader.Rubicon;
 
 /// <summary> PHP upgrader pro systém Rubicon, založený na upgraderu pro systém Mona. </summary>
-public partial class RubiconUpgrader : MonaUpgrader
+public class RubiconUpgrader : MonaUpgrader
 {
     /// <summary> Konstruktor Rubicon > Mona upgraderu. </summary>
     /// <remarks> Přidá specifické případy pro Rubicon do <see cref="MonaUpgrader.FindReplace"/>. </remarks>
@@ -95,15 +97,15 @@ public partial class RubiconUpgrader : MonaUpgrader
         var file = base.UpgradeProcedure(filePath);
         if (file is not null)
         {
-            UpgradeObjectClass(file);
-            UpgradeConstructors(file);
-            UpgradeScriptLanguagePhp(file);
-            UpgradeIncludesInHtmlComments(file);
-            UpgradeAegisxDetail(file);
-            UpgradeLoadData(file);
-            UpgradeHomeTopProducts(file);
-            UpgradeUrlPromenne(file);
-            UpgradeDuplicateArrayKeys(file);
+            file.UpgradeObjectClass(this);
+            file.UpgradeConstructors();
+            file.UpgradeScriptLanguagePhp();
+            file.UpgradeIncludesInHtmlComments();
+            file.UpgradeAegisxDetail();
+            file.UpgradeLoadData();
+            file.UpgradeHomeTopProducts();
+            file.UpgradeUrlPromenne();
+            file.UpgradeDuplicateArrayKeys();
         }
         return file;
     }

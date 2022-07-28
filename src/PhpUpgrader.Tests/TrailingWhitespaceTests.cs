@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Tests;
+﻿using PhpUpgrader.Mona.UpgradeRoutines;
+
+namespace PhpUpgrader.Tests;
 
 public class TrailingWhitespaceTests : UnitTestWithOutputBase
 {
@@ -15,7 +17,7 @@ public class TrailingWhitespaceTests : UnitTestWithOutputBase
         var file = new FileWrapper("file.php", content);
 
         //Act
-        MonaUpgrader.RemoveTrailingWhitespace(file);
+        file.RemoveTrailingWhitespaces();
 
         //Assert
         var updatedContent = file.Content.ToString();
@@ -33,7 +35,7 @@ public class TrailingWhitespaceTests : UnitTestWithOutputBase
         var file = new FileWrapper("file.php", content);
 
         //Act
-        MonaUpgrader.RemoveTrailingWhitespace(file);
+        file.RemoveTrailingWhitespaces();
 
         //Assert
         var updatedContent = file.Content.ToString();
