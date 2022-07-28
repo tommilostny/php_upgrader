@@ -1,8 +1,5 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeAegisxDetailRoutine
 {
     /// <summary> [Break => Return] v souboru aegisx\detail.php (není ve smyčce, ale v if). </summary>

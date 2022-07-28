@@ -1,8 +1,5 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeStrankovaniRoutine
 {
     private const string _pdFunc = "function predchozi_dalsi";

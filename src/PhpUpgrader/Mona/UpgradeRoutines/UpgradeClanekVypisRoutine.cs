@@ -1,8 +1,5 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeClanekVypisRoutine
 {
     /// <summary>

@@ -1,8 +1,5 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeUrlPromenneRoutine
 {
     /// <summary> Opravuje chybně zapsanou proměnnou $modul v souboru funkce/url_promenne.php </summary>

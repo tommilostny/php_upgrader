@@ -1,8 +1,5 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeFloatExplodeConversionsRoutine
 {
     /// <summary> PHPStan: Parameter #2 $str of function explode expects string, float|int&lt;0, max&gt; given. </summary>

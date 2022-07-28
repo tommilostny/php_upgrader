@@ -7,8 +7,8 @@
 /// </summary>
 public static class RemoveTrailingWhitespacesRoutine
 {
-    /// <summary> Removes the trailing whitespaces at the end of a file. </summary>
-    /// <exception cref="IndexOutOfRangeException">Empty file.</exception>
+    /// <summary> Odstraní bílé znaky z konce souboru. </summary>
+    /// <exception cref="IndexOutOfRangeException"> Prázdný soubor. </exception>
     public static void RemoveTrailingWhitespaces(this FileWrapper file)
     {
         while (char.IsWhiteSpace(file.Content[^1]))

@@ -1,8 +1,5 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeSitemapSaveRoutine
 {
     /// <summary>
@@ -10,7 +7,7 @@ public static class UpgradeSitemapSaveRoutine
     ///     - pridat podminku „if($query_text_all !== FALSE)“
     ///     a obalit ji „while($data_stranky_text_all = mysqli_fetch_array($query_text_all))“
     /// </summary>
-    public static void UpgradeSitemapSave(this FileWrapper file, string[] adminFolders)
+    public static void UpgradeSitemapSave(this FileWrapper file, IEnumerable<string> adminFolders)
     {
         const string lookingFor = "while($data_stranky_text_all = mysqli_fetch_array($query_text_all))";
         const string adding = "if($query_text_all !== FALSE)";

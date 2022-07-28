@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader;
 
-internal static class Extensions
+internal static class StringBuilderExtensions
 {
     /// <summary>
     /// Zjistí, zda instance <seealso cref="StringBuilder"/> obsahuje daný podřetězec.

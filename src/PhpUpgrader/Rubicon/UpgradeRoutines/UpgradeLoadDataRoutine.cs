@@ -1,8 +1,5 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeLoadDataRoutine
 {
     /// <summary> Úprava mysql a proměnné $beta v souboru aegisx\import\load_data.php. </summary>

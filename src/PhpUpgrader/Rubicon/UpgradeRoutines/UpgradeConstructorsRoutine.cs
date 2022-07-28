@@ -1,8 +1,5 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeConstructorsRoutine
 {
     /// <summary> Old style constructor function ClassName() => function __construct() </summary>

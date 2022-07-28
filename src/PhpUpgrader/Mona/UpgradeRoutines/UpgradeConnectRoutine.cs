@@ -2,9 +2,6 @@
 
 namespace PhpUpgrader.Mona.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeConnectRoutine
 {
     private const string _hostnameVarPart = "$hostname_";

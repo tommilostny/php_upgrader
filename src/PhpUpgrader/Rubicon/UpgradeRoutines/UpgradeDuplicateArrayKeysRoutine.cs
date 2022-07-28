@@ -1,8 +1,5 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeDuplicateArrayKeysRoutine
 {
     /// <summary> PHPStan: Array has 2 duplicate keys </summary>

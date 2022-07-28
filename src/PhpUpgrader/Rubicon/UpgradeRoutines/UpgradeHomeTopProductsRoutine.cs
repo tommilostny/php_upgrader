@@ -1,8 +1,5 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeHomeTopProductsRoutine
 {
     /// <summary> Úprava SQL dotazu na top produkty v souboru aegisx\home.php. </summary>

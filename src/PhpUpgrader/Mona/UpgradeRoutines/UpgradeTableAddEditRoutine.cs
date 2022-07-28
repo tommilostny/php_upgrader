@@ -1,8 +1,5 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeTableAddEditRoutine
 {
     /// <summary>
@@ -11,7 +8,7 @@ public static class UpgradeTableAddEditRoutine
     /// upravit soubor admin/table_x_edit.php
     ///     - potlacit chybova hlasku znakem „@“ na radku cca 53-80 - $pocet_text_all = mysqli_num_rows….
     /// </summary>
-    public static void UpgradeTableAddEdit(this FileWrapper file, string[] adminFolders)
+    public static void UpgradeTableAddEdit(this FileWrapper file, IEnumerable<string> adminFolders)
     {
         const string variable = "$pocet_text_all";
         const string variableWithAtSign = $"@{variable}";

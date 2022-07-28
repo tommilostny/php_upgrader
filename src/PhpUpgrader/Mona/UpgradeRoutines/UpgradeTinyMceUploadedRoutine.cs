@@ -1,8 +1,5 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeTinyMceUploadedRoutine
 {
     ///<summary> PHP Parse error:  syntax error, unexpected '&amp;' on line 49` </summary>

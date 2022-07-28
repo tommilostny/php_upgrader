@@ -1,8 +1,5 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeIfEmptyRoutine
 {
     /// <summary> PHPStan: Right side of || is always false. </summary>

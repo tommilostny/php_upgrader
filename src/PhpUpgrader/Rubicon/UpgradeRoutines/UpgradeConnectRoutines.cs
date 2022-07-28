@@ -2,9 +2,6 @@
 
 namespace PhpUpgrader.Rubicon.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeConnectRoutines
 {
     /// <summary> Aktualizace souborů připojení systému Rubicon. </summary>

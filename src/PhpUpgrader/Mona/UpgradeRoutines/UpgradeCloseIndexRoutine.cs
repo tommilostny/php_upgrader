@@ -1,8 +1,5 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeRoutines;
 
-/// <summary>
-/// 
-/// </summary>
 public static class UpgradeCloseIndexRoutine
 {
     /// <summary> Přidá "{closeFunction}($beta);" na konec soubor index.php. </summary>
