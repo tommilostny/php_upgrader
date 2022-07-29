@@ -135,7 +135,7 @@ public class MonaUpgrader
                 ModifiedFilesCount++;
             }
             //po dodelani nahrazeni nize projit na retezec - mysql_
-            if (Regex.IsMatch(file.Content.ToString(), "[^//]mysql_", RegexOptions.IgnoreCase | RegexOptions.Compiled))
+            if (Regex.IsMatch(file.Content.ToString(), "[^//$>]mysql_", RegexOptions.IgnoreCase | RegexOptions.Compiled))
             {
                 FilesContainingMysql.Add(filePath);
             }
