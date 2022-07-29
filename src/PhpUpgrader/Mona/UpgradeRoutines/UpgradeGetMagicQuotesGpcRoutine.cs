@@ -5,12 +5,12 @@ public static class UpgradeGetMagicQuotesGpcRoutine
     /// <summary>
     /// Function get_magic_quotes_gpc() is deprecated and won't be supported in future versions of PHP.
     /// </summary>
-    public static void UpgradeGetMagicQuotesGpc(this FileWrapper file)
+    public static FileWrapper UpgradeGetMagicQuotesGpc(this FileWrapper file)
     {
         Lazy<string> contentStr = new(() => file.Content.ToString());
         if (!file.Content.Contains("get_magic_quotes_gpc()") || Is_GMQG_Commented(contentStr.Value))
         {
-            return;
+            return file;
         }
 
         //Zpracování výrazu s ternárním operátorem.
@@ -30,10 +30,11 @@ public static class UpgradeGetMagicQuotesGpcRoutine
             if (!Is_GMQG_Commented(updated))
             {
                 file.Warnings.Add("Nezakomentovaná funkce get_magic_quotes_gpc().");
-                return;
+                return file;
             }
         }
         file.Content.Replace(contentStr.Value, updated);
+        return file;
     }
 
     private static bool Is_GMQG_Commented(string str)

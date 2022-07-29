@@ -12,18 +12,17 @@ public static class UpgradeConnectRoutine
     /// <summary>
     /// 
     /// </summary>
-    public static void UpgradeConnect(this FileWrapper file, MonaUpgrader mu)
+    public static FileWrapper UpgradeConnect(this FileWrapper file, MonaUpgrader mu)
     {
         if (mu is RubiconUpgrader ru)
         {
-            file.UpgradeConnect_Rubicon(ru);
-            return;
+            return file.UpgradeConnect_Rubicon(ru);
         }
-        file.UpgradeConnect_Mona(mu);
+        return file.UpgradeConnect_Mona(mu);
     }
 
     /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
-    public static void UpgradeConnect_Mona(this FileWrapper file, MonaUpgrader upgrader)
+    public static FileWrapper UpgradeConnect_Mona(this FileWrapper file, MonaUpgrader upgrader)
     {
         //konec, pokud aktuální soubor nepatří mezi validní connection soubory
         if (ConnectionPaths(upgrader.ConnectionFile).Any(cf => file.Path.EndsWith(cf)))
@@ -44,6 +43,7 @@ public static class UpgradeConnectRoutine
             //na konec přidání obsahu předpřipraveného souboru
             file.Content.Append(File.ReadAllText(Path.Join(upgrader.BaseFolder, "important", "connection.txt")));
         }
+        return file;
     }
 
     private static IEnumerable<string> ConnectionPaths(string connectionFile)

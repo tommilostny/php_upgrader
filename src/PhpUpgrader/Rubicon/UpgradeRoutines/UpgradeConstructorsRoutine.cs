@@ -4,11 +4,11 @@ public static class UpgradeConstructorsRoutine
 {
     /// <summary> Old style constructor function ClassName() => function __construct() </summary>
     /// <remarks> Deprecated: Methods with the same name as their class will not be constructors in a future version of PHP; </remarks>
-    public static void UpgradeConstructors(this FileWrapper file)
+    public static FileWrapper UpgradeConstructors(this FileWrapper file)
     {
         if (!file.Content.Contains("class"))
         {
-            return;
+            return file;
         }
         var contentStr = file.Content.ToString();
         var contentAhead = contentStr;
@@ -67,6 +67,7 @@ public static class UpgradeConstructorsRoutine
             file.Content.Replace(initialContent, contentStr);
             initialContent = contentStr;
         }
+        return file;
     }
 
     private static ReadOnlySpan<char> LoadClassName(ReadOnlySpan<char> classMatchVal)

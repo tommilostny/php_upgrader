@@ -28,11 +28,13 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         Assert.Empty(file.Warnings);
     }
 
-    [Fact]
-    public void RubiconImportTest()
+    [Theory]
+    [InlineData("rubicon_import.php", "sportmall_import", "<?php\r\n# FileName=\"Connection_php_mysql.htm\"\r\n# Type=\"MYSQL\"\r\n# HTTP=\"true\"\r\n$hostname_sportmall_import = \"localhost\";\r\n$database_sportmall_import = \"eshop_products\";\r\n$username_sportmall_import = \"eshop_products\";\r\n$password_sportmall_import = \"heslo_k_databazi_:)\";\r\n$sportmall_import = mysql_pconnect($hostname_sportmall_import, $username_sportmall_import, $password_sportmall_import) or trigger_error(mysql_error(),E_USER_ERROR); \r\n\r\nmysql_query(\"SET character_set_connection=cp1250\");\r\nmysql_query(\"SET character_set_results=cp1250\");\r\nmysql_query(\"SET character_set_client=cp1250\");\r\n?>")]
+    [InlineData("hodnoceni.php", "hodnoceni_conn", "<?php\r\n# FileName=\"Connection_php_mysql.htm\"\r\n# Type=\"MYSQL\"\r\n# HTTP=\"true\"\r\n$hostname_hodnoceni_conn = \"localhost\";\r\n$database_hodnoceni_conn = \"nicom_hod\";\r\n$username_hodnoceni_conn = \"nicom_hod_use\";\r\n$password_hodnoceni_conn = \"nvjsnvlsnjlvnhvjslvnjslknjvjskdnjvsvkdnjslnjvsnvjlds\";\r\n//$hodnoceni_conn = mysql_pconnect($hostname_hodnoceni_conn, $username_hodnoceni_conn, $password_hodnoceni_conn) or trigger_error(mysql_error(),E_USER_ERROR); \r\nif (!($hodnoceni_conn = mysql_pconnect($hostname_hodnoceni_conn, $username_hodnoceni_conn, $password_hodnoceni_conn))) {\r\n  DisplayErrMsg(sprintf(\"Chyba při připojování uživatele %s k hostiteli %s\", $username_hodnoceni_conn, $hostname_hodnoceni_conn));\r\n  exit();\r\n}\r\nif (!($hodnoceni_db = mysql_select_db($database_hodnoceni_conn, $hodnoceni_conn))) {\r\n  DisplayErrMsg(sprintf(\"Chyba při připojování databaze %s \", $database_hodnoceni_conn));\r\n  exit();\r\n}\r\n/**/\r\nmysql_query(\"SET character_set_connection=utf8mb4\");\r\nmysql_query(\"SET character_set_results=utf8mb4\");\r\nmysql_query(\"SET character_set_client=utf8mb4\");\r\nmysql_query('SET CHARACTER SET utf8mb4');\r\n\r\n?>")]
+    public void MonaLikeConnect_Test(string fileName, string varName, string content)
     {
         //Arrange
-        var file = new FileWrapper(Path.Join("Connections", "rubicon_import.php"), "<?php\r\n# FileName=\"Connection_php_mysql.htm\"\r\n# Type=\"MYSQL\"\r\n# HTTP=\"true\"\r\n$hostname_sportmall_import = \"localhost\";\r\n$database_sportmall_import = \"eshop_products\";\r\n$username_sportmall_import = \"eshop_products\";\r\n$password_sportmall_import = \"heslo_k_databazi_:)\";\r\n$sportmall_import = mysql_pconnect($hostname_sportmall_import, $username_sportmall_import, $password_sportmall_import) or trigger_error(mysql_error(),E_USER_ERROR); \r\n\r\nmysql_query(\"SET character_set_connection=cp1250\");\r\nmysql_query(\"SET character_set_results=cp1250\");\r\nmysql_query(\"SET character_set_client=cp1250\");\r\n?>");
+        var file = new FileWrapper(Path.Join("Connections", fileName), content);
         var upgrader = new RubiconUpgrader("../../../../..", string.Empty)
         { 
             ConnectionFile = "connect.php",
@@ -40,7 +42,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         };
 
         //Act, Debug
-        file.UpgradeRubiconImport(upgrader);
+        file.UpgradeMonaLikeConnect(upgrader, fileName, varName);
         _output.WriteLine(file.Content.ToString());
     }
 
@@ -178,5 +180,23 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         Assert.DoesNotContain("\nDatabase::connect('93.185.102.228', 'safety-jogger', 'Qhc1e2_5', 'safety-jogger', '5432');", contentStr);
         Assert.Contains("//Database::connect('93.185.102.228', 'safety-jogger', 'Qhc1e2_5', 'safety-jogger', '5432');", contentStr);
         Assert.Contains("\n\tDatabase::connect('mcrai-upgrade.vshosting.cz', 'safety-jogger', 'Qhc1e2_5', 'safety-jogger', '5432');", contentStr);
+    }
+
+    [Fact]
+    public void UpgradeOldUnparsableAlmostEmpty_Test()
+    {
+        //Arrange
+        var content = "<?php\r\n\r\n\r\n\r\npublic XMLDiff\\File::diff ( string  , string $to ) : string";
+        var file = new FileWrapper(Path.Join("some-website", "money", "old", "Compare_XML.php"), content);
+
+        //Act
+        file.UpgradeOldUnparsableAlmostEmpty();
+
+        //Assert
+        _output.WriteLine(content);
+        _output.WriteLine("============================================================================================");
+        var updatedContent = file.Content.ToString();
+        _output.WriteLine(updatedContent);
+        Assert.NotEqual(updatedContent, content);
     }
 }

@@ -6,12 +6,12 @@ public static class UpgradeGlobalBetaRoutine
     /// pro všechny funkce které v sobe mají dotaz na db pridat na zacatek
     ///     - global $beta; >>> hledat v netbeans - (?s)^(?=.*?function )(?=.*?mysqli_) - regular
     /// </summary>
-    public static void UpgradeGlobalBeta(this FileWrapper file)
+    public static FileWrapper UpgradeGlobalBeta(this FileWrapper file)
     {
         if (file.Content.Contains("$this")
             || !Regex.IsMatch(file.Content.ToString(), "(?s)^(?=.*?function )(?=.*?mysqli_)", RegexOptions.Compiled))
         {
-            return;
+            return file;
         }
         var javascript = false;
         var lines = file.Content.Split();
@@ -36,6 +36,7 @@ public static class UpgradeGlobalBetaRoutine
             }
         }
         lines.JoinInto(file.Content);
+        return file;
     }
 
     private static bool MysqliAndBetaInFunction(int startIndex, IReadOnlyList<StringBuilder> lines)

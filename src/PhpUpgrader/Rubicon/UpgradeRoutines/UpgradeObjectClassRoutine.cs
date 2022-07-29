@@ -6,11 +6,11 @@ public static class UpgradeObjectClassRoutine
 
     /// <summary> Aktualizace třídy Object => ObjectBase. Provádí se pouze pokud existuje soubor classes\Object.php. </summary>
     /// <remarks> + extends Object, @param Object, @property Object </remarks>
-    public static void UpgradeObjectClass(this FileWrapper file, RubiconUpgrader upgrader)
+    public static FileWrapper UpgradeObjectClass(this FileWrapper file, RubiconUpgrader upgrader)
     {
         if (!(_containsObjectClass ??= File.Exists(Path.Join(upgrader.BaseFolder, "weby", upgrader.WebName, "classes", "Object.php"))))
         {
-            return;
+            return file;
         }
         if (file.Path.EndsWith(Path.Join("classes", "Object.php")) && file.Content.Contains("abstract class Object"))
         {
@@ -26,5 +26,6 @@ public static class UpgradeObjectClassRoutine
         file.Content.Replace("extends Object", "extends ObjectBase");
         file.Content.Replace("@param Object", "@param ObjectBase");
         file.Content.Replace("@property  Object", "@property  ObjectBase");
+        return file;
     }
 }

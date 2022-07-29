@@ -36,7 +36,11 @@ public static class RenameVarRoutines
     }
 
     /// <summary> Přejmenovat proměnnou $beta v souboru. </summary>
-    public static void RenameBeta(this FileWrapper file, MonaUpgrader upgrader) => upgrader.RenameVar(file.Content);
+    public static FileWrapper RenameBeta(this FileWrapper file, MonaUpgrader upgrader)
+    {
+        upgrader.RenameVar(file.Content);
+        return file;
+    }
 
     /// <summary> Přejmenovat proměnnou ve slovníku <see cref="MonaUpgrader.FindReplace"/>. </summary>
     public static void RenameVarInFindReplace(this MonaUpgrader upgrader, string oldVarName, string newVarName)

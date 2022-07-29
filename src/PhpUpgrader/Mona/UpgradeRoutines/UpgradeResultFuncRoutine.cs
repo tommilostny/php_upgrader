@@ -5,7 +5,7 @@ public static class UpgradeResultFuncRoutine
     /// <summary>
     /// mysql_result >>> mysqli_num_rows + odmazat druhy parametr (vetsinou - , 0) + predelat COUNT(*) na *
     /// </summary>
-    public static void UpgradeResultFunc(this FileWrapper file, MonaUpgrader upgrader)
+    public static FileWrapper UpgradeResultFunc(this FileWrapper file, MonaUpgrader upgrader)
     {
         if (file.Path.EndsWith(Path.Join("funkce", "secure", "login.php")))
         {
@@ -23,7 +23,7 @@ public static class UpgradeResultFuncRoutine
         };
         if (!file.Content.Contains(oldResultFunc))
         {
-            return;
+            return file;
         }
         var lines = file.Content.Split();
         StringBuilder currentLine;
@@ -51,5 +51,6 @@ public static class UpgradeResultFuncRoutine
             currentLine.Replace(oldResultFunc, newNumRowsFunc);
         }
         lines.JoinInto(file.Content);
+        return file;
     }
 }

@@ -8,23 +8,24 @@ public static class UpgradeStrankovaniRoutine
     /// upravit soubor funkce/strankovani.php
     ///     >>>  function predchozi_dalsi($zobrazena_strana, $pocet_stran, $textact, $texta = null, $prenext = null)
     /// </summary>
-    public static void UpgradeStrankovani(this FileWrapper file)
+    public static FileWrapper UpgradeStrankovani(this FileWrapper file)
     {
         switch (file)
         {
             case { Path: var p } when !p.Contains(Path.Join("funkce", "strankovani.php")):
             case { Content: var c } when !c.Contains(_pdFunc):
-                return;
+                return file;
         }
         foreach (var (old, updated) in PredchoziDalsiVariants())
         {
-            file.Content.Replace(old, updated);
-
-            if (file.Content.Contains(updated))
-                return;
+            if (file.Content.Replace(old, updated).Contains(updated))
+            {
+                return file;
+            }
         }
         //zahlásit chybu při nalezení další varianty funkce predchozi_dalsi
         file.Warnings.Add("Nalezena neznámá varianta funkce predchozi_dalsi.");
+        return file;
     }
 
     private static IEnumerable<(string old, string updated)> PredchoziDalsiVariants()

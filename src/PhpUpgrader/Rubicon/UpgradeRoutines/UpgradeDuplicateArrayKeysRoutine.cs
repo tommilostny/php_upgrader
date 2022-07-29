@@ -3,7 +3,7 @@
 public static class UpgradeDuplicateArrayKeysRoutine
 {
     /// <summary> PHPStan: Array has 2 duplicate keys </summary>
-    public static void UpgradeDuplicateArrayKeys(this FileWrapper file)
+    public static FileWrapper UpgradeDuplicateArrayKeys(this FileWrapper file)
     {
         var content = file.Content.ToString();
         var evaluator = new MatchEvaluator(ArrayKeyValueEvaluator);
@@ -13,6 +13,7 @@ public static class UpgradeDuplicateArrayKeysRoutine
                                     RegexOptions.Compiled);
 
         file.Content.Replace(content, updated);
+        return file;
     }
 
     private static string ArrayKeyValueEvaluator(Match match)

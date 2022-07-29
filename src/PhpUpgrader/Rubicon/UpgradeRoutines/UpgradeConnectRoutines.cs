@@ -5,51 +5,58 @@ namespace PhpUpgrader.Rubicon.UpgradeRoutines;
 public static class UpgradeConnectRoutines
 {
     /// <summary> Aktualizace souborů připojení systému Rubicon. </summary>
-    public static void UpgradeConnect_Rubicon(this FileWrapper file, RubiconUpgrader upgrader)
+    public static FileWrapper UpgradeConnect_Rubicon(this FileWrapper file, RubiconUpgrader upgrader)
     {
-        file.UpgradeRubiconImport(upgrader);
-        file.UpgradeSetup(upgrader);
-        file.UpgradeHostname(upgrader);
-        file.UpgradeOldDbConnect(upgrader);
+        return file.UpgradeMonaLikeConnect(upgrader, "rubicon_import.php", "sportmall_import")
+            .UpgradeMonaLikeConnect(upgrader, "hodnoceni.php", "hodnoceni_conn")
+            .UpgradeSetup(upgrader)
+            .UpgradeHostname(upgrader)
+            .UpgradeOldDbConnect(upgrader);
     }
 
     /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php. </summary>
-    public static void UpgradeRubiconImport(this FileWrapper file, RubiconUpgrader upgrader)
+    public static FileWrapper UpgradeMonaLikeConnect(this FileWrapper file, RubiconUpgrader upgrader, string fileName, string varName)
     {
-        if (!file.Path.EndsWith(Path.Join("Connections", "rubicon_import.php")))
+        if (!file.Path.EndsWith(Path.Join("Connections", fileName)))
         {
-            return;
+            return file;
         }
+        //načíst původní dotazy z konce souboru.
+        StringBuilder mysqlQueries = new();
+        IEnumerable<Match> matches = Regex.Matches(file.Content.ToString(), @"mysql_query\("".+""\);", RegexOptions.Compiled);
+        foreach (var match in matches)
+        {
+            var queryStartIndex = match.ValueSpan.IndexOf('"');
+            mysqlQueries.AppendLine($"mysqli_query(${varName}, {match.ValueSpan[queryStartIndex..]}");
+        }
+        //aktualizovat stejně jako connect pro RS Mona, jen s proměnnou $sportmall_import.
         var backup = upgrader.ConnectionFile;
-        upgrader.ConnectionFile = "rubicon_import.php";
+        upgrader.ConnectionFile = fileName;
         
         file.UpgradeConnect_Mona(upgrader);
 
         upgrader.ConnectionFile = backup;
-        upgrader.RenameVar(file.Content, "sportmall_import");
+        upgrader.RenameVar(file.Content, varName);
 
-        var replacements = new StringBuilder()
-            .AppendLine("mysqli_query($sportmall_import, \"SET character_set_connection = cp1250\");")
-            .AppendLine("mysqli_query($sportmall_import, \"SET character_set_results = cp1250\");")
-            .Append("mysqli_query($sportmall_import, \"SET character_set_client = cp1250\");");
-
-        file.Content.Replace("mysqli_query($sportmall_import, \"SET CHARACTER SET utf8\");",
-                             replacements.ToString());
+        //nakonec přidat aktualizované původní dotazy.
+        file.Content.Replace($"mysqli_query(${varName}, \"SET CHARACTER SET utf8\");",
+                             mysqlQueries.ToString());
+        return file;
     }
 
     /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
-    public static void UpgradeSetup(this FileWrapper file, RubiconUpgrader upgrader)
+    public static FileWrapper UpgradeSetup(this FileWrapper file, RubiconUpgrader upgrader)
     {
         if (!file.Path.EndsWith(Path.Join(upgrader.WebName, "setup.php")))
         {
-            return;
+            return file;
         }
         file.Content.Replace("$_SERVER[HTTP_HOST]", "$_SERVER['HTTP_HOST']");
 
         if (upgrader.Database is null || upgrader.Username is null || upgrader.Password is null
             || file.Content.Contains($"password = '{upgrader.Password}';"))
         {
-            return;
+            return file;
         }
         bool usernameLoaded = false, passwordLoaded = false, databaseLoaded = false;
         var content = file.Content.ToString();
@@ -73,6 +80,7 @@ public static class UpgradeConnectRoutines
             file.Warnings.Add("setup.php - nenačtený název databáze.");
         }
         file.Warnings.Add("setup.php - zkontrolovat připojení k databázi..");
+        return file;
 
         string _NewCredentialAndComment(Match match)
         {
@@ -100,7 +108,7 @@ public static class UpgradeConnectRoutines
     };
 
     /// <summary> Aktualizace hostname z mcrai1 na server mcrai2. </summary>
-    public static void UpgradeHostname(this FileWrapper file, RubiconUpgrader upgrader)
+    public static FileWrapper UpgradeHostname(this FileWrapper file, RubiconUpgrader upgrader)
     {
         var connBeta = file.Path.EndsWith(Path.Join("Connections", "beta.php"));
         foreach (var hn in _hostnamesToReplace)
@@ -121,10 +129,11 @@ public static class UpgradeConnectRoutines
             }
             file.UpgradeDatabaseConnectCall(hn, upgrader.Hostname);
         }
+        return file;
     }
 
     /// <summary> Aktualizace Database::connect. </summary>
-    public static void UpgradeDatabaseConnectCall(this FileWrapper file, string oldHost, string newHost)
+    public static FileWrapper UpgradeDatabaseConnectCall(this FileWrapper file, string oldHost, string newHost)
     {
         var lookingFor = $"Database::connect('{oldHost}'";
         var commented = $"//{lookingFor}";
@@ -137,6 +146,7 @@ public static class UpgradeConnectRoutines
 
             file.Content.Replace(content, updated);
         }
+        return file;
 
         string _DCMatchEvaluator(Match match)
         {
@@ -153,7 +163,7 @@ public static class UpgradeConnectRoutines
     /// Nalezeno v importy/_importy_old/DB_connect.php.
     /// (Raději také aktualizovat. Stejný soubor se někde může ještě používat.)
     /// </summary>
-    public static void UpgradeOldDbConnect(this FileWrapper file, RubiconUpgrader upgrader)
+    public static FileWrapper UpgradeOldDbConnect(this FileWrapper file, RubiconUpgrader upgrader)
     {
         if (file.Path.EndsWith("DB_connect.php"))
         {
@@ -167,5 +177,6 @@ public static class UpgradeConnectRoutines
             }
             upgrader.RenameVar(file.Content, "DBLink");
         }
+        return file;
     }
 }

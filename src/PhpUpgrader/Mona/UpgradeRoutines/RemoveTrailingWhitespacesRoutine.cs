@@ -9,11 +9,12 @@ public static class RemoveTrailingWhitespacesRoutine
 {
     /// <summary> Odstraní bílé znaky z konce souboru. </summary>
     /// <exception cref="IndexOutOfRangeException"> Prázdný soubor. </exception>
-    public static void RemoveTrailingWhitespaces(this FileWrapper file)
+    public static FileWrapper RemoveTrailingWhitespaces(this FileWrapper file)
     {
         while (char.IsWhiteSpace(file.Content[^1]))
         {
             file.Content.Remove(file.Content.Length - 1, 1);
         }
+        return file;
     }
 }

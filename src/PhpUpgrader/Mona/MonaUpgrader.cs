@@ -91,7 +91,8 @@ public class MonaUpgrader
         { "mysql_free_result", "mysqli_free_result" },
         { "mysql_list_tables($database_beta);", "mysqli_query($beta, \"SHOW TABLES FROM `$database_beta`\");" },
         { "$table_all .= \"`\".mysql_tablename($result, $i).\"`\";", "$table_all .= \"`\".mysqli_fetch_row($result)[0].\"`\";" },
-        { "<?php/", "<?php /" }
+        { "<?php/", "<?php /" },
+        { "<?PHP/", "<?PHP /" },
     };
 
     /// <summary> Počet modifikovaných souborů během procesu aktualizace. </summary>
@@ -162,31 +163,31 @@ public class MonaUpgrader
         }
         if (!filePath.Contains("tiny_mce"))
         {
-            file.UpgradeConnect(this);
-            file.UpgradeResultFunc(this);
-            file.UpgradeClanekVypis();
-            file.UpgradeFindReplace(this);
-            file.UpgradeMysqliQueries(this);
-            file.UpgradeCloseIndex(this);
-            file.UpgradeAnketa();
-            file.UpgradeChdir(AdminFolders);
-            file.UpgradeTableAddEdit(AdminFolders);
-            file.UpgradeStrankovani();
-            file.UpgradeXmlFeeds();
-            file.UpgradeSitemapSave(AdminFolders);
-            file.UpgradeGlobalBeta();
-            file.RenameBeta(this);
-            file.UpgradeFloatExplodeConversions();
+            file.UpgradeConnect(this)
+                .UpgradeResultFunc(this)
+                .UpgradeClanekVypis()
+                .UpgradeFindReplace(this)
+                .UpgradeMysqliQueries(this)
+                .UpgradeCloseIndex(this)
+                .UpgradeAnketa()
+                .UpgradeChdir(AdminFolders)
+                .UpgradeTableAddEdit(AdminFolders)
+                .UpgradeStrankovani()
+                .UpgradeXmlFeeds()
+                .UpgradeSitemapSave(AdminFolders)
+                .UpgradeGlobalBeta()
+                .RenameBeta(this)
+                .UpgradeFloatExplodeConversions();
         }
         else
         {
-            file.UpgradeFindReplace(this);
-            file.UpgradeTinyMceUploaded();
+            file.UpgradeFindReplace(this)
+                .UpgradeTinyMceUploaded();
         }
-        file.UpgradeRegexFunctions();
-        file.RemoveTrailingWhitespaces();
-        file.UpgradeIfEmpty();
-        file.UpgradeGetMagicQuotesGpc();
+        file.UpgradeRegexFunctions()
+            .RemoveTrailingWhitespaces()
+            .UpgradeIfEmpty()
+            .UpgradeGetMagicQuotesGpc();
 
         //Zahlásit IP adresu serveru mcrai1, pokud není zakomentovaná.
         if (file.Content.Contains("93.185.102.228")

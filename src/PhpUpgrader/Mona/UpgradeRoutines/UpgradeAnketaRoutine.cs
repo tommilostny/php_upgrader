@@ -6,11 +6,12 @@ public static class UpgradeAnketaRoutine
     /// upravit soubor anketa/anketa.php - r.3 (odmazat ../)
     ///     - include_once "../setup.php"; na include_once "setup.php";
     /// </summary>
-    public static void UpgradeAnketa(this FileWrapper file)
+    public static FileWrapper UpgradeAnketa(this FileWrapper file)
     {
         if (file.Path.Contains(Path.Join("anketa", "anketa.php")))
         {
             file.Content.Replace(@"include_once(""../setup.php"")", @"include_once(""setup.php"")");
         }
+        return file;
     }
 }

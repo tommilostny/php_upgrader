@@ -72,9 +72,18 @@ public class RubiconUpgrader : MonaUpgrader
             new("<?\r", "<?php\r"),
             new("<?\t", "<?php\t"),
             //PHPStan: Undefined variable: $PHP_SELF
-            new("<?php $PHP_SELF.\"#", "<?= $_SERVER['PHP_SELF'].\"#"),
-            new("<?= $PHP_SELF.\"#", "<?= $_SERVER['PHP_SELF'].\"#"),
-            new("$PHP_SELF", "$_SERVER['PHP_SELF']"),
+            new("<?php $PHP_SELF.\"#",
+                "<?= $_SERVER['PHP_SELF'].\"#"
+            ),
+            new("<?= $PHP_SELF.\"#",
+                "<?= $_SERVER['PHP_SELF'].\"#"
+            ),
+            new("$PHP_SELF",
+                "$_SERVER['PHP_SELF']"
+            ),
+            new("\"<a href='$_SERVER['PHP_SELF']",
+                "\"<a href='\".$_SERVER['PHP_SELF'].\""
+            ),
             //PHPStan: Function pg_select_db not found
             new("pg_connect(DB_HOST, DB_USER, DB_PASSWORD)",
                 "pg_connect(\"host=\".DB_HOST.\" dbname=\".DB_DATABASE.\" user=\".DB_USER.\" password=\".DB_PASSWORD)"
@@ -97,15 +106,16 @@ public class RubiconUpgrader : MonaUpgrader
         var file = base.UpgradeProcedure(filePath);
         if (file is not null)
         {
-            file.UpgradeObjectClass(this);
-            file.UpgradeConstructors();
-            file.UpgradeScriptLanguagePhp();
-            file.UpgradeIncludesInHtmlComments();
-            file.UpgradeAegisxDetail();
-            file.UpgradeLoadData();
-            file.UpgradeHomeTopProducts();
-            file.UpgradeUrlPromenne();
-            file.UpgradeDuplicateArrayKeys();
+            file.UpgradeObjectClass(this)
+                .UpgradeConstructors()
+                .UpgradeScriptLanguagePhp()
+                .UpgradeIncludesInHtmlComments()
+                .UpgradeAegisxDetail()
+                .UpgradeLoadData()
+                .UpgradeHomeTopProducts()
+                .UpgradeUrlPromenne()
+                .UpgradeDuplicateArrayKeys()
+                .UpgradeOldUnparsableAlmostEmpty();
         }
         return file;
     }

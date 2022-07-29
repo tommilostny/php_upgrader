@@ -7,7 +7,7 @@ public static class UpgradeSitemapSaveRoutine
     ///     - pridat podminku „if($query_text_all !== FALSE)“
     ///     a obalit ji „while($data_stranky_text_all = mysqli_fetch_array($query_text_all))“
     /// </summary>
-    public static void UpgradeSitemapSave(this FileWrapper file, IEnumerable<string> adminFolders)
+    public static FileWrapper UpgradeSitemapSave(this FileWrapper file, IEnumerable<string> adminFolders)
     {
         const string lookingFor = "while($data_stranky_text_all = mysqli_fetch_array($query_text_all))";
         const string adding = "if($query_text_all !== FALSE)";
@@ -16,7 +16,7 @@ public static class UpgradeSitemapSaveRoutine
         if (!adminFolders.Any(af => file.Path.EndsWith(Path.Join(af, "sitemap_save.php")))
             || !file.Content.Contains(lookingFor) || file.Content.Contains(adding))
         {
-            return;
+            return file;
         }
         var sfBracket = false;
         var lines = file.Content.Split();
@@ -37,5 +37,6 @@ public static class UpgradeSitemapSaveRoutine
             }
         }
         lines.JoinInto(file.Content);
+        return file;
     }
 }

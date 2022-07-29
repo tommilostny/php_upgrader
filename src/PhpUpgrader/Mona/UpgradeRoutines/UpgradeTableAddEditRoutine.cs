@@ -8,17 +8,17 @@ public static class UpgradeTableAddEditRoutine
     /// upravit soubor admin/table_x_edit.php
     ///     - potlacit chybova hlasku znakem „@“ na radku cca 53-80 - $pocet_text_all = mysqli_num_rows….
     /// </summary>
-    public static void UpgradeTableAddEdit(this FileWrapper file, IEnumerable<string> adminFolders)
+    public static FileWrapper UpgradeTableAddEdit(this FileWrapper file, IEnumerable<string> adminFolders)
     {
         const string variable = "$pocet_text_all";
         const string variableWithAtSign = $"@{variable}";
 
-        if (!adminFolders.Any(af => file.Path.Contains(Path.Join(af, "table_x_add.php"))
+        if (adminFolders.Any(af => file.Path.Contains(Path.Join(af, "table_x_add.php"))
                                  || file.Path.Contains(Path.Join(af, "table_x_edit.php")))
-            || file.Content.Contains(variableWithAtSign))
+            && !file.Content.Contains(variableWithAtSign))
         {
-            return;
+            file.Content.Replace($"{variable} = mysqli_num_rows", $"{variableWithAtSign} = mysqli_num_rows");
         }
-        file.Content.Replace($"{variable} = mysqli_num_rows", $"{variableWithAtSign} = mysqli_num_rows");
+        return file;
     }
 }

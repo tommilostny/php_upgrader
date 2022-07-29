@@ -3,14 +3,14 @@
 public static class UpgradeScriptLanguagePhpRoutine
 {
     /// <summary> HTML tag &lt;script language="PHP"&gt;&lt;/script> deprecated => &lt;?php ?&gt; </summary>
-    public static void UpgradeScriptLanguagePhp(this FileWrapper file)
+    public static FileWrapper UpgradeScriptLanguagePhp(this FileWrapper file)
     {
         const string oldScriptTagStart = @"<script language=""PHP"">";
         const string oldScriptTagEnd = "</script>";
 
         if (!file.Content.Contains(oldScriptTagStart, StringComparison.OrdinalIgnoreCase))
         {
-            return;
+            return file;
         }
         var lines = file.Content.Split();
         var insidePhpScriptTag = false;
@@ -33,5 +33,6 @@ public static class UpgradeScriptLanguagePhpRoutine
         }
         lines.JoinInto(file.Content);
         file.Warnings.Add($"Nalezena značka {oldScriptTagStart}. Zkontrolovat možný Javascript.");
+        return file;
     }
 }

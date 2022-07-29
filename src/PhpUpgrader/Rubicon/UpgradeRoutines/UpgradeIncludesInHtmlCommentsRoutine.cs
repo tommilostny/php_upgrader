@@ -3,11 +3,11 @@
 public static class UpgradeIncludesInHtmlCommentsRoutine
 {
     /// <summary> templates/.../product_detail.php, zakomentovaný blok HTML stále spouští broken PHP includy, zakomentovat </summary>
-    public static void UpgradeIncludesInHtmlComments(this FileWrapper file)
+    public static FileWrapper UpgradeIncludesInHtmlComments(this FileWrapper file)
     {
         if (!Regex.IsMatch(file.Path, @"(\\|/)templates(\\|/).+(\\|/)product_detail\.php", RegexOptions.Compiled))
         {
-            return;
+            return file;
         }
         var lines = file.Content.Split();
         var insideHtmlComment = false;
@@ -34,5 +34,6 @@ public static class UpgradeIncludesInHtmlCommentsRoutine
         {
             file.Warnings.Add("Zkontrolovat HTML zakomentované '<?php include'.");
         }
+        return file;
     }
 }

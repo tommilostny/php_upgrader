@@ -6,11 +6,12 @@ public static class UpgradeRegexFunctionsRoutine
     /// - funkci ereg nebo ereg_replace doplnit do prvního parametru delimetr na začátek a nakonec (if(ereg('.+@.+..+', $retezec))
     /// // puvodni, jiz nefunkcni >>> if(preg_match('#.+@.+..+#', $retezec)) // upravene - delimiter zvolen #)
     /// </summary>
-    public static void UpgradeRegexFunctions(this FileWrapper file)
+    public static FileWrapper UpgradeRegexFunctions(this FileWrapper file)
     {
         var evaluator = new MatchEvaluator(PregMatchEvaluator);
         UpgradeEreg(file, evaluator);
         UpgradeSplit(file, evaluator);
+        return file;
     }
 
     private static void UpgradeEreg(FileWrapper file, MatchEvaluator evaluator)
