@@ -242,4 +242,17 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         Assert.Equal(updatedContent3, content);
         Assert.DoesNotContain(updatedMysqli, updatedContent3);
     }
+
+    [Fact]
+    public void RubiconUpgrader_Constructor_ShouldAddToFindReplace()
+    {
+        //Arrange & Act
+        var monaCount = new MonaUpgrader(null, null).FindReplace.Count;
+        var rubiconCount = new RubiconUpgrader(null, null).FindReplace.Count;
+
+        //Assert
+        _output.WriteLine($"Mona\tFR: {monaCount}");
+        _output.WriteLine($"Rubicon\tFR: {rubiconCount}");
+        Assert.True(monaCount < rubiconCount);
+    }
 }

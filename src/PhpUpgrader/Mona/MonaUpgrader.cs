@@ -143,7 +143,7 @@ public class MonaUpgrader
     }
 
     /// <summary> Procedura aktualizace zadaného souboru. </summary>
-    /// <returns> Upravený soubor, null v případě TinyAjaxBehavior. </returns>
+    /// <returns> Upravený soubor, null v případě TinyAjaxBehavior nebo prázdného souboru. </returns>
     protected virtual FileWrapper? UpgradeProcedure(string filePath)
     {
 #if DEBUG
@@ -152,37 +152,35 @@ public class MonaUpgrader
         Console.WriteLine(filePath);
         Console.ResetColor();
 #endif
-        if (this.UpgradeTinyAjaxBehavior(filePath))
+        FileWrapper? file = this.UpgradeTinyAjaxBehavior(filePath) ? null : new(filePath);
+        switch (file)
         {
-            return null;
-        }
-        var file = new FileWrapper(filePath);
-        if (file.Content.Length == 0)
-        {
-            return null;
-        }
-        if (!filePath.Contains("tiny_mce"))
-        {
-            file.UpgradeConnect(this)
-                .UpgradeResultFunc(this)
-                .UpgradeClanekVypis()
-                .UpgradeFindReplace(this)
-                .UpgradeMysqliQueries(this)
-                .UpgradeCloseIndex(this)
-                .UpgradeAnketa()
-                .UpgradeChdir(AdminFolders)
-                .UpgradeTableAddEdit(AdminFolders)
-                .UpgradeStrankovani()
-                .UpgradeXmlFeeds()
-                .UpgradeSitemapSave(AdminFolders)
-                .UpgradeGlobalBeta()
-                .RenameBeta(this)
-                .UpgradeFloatExplodeConversions();
-        }
-        else
-        {
-            file.UpgradeFindReplace(this)
-                .UpgradeTinyMceUploaded();
+            case null or { Content.Length: 0 }:
+                return null;
+
+            //pro tiny_mce pouze find=>replace a speciální případy.
+            case { Path: var p } when p.Contains("tiny_mce"):
+                file.UpgradeFindReplace(this)
+                    .UpgradeTinyMceUploaded();
+                break;
+
+            default:
+                file.UpgradeConnect(this)
+                    .UpgradeResultFunc(this)
+                    .UpgradeClanekVypis()
+                    .UpgradeFindReplace(this)
+                    .UpgradeMysqliQueries(this)
+                    .UpgradeCloseIndex(this)
+                    .UpgradeAnketa()
+                    .UpgradeChdir(AdminFolders)
+                    .UpgradeTableAddEdit(AdminFolders)
+                    .UpgradeStrankovani()
+                    .UpgradeXmlFeeds()
+                    .UpgradeSitemapSave(AdminFolders)
+                    .UpgradeGlobalBeta()
+                    .RenameBeta(this)
+                    .UpgradeFloatExplodeConversions();
+                break;
         }
         file.UpgradeRegexFunctions()
             .RemoveTrailingWhitespaces()

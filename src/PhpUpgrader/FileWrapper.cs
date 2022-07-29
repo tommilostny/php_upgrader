@@ -33,11 +33,14 @@ public class FileWrapper
     /// <summary> Obsah souboru je zadán parametrem. </summary>
     /// <param name="path"> Cesta k souboru. </param>
     /// <param name="content"> Obsah souboru. </param>
-    public FileWrapper(string path, string content)
+    public FileWrapper(string path, string? content)
     {
         Path = path;
-        Content = new(content);
-        _initialContent = content;
+        if (content is not null)
+        {
+            Content = new(content);
+            _initialContent = content;
+        }
     }
 
     /// <summary> Obsah souboru je načten z disku na zadané cestě. </summary>
