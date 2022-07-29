@@ -201,49 +201,6 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
     }
 
     [Fact]
-    public void UpgradePListina_Test()
-    {
-        //Arrange
-        var content = "$setup_connect_db = \"nicom\";\r\n$setup_connect_username = \"nicom_use\";\r\n$setup_connect_password = \"aljjaskvnjnnavajnjks\";\r\n$connport_beta = \"5432\";\r\n$hostname_beta = \"93.185.102.228\";\r\n$beta = pg_connect(\"host=$hostname_beta port=$connport_beta dbname=$setup_connect_db user=$setup_connect_username password=$setup_connect_password\");\r\n\r\n$server_hod = \"localhost\";\r\n$dtb_hod = \"nicom_hod\";\r\n$user_hod = \"nicom_hod_use\";\r\n$pass_hod = \"savasvkkmůmvavkmlamjuvnejwikuwiqhbnbacha\";\r\n$beta_hod = mysqli_connect($server_hod, $user_hod, $pass_hod);\r\nmysql_select_db($dtb_hod, $beta_hod);\r\n\r\nmysqli_select_db($beta_hod, $dtb_hod);\r\n\r\nmysqli_query($beta, \"SET character_set_connection=utf8mb4\");\r\nmysqli_query($beta, \"SET character_set_results=utf8mb4\");\r\nmysqli_query($beta, \"SET character_set_client=utf8mb4\");\r\nmysqli_query($beta, 'SET CHARACTER SET utf8mb4');\r\n\r\n$DPH_ARRAY = array(0,10,15,21);\r\n\r\n$product_id = najdi_v_db(\"product_spec\", \"product_spec_id\", $_GET['psid'], \"product_id\");\r\n$cat_q = \"SELECT category_id FROM product_category WHERE product_id = '\".$product_id.\"'\";\r\n$cat_d = pg_query($cat_q);\r\n$ctg_arr = array();\r\nwhile($cat_r = pg_fetch_assoc($cat_d)) {\r\n\t$ctg_arr[] = $cat_r['category_id'];\r\n}";
-        var file1 = new FileWrapper(Path.Join("some-website", "pdf", "p_listina.php"), content);
-        var file2 = new FileWrapper(Path.Join("some-website", "pdf", "p_listina_u.php"), content);
-        var file3 = new FileWrapper(Path.Join("some-website", "other_folder", "other_file.php"), content);
-
-        //Act
-        file1.UpgradePListina();
-        file2.UpgradePListina();
-        file3.UpgradePListina();
-
-        //Assert
-        _output.WriteLine(file1.Path);
-        var updatedContent1 = file1.Content.ToString();
-        _output.WriteLine(updatedContent1);
-
-        _output.WriteLine("============================================================================================");
-        _output.WriteLine(file2.Path);
-        var updatedContent2 = file2.Content.ToString();
-        _output.WriteLine(updatedContent2);
-
-        _output.WriteLine("============================================================================================");
-        _output.WriteLine(file3.Path);
-        var updatedContent3 = file3.Content.ToString();
-        _output.WriteLine(updatedContent3);
-
-        const string updatedMysqli = "mysqli_query($beta_hod, ";
-        Assert.True(file1.IsModified);
-        Assert.NotEqual(updatedContent1, content);
-        Assert.Contains(updatedMysqli, updatedContent1);
-
-        Assert.True(file2.IsModified);
-        Assert.NotEqual(updatedContent2, content);
-        Assert.Contains(updatedMysqli, updatedContent2);
-        
-        Assert.False(file3.IsModified);
-        Assert.Equal(updatedContent3, content);
-        Assert.DoesNotContain(updatedMysqli, updatedContent3);
-    }
-
-    [Fact]
     public void RubiconUpgrader_Constructor_ShouldAddToFindReplace()
     {
         //Arrange & Act

@@ -35,7 +35,7 @@ public class RubiconUpgrader : MonaUpgrader
                             .UpgradeUrlPromenne()
                             .UpgradeDuplicateArrayKeys()
                             .UpgradeOldUnparsableAlmostEmpty()
-                            .UpgradePListina()
+                            .UpgradeHodnoceniDBCalls()
         };
     }
 
