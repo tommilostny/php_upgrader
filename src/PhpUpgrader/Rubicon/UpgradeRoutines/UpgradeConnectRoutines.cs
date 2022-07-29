@@ -101,35 +101,48 @@ public static class UpgradeConnectRoutines
         }
     }
 
-    /// <summary> Hodnoty <b>$hostname_beta</b>, které nahradit <see cref="MonaUpgrader.Hostname"/>. </summary>
-    private static readonly string[] _hostnamesToReplace =
-    {
-        "93.185.102.228", "mcrai.vshosting.cz", "217.16.184.116", "mcrai2.vshosting.cz", "localhost"
-    };
-
-    /// <summary> Aktualizace hostname z mcrai1 na server mcrai2. </summary>
+    /// <summary> Aktualizace hostname z mcrai1 na <see cref="MonaUpgrader.Hostname"/>. </summary>
     public static FileWrapper UpgradeHostname(this FileWrapper file, RubiconUpgrader upgrader)
     {
         var connBeta = file.Path.EndsWith(Path.Join("Connections", "beta.php"));
-        foreach (var hn in _hostnamesToReplace)
+        var moneyXmlInclude = file.Path.EndsWith("MONEY_XML_INCLUDE.php");
+        var pListina = file.Path.EndsWith(Path.Join("pdf", "p_listina.php"))
+                     || file.Path.EndsWith(Path.Join("pdf", "p_listina_u.php"));
+
+        foreach (var hn in HostnamesToReplace())
         {
             if (upgrader.Hostname == hn)
             {
                 continue;
             }
-            if (connBeta && !file.Content.Contains($"//$hostname_beta = \"{hn}\";"))
+            if (moneyXmlInclude && !file.Content.Contains($"//$conn = pg_connect(\"host = {hn}"))
+            {
+                file.Content.Replace($"$conn = pg_connect(\"host = {hn}",
+                                     $"//$conn = pg_connect(\"host = {hn}\n$conn = pg_connect(\"host = {upgrader.Hostname}");
+            }
+            if ((connBeta || pListina) && !file.Content.Contains($"//$hostname_beta = \"{hn}\";"))
             {
                 file.Content.Replace($"$hostname_beta = \"{hn}\";",
-                    $"//$hostname_beta = \"{hn}\";\n\t$hostname_beta = \"{upgrader.Hostname}\";");
+                                     $"//$hostname_beta = \"{hn}\";\n{(!pListina ? '\t' : null)}$hostname_beta = \"{upgrader.Hostname}\";");
             }
             if (!file.Content.Contains($"//$api = new RubiconAPI($_REQUEST['url'], '{hn}'"))
             {
                 file.Content.Replace($"$api = new RubiconAPI($_REQUEST['url'], '{hn}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');",
-                    $"//$api = new RubiconAPI($_REQUEST['url'], '{hn}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');\n\t$api = new RubiconAPI($_REQUEST['url'], '{upgrader.Hostname}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');");
+                                     $"//$api = new RubiconAPI($_REQUEST['url'], '{hn}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');\n\t$api = new RubiconAPI($_REQUEST['url'], '{upgrader.Hostname}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');");
             }
             file.UpgradeDatabaseConnectCall(hn, upgrader.Hostname);
         }
         return file;
+    }
+
+    /// <summary> Hodnoty <b>$hostname_beta</b>, které nahradit <see cref="MonaUpgrader.Hostname"/>. </summary>
+    private static IEnumerable<string> HostnamesToReplace()
+    {
+        yield return "93.185.102.228";
+        yield return "mcrai.vshosting.cz";
+        yield return "217.16.184.116";
+        yield return "mcrai2.vshosting.cz";
+        yield return "localhost";
     }
 
     /// <summary> Aktualizace Database::connect. </summary>
