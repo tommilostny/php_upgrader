@@ -115,7 +115,8 @@ public class RubiconUpgrader : MonaUpgrader
                 .UpgradeHomeTopProducts()
                 .UpgradeUrlPromenne()
                 .UpgradeDuplicateArrayKeys()
-                .UpgradeOldUnparsableAlmostEmpty();
+                .UpgradeOldUnparsableAlmostEmpty()
+                .UpgradePListina();
         }
         return file;
     }
