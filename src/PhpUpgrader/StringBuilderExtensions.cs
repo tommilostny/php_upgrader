@@ -133,7 +133,7 @@ internal static class StringBuilderExtensions
     /// <returns>Index začátku <paramref name="value"/> v <paramref name="source"/> nebo -1, pokud není nalezena.</returns>
     internal static int IndexOf(this StringBuilder source, ReadOnlySpan<char> value)
     {
-        for (int i = 0, j = 0; i < source.Length; i++)
+        for (var (i, j) = (0, 0); i < source.Length; i++)
         {
             if (source[i] != value[j])
             {

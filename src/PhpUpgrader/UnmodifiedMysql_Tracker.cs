@@ -41,13 +41,13 @@ public record UnmodifiedMysql_Tracker
         matches = Matches;
     }
 
-    private static List<(uint line, string function)> LoadMatchesWithLineNumbers(FileWrapper file, ICollection<Match> matches)
+    private static List<(uint line, string function)> LoadMatchesWithLineNumbers(FileWrapper file, IEnumerable<Match> matches)
     {
         var matchesList = new List<(uint, string)>();
         foreach (var match in matches)
         {
             uint line = 1;
-            for (int i = 0; i < match.Index; i++)
+            for (var i = 0; i < match.Index; i++)
             {
                 if (file.Content[i] == '\n')
                 {
