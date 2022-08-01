@@ -8,11 +8,20 @@ public static class UpgradeGetMagicQuotesGpcRoutine
     public static FileWrapper UpgradeGetMagicQuotesGpc(this FileWrapper file)
     {
         Lazy<string> contentStr = new(() => file.Content.ToString());
+        switch (file.Path)
+        {
+            case var p when p.EndsWith(Path.Join("piwika", "libs", "HTML", "QuickForm2.php")):
+                file.Content.Replace("$method, get_magic_quotes_gpc()", "$method /*, get_magic_quotes_gpc()*/");
+                break;
+
+            case var p when p.EndsWith(Path.Join("piwika", "core", "Common.php")):
+                file.Content.Replace("&& get_magic_quotes_gpc()", "&& /*get_magic_quotes_gpc()*/ false");
+                break;
+        }
         if (!file.Content.Contains("get_magic_quotes_gpc()") || Is_GMQG_Commented(contentStr.Value))
         {
             return file;
         }
-
         //Zpracování výrazu s ternárním operátorem.
         var evaluator = new MatchEvaluator(GetMagicQuotesGpcTernaryEvaluator);
         var updated = Regex.Replace(contentStr.Value,

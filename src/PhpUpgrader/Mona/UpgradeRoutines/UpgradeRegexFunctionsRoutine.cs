@@ -27,7 +27,7 @@ public static class UpgradeRegexFunctionsRoutine
         updated = Regex.Replace(updated, @"eregi? ?\( ?\$", "preg_match($", RegexOptions.Compiled);
         updated = Regex.Replace(updated, @"ereg_replace ?\( ?\$", "preg_replace($", RegexOptions.Compiled);
 
-        if (Regex.IsMatch(updated, "\n[^//]{0,236}ereg", RegexOptions.Compiled))
+        if (Regex.IsMatch(updated, @"\n[^//]{0,236}ereg[^(;"",]*\(", RegexOptions.Compiled))
         {
             file.Warnings.Add("Nemodifikovaná funkce ereg!");
         }
