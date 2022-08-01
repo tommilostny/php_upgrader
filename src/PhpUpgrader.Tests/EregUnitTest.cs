@@ -97,4 +97,19 @@ public class EregUnitTest : UnitTestWithOutputBase
         Assert.True(file.IsModified);
         Assert.Equal(@"if(preg_match('~.+@.+\..+~i', $mail))", contentStr);
     }
+
+    [Theory]
+    [InlineData(@"if(ereg('.+~@~.+\..+', $mail))", @"if(preg_match('~.+\~@\~.+\..+~', $mail))")]
+    [InlineData(@"if(ereg('~.+~@~.+\..+', $mail))", @"if(preg_match('~\~.+\~@\~.+\..+~', $mail))")]
+    public void Should_EscapeDelimiter(string input, string expectedOutput)
+    {
+        var file = new FileWrapper(string.Empty, input);
+
+        file.UpgradeRegexFunctions();
+
+        var contentStr = file.Content.ToString();
+        _output.WriteLine(contentStr);
+        Assert.True(file.IsModified);
+        Assert.Equal(expectedOutput, contentStr);
+    }
 }

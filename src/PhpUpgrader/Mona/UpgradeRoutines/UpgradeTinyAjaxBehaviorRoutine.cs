@@ -5,7 +5,7 @@ public static class UpgradeTinyAjaxBehaviorRoutine
     /// <summary>
     /// predelat soubor (TinyAjaxBehavior.php) v adresari admin/include >>> prekopirovat soubor ze vzoru rs mona
     /// </summary>
-    /// <returns> True, pokud se jednalo o TinyAjaxBehavior, jinak False. </returns>
+    /// <returns> <b>True</b> <em>(není třeba aktualizovat)</em>, pokud se jednalo o TinyAjaxBehavior, jinak <b>False</b>. </returns>
     public static bool UpgradeTinyAjaxBehavior(this MonaUpgrader upgrader, string filePath)
     {
         var isTinyAjaxBehavior = upgrader.AdminFolders.Any(af => filePath.Contains(Path.Join(af, "include", "TinyAjaxBehavior.php")));

@@ -68,6 +68,8 @@ public static class UpgradeRegexFunctionsRoutine
         }
     }
 
+    private const char _delimiter = '~';
+
     private static string PregMatchEvaluator(Match match)
     {
         var bracketIndex = match.ValueSpan.IndexOf('(');
@@ -79,10 +81,20 @@ public static class UpgradeRegexFunctionsRoutine
             var x when x.SequenceEqual("split") => "preg_split",
             _ => "preg_match"
         };
-        var quote = match.ValueSpan[++bracketIndex];
-        var insidePattern = match.ValueSpan[++bracketIndex..^1];
-        char? ignoreMode = oldFunc.SequenceEqual("eregi") ? 'i' : null;
+        char quote = match.ValueSpan[++bracketIndex];
+        char? ignoreFlag = oldFunc.SequenceEqual("eregi") ? 'i' : null;
 
-        return $"{pregFunction}({quote}~{insidePattern}~{ignoreMode}{quote}";
+        var evaluator = new MatchEvaluator(PatternDelimiterEscapeEvaluator);
+        var pattern = Regex.Replace(match.Value[++bracketIndex..^1],
+                                    $@"(^{_delimiter})|([^\\]{_delimiter})",
+                                    evaluator);
+
+        return $"{pregFunction}({quote}{_delimiter}{pattern}{_delimiter}{ignoreFlag}{quote}";
+    }
+
+    private static string PatternDelimiterEscapeEvaluator(Match match)
+    {
+        var index = match.Value.StartsWith(_delimiter) ? 0 : 1;
+        return match.Value.Insert(index, @"\");
     }
 }
