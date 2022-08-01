@@ -7,8 +7,8 @@ public static class UpgradeLoadDataRoutine
     {
         if (file.Path.EndsWith(Path.Join("aegisx", "import", "load_data.php")))
         {
-            file.Content.Replace("global $beta;", "global $sportmall_import;");
-            file.Content.Replace("mysqli_real_escape_string($beta,", "mysqli_real_escape_string($sportmall_import,");
+            file.Content.Replace("global $beta;", "global $sportmall_import;")
+                        .Replace("mysqli_real_escape_string($beta,", "mysqli_real_escape_string($sportmall_import,");
         }
         return file;
     }

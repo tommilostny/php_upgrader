@@ -46,9 +46,9 @@ public static class UpgradeResultFuncRoutine
                 currentLine.Replace(oldResultFunc, "pg_fetch_result");
                 continue;
             }
-            currentLine.Replace(countFunc, "*", countIndex);
-            currentLine.Replace(", 0", string.Empty);
-            currentLine.Replace(oldResultFunc, newNumRowsFunc);
+            currentLine.Replace(countFunc, "*", countIndex)
+                       .Replace(", 0", string.Empty)
+                       .Replace(oldResultFunc, newNumRowsFunc);
         }
         lines.JoinInto(file.Content);
         return file;

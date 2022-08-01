@@ -8,10 +8,11 @@ public static class UpgradeConnectRoutines
     public static FileWrapper UpgradeConnect_Rubicon(this FileWrapper file, RubiconUpgrader upgrader)
     {
         return file.UpgradeMonaLikeConnect(upgrader, "rubicon_import.php", "sportmall_import")
-            .UpgradeMonaLikeConnect(upgrader, "hodnoceni.php", "hodnoceni_conn")
-            .UpgradeSetup(upgrader)
-            .UpgradeHostname(upgrader)
-            .UpgradeOldDbConnect(upgrader);
+                   .UpgradeMonaLikeConnect(upgrader, "hodnoceni.php", "hodnoceni_conn")
+                   .UpgradeSetup(upgrader)
+                   .UpgradeHostname(upgrader)
+                   .UpgradeOldDbConnect(upgrader)
+                   .UpgradeRubiconModulesDB();
     }
 
     /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php. </summary>
@@ -64,8 +65,8 @@ public static class UpgradeConnectRoutines
 
         var updated = Regex.Replace(content, @"\$setup_connect.*= ?"".*"";", evaluator, RegexOptions.Compiled);
 
-        file.Content.Replace(content, updated);
-        file.Content.Replace("////", "//");
+        file.Content.Replace(content, updated)
+                    .Replace("////", "//");
 
         if (!usernameLoaded)
         {
@@ -181,14 +182,26 @@ public static class UpgradeConnectRoutines
         if (file.Path.EndsWith("DB_connect.php"))
         {
             file.Content.Replace("$DBLink = mysqli_connect ($host,$user,$pass) or mysql_errno() + mysqli_error($beta);",
-                                 "$DBLink = mysqli_connect($host, $user, $pass);");
-            file.Content.Replace("if (!mysql_select_db( $DBname, $DBLink ))",
+                                 "$DBLink = mysqli_connect($host, $user, $pass);")
+                        .Replace("if (!mysql_select_db( $DBname, $DBLink ))",
                                  "mysqli_select_db($DBLink, $DBname);\nif (mysqli_connect_errno())");
             if (!file.Content.Contains("exit()"))
             {
                 file.Content.Replace("echo \"ERROR\";", "echo \"ERROR\";\nexit();");
             }
             upgrader.RenameVar(file.Content, "DBLink");
+        }
+        return file;
+    }
+
+    public static FileWrapper UpgradeRubiconModulesDB(this FileWrapper file)
+    {
+        if (file.Path.EndsWith(Path.Join("core", "modules", "core", "module.php")))
+        {
+            file.Content.Replace("mysql_pconnect($rubicon_db->mysql_hostname, $rubicon_db->mysql_username, $rubicon_db->mysql_password)",
+                                 "mysqli_connect($rubicon_db->mysql_hostname, $rubicon_db->mysql_username, $rubicon_db->mysql_password)")
+                        .Replace("mysql_select_db($rubicon_db->mysql_database, $its_connect)",
+                                 "mysqli_select_db($its_connect, $rubicon_db->mysql_database)");
         }
         return file;
     }

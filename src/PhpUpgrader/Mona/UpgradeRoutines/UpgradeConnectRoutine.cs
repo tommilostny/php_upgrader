@@ -37,8 +37,8 @@ public static class UpgradeConnectRoutine
             GenerateNewCredential(_passwordVarPart, upgrader.Password, file);
 
             //smazat zbytečné znaky
-            file.Content.Replace("////", "//");
-            file.Content.Replace("\r\r", "\r");
+            file.Content.Replace("////", "//")
+                        .Replace("\r\r", "\r");
 
             //na konec přidání obsahu předpřipraveného souboru
             file.Content.Append(File.ReadAllText(Path.Join(upgrader.BaseFolder, "important", "connection.txt")));

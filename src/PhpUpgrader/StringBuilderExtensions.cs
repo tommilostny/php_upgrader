@@ -155,8 +155,8 @@ internal static class StringBuilderExtensions
     /// <param name="oldValue">Hledaná hodnota k nahrazení.</param>
     /// <param name="newValue">Nová hodnota, kterou se nahrazuje.</param>
     /// <param name="startIndex">Od jakého indexu začít hledat <paramref name="oldValue"/>.</param>
-    internal static void Replace(this StringBuilder source, string oldValue, string? newValue, int startIndex)
+    internal static StringBuilder Replace(this StringBuilder source, string oldValue, string? newValue, int startIndex)
     {
-        source.Replace(oldValue, newValue, startIndex, count: source.Length - startIndex);
+        return source.Replace(oldValue, newValue, startIndex, count: source.Length - startIndex);
     }
 }

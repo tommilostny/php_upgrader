@@ -36,6 +36,7 @@ public class RubiconUpgrader : MonaUpgrader
                             .UpgradeDuplicateArrayKeys()
                             .UpgradeOldUnparsableAlmostEmpty()
                             .UpgradeHodnoceniDBCalls()
+                            .UpgradeLibDbMysql()
         };
     }
 

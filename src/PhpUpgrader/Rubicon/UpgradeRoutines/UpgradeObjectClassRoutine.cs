@@ -23,9 +23,9 @@ public static class UpgradeObjectClassRoutine
             file.MoveOnSavePath = file.Path.Replace(Path.Join("classes", "Object.php"),
                                                     Path.Join("classes", "ObjectBase.php"));
         }
-        file.Content.Replace("extends Object", "extends ObjectBase");
-        file.Content.Replace("@param Object", "@param ObjectBase");
-        file.Content.Replace("@property  Object", "@property  ObjectBase");
+        file.Content.Replace("extends Object", "extends ObjectBase")
+                    .Replace("@param Object", "@param ObjectBase")
+                    .Replace("@property  Object", "@property  ObjectBase");
         return file;
     }
 }

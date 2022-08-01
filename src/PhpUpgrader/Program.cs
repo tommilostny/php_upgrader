@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader;
+﻿using System.Text.RegularExpressions;
+
+namespace PhpUpgrader;
 
 class Program
 {
@@ -72,10 +74,18 @@ class Program
 
         Console.WriteLine($"Celkem upravených souborů: {upgrader.ModifiedFilesCount}/{upgrader.TotalFilesCount}");
         
-        Console.WriteLine($"Soubory obsahující mysql_: {upgrader.FilesContainingMysql.Count}");
-        foreach (var fileName in upgrader.FilesContainingMysql)
+        Console.WriteLine($"Soubory obsahující mysql_: {upgrader.FilesContainingMysql.Count}\n");
+        foreach (var (fileName, matches) in upgrader.FilesContainingMysql)
         {
             Console.WriteLine(fileName);
+            foreach (var (line, function) in matches)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write($"{line}\t");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(function);
+            }
+            Console.ResetColor();
         }
     }
 }
