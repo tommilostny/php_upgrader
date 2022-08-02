@@ -1,38 +1,29 @@
 ﻿namespace PhpUpgrader;
 
 /// <summary>
-/// Vyhazuje konstruktor třídy <see cref="UnmodifiedMysql_Tracker"/>, pokud v souboru nenajde žádnou z funkcí "mysql_".
-/// </summary>
-public class DoesNotContainMysql_Exception : Exception
-{
-    public override string Message => "Tento soubor neobsahuje funkce 'mysql_'.";
-}
-
-/// <summary>
 /// Záznam o funkcích "mysql_" nalezených v souboru <see cref="FileName"/>.
 /// </summary>
-public record UnmodifiedMysql_Tracker
+public record UnmodifiedMysql_File
 {
     public string FileName { get; }
 
     public IReadOnlyCollection<(uint line, string function)> Matches { get; }
 
     /// <summary>
-    /// Vytvoří záznam o souboru, který obsahuje funkce mysql_.
+    /// Zjistí, zda soubor obsahuje funkce "mysql_".
     /// </summary>
     /// <param name="file"> Soubor, ve kterém hledat funkce "mysql_". </param>
-    /// <exception cref="DoesNotContainMysql_Exception"> Soubor neobsahuje žádné funkce "mysql_". </exception>
-    public UnmodifiedMysql_Tracker(FileWrapper file)
+    /// <returns>
+    /// Novou instanci záznamu <see cref="UnmodifiedMysql_File"/> nebo <b>null</b>,
+    /// pokud <paramref name="file"/> neobsahuje "mysql_" funkce.
+    /// </returns>
+    public static UnmodifiedMysql_File? Create(FileWrapper file)
     {
         var matches = Regex.Matches(file.Content.ToString(),
-                                    @"(?<!(//.*)|\$|->|_)mysql_[^(]+",
+                                    @"(?<!(//.*)|(/\*((.|\n)(?!\*/))*)|\$|->|_|PDO::)mysql_[^( )]+",
                                     RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        if (matches.Count == 0)
-        {
-            throw new DoesNotContainMysql_Exception();
-        }
-        FileName = file.Path;
-        Matches = LoadMatchesWithLineNumbers(file, matches);
+        
+        return matches.Count == 0 ? null : new(file, matches);
     }
 
     public void Deconstruct(out string fileName, out IReadOnlyCollection<(uint line, string function)> matches)
@@ -41,15 +32,23 @@ public record UnmodifiedMysql_Tracker
         matches = Matches;
     }
 
+    private UnmodifiedMysql_File(FileWrapper file, MatchCollection matches)
+    {
+        FileName = file.Path;
+        Matches = LoadMatchesWithLineNumbers(file, matches);
+    }
+
     private static List<(uint line, string function)> LoadMatchesWithLineNumbers(FileWrapper file, IEnumerable<Match> matches)
     {
         var matchesList = new List<(uint, string)>();
+        var i = 0;
+        uint line = 1;
+        
         foreach (var match in matches)
         {
-            uint line = 1;
-            for (var i = 0; i < match.Index; i++)
+            while (i < match.Index)
             {
-                if (file.Content[i] == '\n')
+                if (file.Content[i++] == '\n')
                 {
                     line++;
                 }

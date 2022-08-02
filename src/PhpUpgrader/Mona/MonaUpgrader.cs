@@ -6,7 +6,7 @@ namespace PhpUpgrader.Mona;
 public class MonaUpgrader
 {
     /// <summary> Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce. </summary>
-    public List<UnmodifiedMysql_Tracker> FilesContainingMysql { get; } = new();
+    public List<UnmodifiedMysql_File> FilesContainingMysql { get; } = new();
 
     /// <summary> Absolutní cesta základní složky, kde jsou složky 'weby' a 'important'. </summary>
     public string BaseFolder { get; }
@@ -134,15 +134,12 @@ public class MonaUpgrader
             {
                 ModifiedFilesCount++;
             }
-            try //po dodelani nahrazeni nize projit na retezec - mysql_
+            //po dodelani nahrazeni nize projit na retezec - mysql_
+            var mysql_FileRecord = UnmodifiedMysql_File.Create(file);
+            if (mysql_FileRecord is not null)
             {
                 //soubor se přidá do kolekce, pokud obsahuje funkce "mysql_".
-                FilesContainingMysql.Add(new UnmodifiedMysql_Tracker(file));
-            }
-            catch (DoesNotContainMysql_Exception)
-            {
-                //soubor neobsahuje "myqsl_", ok, pokračujeme.
-                continue;
+                FilesContainingMysql.Add(mysql_FileRecord);
             }
         }
     }

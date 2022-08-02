@@ -124,5 +124,8 @@ public class RubiconUpgrader : MonaUpgrader
         yield return ("pg_query(\"SET CHARACTER SET utf8\", $this->db)",
                       "pg_query($this->db, \"SET CHARACTER SET utf8\")"
                      );
+        yield return ("mysql_stat($link)",
+                      "mysqli_stat($link)"
+                     );
     }
 }
