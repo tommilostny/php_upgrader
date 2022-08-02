@@ -190,7 +190,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         var file = new FileWrapper(Path.Join("some-website", "money", "old", "Compare_XML.php"), content);
 
         //Act
-        file.UpgradeOldUnparsableAlmostEmpty();
+        file.UpgradeOldUnparsableAlmostEmptyFile();
 
         //Assert
         _output.WriteLine(content);

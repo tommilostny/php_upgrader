@@ -84,8 +84,6 @@ public class MonaUpgrader
         { "eregi(", "preg_match(" },
         { "eregi (", "preg_match(" },
         { "preg_match('^<tr(.*){0,}</tr>$'", "preg_match('/^<tr(.*){0,}< \\/tr>$/'" },
-        { "unlink", "@unlink" },
-        { "@@unlink", "@unlink" },
         { "mysql_data_seek", "mysqli_data_seek" },
         { "mysql_real_escape_string", "mysqli_real_escape_string" },
         { "mysql_free_result", "mysqli_free_result" },
@@ -168,14 +166,14 @@ public class MonaUpgrader
 
             default:
                 file.UpgradeConnect(this)
-                    .UpgradeResultFunc(this)
+                    .UpgradeResultFunction(this)
                     .UpgradeClanekVypis()
                     .UpgradeFindReplace(this)
                     .UpgradeMysqliQueries(this)
                     .UpgradeCloseIndex(this)
                     .UpgradeAnketa()
                     .UpgradeChdir(AdminFolders)
-                    .UpgradeTableAddEdit(AdminFolders)
+                    .UpgradeTableXAddEdit(AdminFolders)
                     .UpgradeStrankovani()
                     .UpgradeXmlFeeds()
                     .UpgradeSitemapSave(AdminFolders)
@@ -184,7 +182,8 @@ public class MonaUpgrader
                     .UpgradeFloatExplodeConversions();
                 break;
         }
-        file.UpgradeRegexFunctions()
+        file.UpgradeUnlink()
+            .UpgradeRegexFunctions()
             .RemoveTrailingWhitespaces()
             .UpgradeIfEmpty()
             .UpgradeGetMagicQuotesGpc();

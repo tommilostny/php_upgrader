@@ -20,7 +20,7 @@ public class UpgradeTableAddEditTests : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture();
 
         //Act
-        file.UpgradeTableAddEdit(upgrader.AdminFolders);
+        file.UpgradeTableXAddEdit(upgrader.AdminFolders);
 
         //Assert
         _output.WriteLine(file.Path);
@@ -43,7 +43,7 @@ public class UpgradeTableAddEditTests : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture();
 
         //Act
-        file.UpgradeTableAddEdit(upgrader.AdminFolders);
+        file.UpgradeTableXAddEdit(upgrader.AdminFolders);
 
         //Assert
         _output.WriteLine(file.Path);

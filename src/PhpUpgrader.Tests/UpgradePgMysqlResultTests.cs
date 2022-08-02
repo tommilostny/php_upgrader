@@ -22,7 +22,7 @@ public class UpgradePgMysqlResultTests : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture();
 
         //Act
-        file.UpgradeResultFunc(upgrader);
+        file.UpgradeResultFunction(upgrader);
 
         //Assert
         var updatedContent = file.Content.ToString();
@@ -48,7 +48,7 @@ public class UpgradePgMysqlResultTests : UnitTestWithOutputBase
         var upgrader = new RubiconUpgrader(null, null);
 
         //Act
-        file.UpgradeResultFunc(upgrader);
+        file.UpgradeResultFunction(upgrader);
 
         //Assert
         var updatedContent = file.Content.ToString();
@@ -70,7 +70,7 @@ public class UpgradePgMysqlResultTests : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture();
 
         //Act
-        file.UpgradeResultFunc(upgrader);
+        file.UpgradeResultFunction(upgrader);
 
         //Assert
         var updatedContent = file.Content.ToString();
