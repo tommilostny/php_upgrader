@@ -1,5 +1,4 @@
-﻿using PhpUpgrader.Mona.UpgradeRoutines;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace PhpUpgrader.Tests;
 
@@ -29,19 +28,19 @@ public class UpgradeConnectTests
         /* Gets through the file path check and encounters an exception
          * because there is no ".../important/connection.txt" file or content is empty.
          */
-        var exception = Record.Exception(() => file1.UpgradeConnect(upgrader1));
+        var exception = Record.Exception(() => upgrader1.ConnectHandler.UpgradeConnect(file1, upgrader1));
         Assert.NotNull(exception);
         Assert.True(exception is IndexOutOfRangeException);
         Assert.False(file1.IsModified);
         Assert.Equal(string.Empty, file1.Content.ToString());
 
         file1.Content.Append("<?php echo(\"some random PHP code\"); ?>");
-        exception = Record.Exception(() => file1.UpgradeConnect(upgrader1));
+        exception = Record.Exception(() => upgrader1.ConnectHandler.UpgradeConnect(file1, upgrader1));
         Assert.NotNull(exception);
         Assert.True(exception is DirectoryNotFoundException);
 
         //upgrader2 has a valid BaseFolder and proceeds to update the file correctly.
-        exception = Record.Exception(() => file2.UpgradeConnect(upgrader2));
+        exception = Record.Exception(() => upgrader2.ConnectHandler.UpgradeConnect(file2, upgrader2));
         Assert.Null(exception);
         Assert.True(file2.IsModified);
         Assert.Contains("$beta = mysqli_connect", file2.Content.ToString());
@@ -56,8 +55,9 @@ public class UpgradeConnectTests
         {
             ConnectionFile = "connection.php"
         };
+
         //Act & Assert
-        var exception = Record.Exception(() => file.UpgradeConnect(upgrader));
+        var exception = Record.Exception(() => upgrader.ConnectHandler.UpgradeConnect(file, upgrader));
         Assert.Null(exception);
     }
 }

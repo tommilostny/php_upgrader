@@ -1,4 +1,4 @@
-﻿using PhpUpgrader.Rubicon.UpgradeRoutines;
+﻿using PhpUpgrader.Rubicon.UpgradeExtensions;
 
 namespace PhpUpgrader.Tests;
 

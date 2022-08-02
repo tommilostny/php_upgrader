@@ -1,4 +1,6 @@
-﻿using PhpUpgrader.Rubicon.UpgradeRoutines;
+﻿using PhpUpgrader.Mona.UpgradeHandlers;
+using PhpUpgrader.Rubicon.UpgradeExtensions;
+using PhpUpgrader.Rubicon.UpgradeHandlers;
 
 namespace PhpUpgrader.Tests;
 
@@ -42,7 +44,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         };
 
         //Act, Debug
-        file.UpgradeMonaLikeConnect(upgrader, fileName, varName);
+        ((RubiconConnectHandler)upgrader.ConnectHandler).UpgradeMonaLikeConnect(file, upgrader, fileName, varName);
         _output.WriteLine(file.Content.ToString());
     }
 
@@ -62,7 +64,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         };
 
         //Act
-        file.UpgradeSetup(upgrader);
+        RubiconConnectHandler.UpgradeSetup(file, upgrader);
 
         //Assert
         _output.WriteLine(file.Content.ToString());
@@ -86,7 +88,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         };
 
         //Act
-        file.UpgradeHostname(upgrader);
+        RubiconConnectHandler.UpgradeHostname(file, upgrader);
 
         //Assert
         _output.WriteLine(file.Content.ToString());
@@ -169,7 +171,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         var file = new FileWrapper(Path.Join("test-site", "index.php"), originalContent);
 
         //Act
-        file.UpgradeDatabaseConnectCall("93.185.102.228", "mcrai-upgrade.vshosting.cz");
+        RubiconConnectHandler.UpgradeDatabaseConnectCall(file, "93.185.102.228", "mcrai-upgrade.vshosting.cz");
 
         //Assert
         var contentStr = file.Content.ToString();
@@ -204,12 +206,14 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
     public void RubiconUpgrader_Constructor_ShouldAddToFindReplace()
     {
         //Arrange & Act
-        var monaCount = new MonaUpgrader(null, null).FindReplace.Count;
-        var rubiconCount = new RubiconUpgrader(null, null).FindReplace.Count;
+        var monaFR = new MonaUpgrader(null, null).FindReplaceHandler;
+        var rubiconFR = new RubiconUpgrader(null, null).FindReplaceHandler;
 
         //Assert
-        _output.WriteLine($"Mona\tFR: {monaCount}");
-        _output.WriteLine($"Rubicon\tFR: {rubiconCount}");
-        Assert.True(monaCount < rubiconCount);
+        _output.WriteLine($"Mona\tFR: {monaFR.Replacements.Count}");
+        _output.WriteLine($"Rubicon\tFR: {rubiconFR.Replacements.Count}");
+        Assert.True(monaFR.Replacements.Count < rubiconFR.Replacements.Count);
+        Assert.Equal(nameof(MonaFindReplaceHandler), monaFR.GetType().Name);
+        Assert.Equal(nameof(RubiconFindReplaceHandler), rubiconFR.GetType().Name);
     }
 }

@@ -1,4 +1,4 @@
-﻿using PhpUpgrader.Mona.UpgradeRoutines;
+﻿using PhpUpgrader.Mona.UpgradeExtensions;
 
 namespace PhpUpgrader.Tests;
 

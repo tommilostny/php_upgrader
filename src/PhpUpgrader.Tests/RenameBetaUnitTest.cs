@@ -1,4 +1,4 @@
-﻿using PhpUpgrader.Mona.UpgradeRoutines;
+﻿using PhpUpgrader.Mona.UpgradeExtensions;
 
 namespace PhpUpgrader.Tests;
 
@@ -80,13 +80,13 @@ public class RenameBetaUnitTest : UnitTestWithOutputBase
         var upgrader = new MonaUpgraderFixture();
 
         //Act, Assert
-        var originalCount = upgrader.FindReplace.Count;
+        var originalCount = upgrader.FindReplaceHandler.Replacements.Count;
 
-        Assert.Contains(upgrader.FindReplace, fr => fr.Key.Contains("beta") || fr.Value.Contains("beta"));
+        Assert.Contains(upgrader.FindReplaceHandler.Replacements, fr => fr.Key.Contains("beta") || fr.Value.Contains("beta"));
         upgrader.RenameBetaWith = "gama";
-        Assert.DoesNotContain(upgrader.FindReplace, fr => fr.Key.Contains("beta") || fr.Value.Contains("beta"));
-        Assert.Contains(upgrader.FindReplace, fr => fr.Key.Contains("gama") || fr.Value.Contains("gama"));
+        Assert.DoesNotContain(upgrader.FindReplaceHandler.Replacements, fr => fr.Key.Contains("beta") || fr.Value.Contains("beta"));
+        Assert.Contains(upgrader.FindReplaceHandler.Replacements, fr => fr.Key.Contains("gama") || fr.Value.Contains("gama"));
 
-        Assert.Equal(originalCount, upgrader.FindReplace.Count);
+        Assert.Equal(originalCount, upgrader.FindReplaceHandler.Replacements.Count);
     }
 }
