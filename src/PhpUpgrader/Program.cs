@@ -1,6 +1,4 @@
-﻿using System.Text.RegularExpressions;
-
-namespace PhpUpgrader;
+﻿namespace PhpUpgrader;
 
 class Program
 {
@@ -20,10 +18,12 @@ class Program
     /// <param name="connectionFile">Název souboru ve složce "/connect".</param>
     /// <param name="rubicon">Upgrade systému Rubicon (nezadáno => Mona).</param>
     /// <param name="ignoreConnect">Ignore DB connection arguments (--host, --db, --user, --password).</param>
+    /// <param name="useBackup"> Neptat se a vždy načítat soubory ze zálohy. </param>
+    /// <param name="ignoreBackup"> Neptat se a vždy ignorovat zálohu. </param>
     static void Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
         string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
         string host = "localhost", string? beta = null, string connectionFile = "connection.php",
-        bool rubicon = false, bool ignoreConnect = false)
+        bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false)
     {
         var workDir = Path.Join(baseFolder, "weby", webName);
 
@@ -65,6 +65,10 @@ class Program
         Console.WriteLine($"Nemodifikován: {FileWrapper.UnmodifiedSymbol}");
         Console.WriteLine($"Varování:      {FileWrapper.WarningSymbol}");
 
+        if (!ignoreBackup)
+        {
+            BackupManager.LoadBackupFiles(useBackup, baseFolder, webName);
+        }
         Console.WriteLine("\nZpracované soubory:");
         upgrader.UpgradeAllFilesRecursively(workDir);
 

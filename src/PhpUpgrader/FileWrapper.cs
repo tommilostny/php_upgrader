@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader;
+﻿using SystemPath = System.IO.Path;
+
+namespace PhpUpgrader;
 
 /// <summary> Třída udržující informace o souboru (obsah, cesta, příznak modifikace). </summary>
 public class FileWrapper
@@ -58,14 +60,7 @@ public class FileWrapper
             return;
         }
         //Vytvořit backup soubor.
-        var s = System.IO.Path.DirectorySeparatorChar;
-        var backupFile = new FileInfo(Path.Replace($"{baseFolder}{s}weby{s}{webName}{s}",
-                                                   $"{baseFolder}{s}weby{s}_backup{s}{webName}{s}"));
-        backupFile.Directory.Create();
-        if (!backupFile.Exists)
-        {
-            File.Copy(Path, backupFile.FullName);
-        }
+        BackupManager.CreateBackupFile(Path, baseFolder, webName);
         //Zapsat změny.
         File.WriteAllText(Path, Content.ToString());
         
@@ -79,7 +74,7 @@ public class FileWrapper
     /// <param name="modified">Který symbol modifikace vybrat?</param>
     public void WriteStatus(bool modified)
     {
-        var s = System.IO.Path.DirectorySeparatorChar;
+        var s = SystemPath.DirectorySeparatorChar;
         var webyIndex = Path.IndexOf($"{s}weby{s}");
 
         var displayName = webyIndex != -1 ? Path.AsSpan(webyIndex + 6) : Path;
