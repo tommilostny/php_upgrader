@@ -6,7 +6,7 @@ namespace PhpUpgrader.Rubicon.UpgradeHandlers;
 public class RubiconConnectHandler : MonaConnectHandler
 {
     /// <summary> Aktualizace souborů připojení systému Rubicon. </summary>
-    public override void UpgradeConnect(FileWrapper file, MonaUpgrader upgrader)
+    public override void UpgradeConnect(FileWrapper file, PhpUpgrader upgrader)
     {
         UpgradeMonaLikeConnect(file, upgrader, "rubicon_import.php", "sportmall_import");
         UpgradeMonaLikeConnect(file, upgrader, "hodnoceni.php", "hodnoceni_conn");
@@ -17,7 +17,7 @@ public class RubiconConnectHandler : MonaConnectHandler
     }
 
     /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php. </summary>
-    public void UpgradeMonaLikeConnect(FileWrapper file, MonaUpgrader upgrader, string fileName, string varName)
+    public void UpgradeMonaLikeConnect(FileWrapper file, PhpUpgrader upgrader, string fileName, string varName)
     {
         if (!file.Path.EndsWith(Path.Join("Connections", fileName)))
         {
@@ -38,7 +38,7 @@ public class RubiconConnectHandler : MonaConnectHandler
         base.UpgradeConnect(file, upgrader);
 
         upgrader.ConnectionFile = backup;
-        upgrader.RenameVar(file.Content, varName);
+        (upgrader as MonaUpgrader).RenameVar(file.Content, varName);
 
         //nakonec přidat aktualizované původní dotazy.
         file.Content.Replace($"mysqli_query(${varName}, \"SET CHARACTER SET utf8\");",
@@ -46,7 +46,7 @@ public class RubiconConnectHandler : MonaConnectHandler
     }
 
     /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
-    public static void UpgradeSetup(FileWrapper file, MonaUpgrader upgrader)
+    public static void UpgradeSetup(FileWrapper file, PhpUpgrader upgrader)
     {
         if (!file.Path.EndsWith(Path.Join(upgrader.WebName, "setup.php")))
         {
@@ -101,8 +101,8 @@ public class RubiconConnectHandler : MonaConnectHandler
         }
     }
 
-    /// <summary> Aktualizace hostname z mcrai1 na <see cref="MonaUpgrader.Hostname"/>. </summary>
-    public static void UpgradeHostname(FileWrapper file, MonaUpgrader upgrader)
+    /// <summary> Aktualizace hostname z mcrai1 na <see cref="PhpUpgrader.Hostname"/>. </summary>
+    public static void UpgradeHostname(FileWrapper file, PhpUpgrader upgrader)
     {
         var connBeta = file.Path.EndsWith(Path.Join("Connections", "beta.php"));
         var moneyXmlInclude = file.Path.EndsWith("MONEY_XML_INCLUDE.php");
@@ -134,7 +134,7 @@ public class RubiconConnectHandler : MonaConnectHandler
         }
     }
 
-    /// <summary> Hodnoty <b>$hostname_beta</b>, které nahradit <see cref="MonaUpgrader.Hostname"/>. </summary>
+    /// <summary> Hodnoty <b>$hostname_beta</b>, které nahradit <see cref="PhpUpgrader.Hostname"/>. </summary>
     private static IEnumerable<string> HostnamesToReplace()
     {
         yield return "93.185.102.228";
@@ -174,7 +174,7 @@ public class RubiconConnectHandler : MonaConnectHandler
     /// Nalezeno v importy/_importy_old/DB_connect.php.
     /// (Raději také aktualizovat. Stejný soubor se někde může ještě používat.)
     /// </summary>
-    public static void UpgradeOldDbConnect(FileWrapper file, MonaUpgrader upgrader)
+    public static void UpgradeOldDbConnect(FileWrapper file, PhpUpgrader upgrader)
     {
         if (file.Path.EndsWith("DB_connect.php"))
         {
@@ -186,7 +186,7 @@ public class RubiconConnectHandler : MonaConnectHandler
             {
                 file.Content.Replace("echo \"ERROR\";", "echo \"ERROR\";\nexit();");
             }
-            upgrader.RenameVar(file.Content, "DBLink");
+            (upgrader as MonaUpgrader).RenameVar(file.Content, "DBLink");
         }
     }
 

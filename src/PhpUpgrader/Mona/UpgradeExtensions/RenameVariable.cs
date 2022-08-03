@@ -9,7 +9,7 @@ public static class RenameVariable
 {
     /// <summary> Přejmenuje proměnnou $<paramref name="oldVarName"/> v instanci <see cref="StringBuilder"/>. </summary>
     /// <param name="upgrader"></param>
-    /// <param name="newVarName"> Nové jméno proměnné. null => použít vlastnost <see cref="MonaUpgrader.RenameBetaWith"/>. </param>
+    /// <param name="newVarName"> Nové jméno proměnné. null => použít vlastnost <see cref="PhpUpgrader.RenameBetaWith"/>. </param>
     /// <param name="oldVarName"> Jmené původní proměnné, která se bude přejmenovávat. </param>
     /// <param name="content"> Obsah, ve kterém se proměnná přejmenovává. </param>
     public static void RenameVar(this MonaUpgrader upgrader, StringBuilder content, string? newVarName = null, string oldVarName = "beta")
@@ -26,7 +26,7 @@ public static class RenameVariable
 
     /// <summary> Přejmenuje proměnnou $<paramref name="oldVarName"/>. </summary>
     /// <param name="upgrader"></param>
-    /// <param name="newVarName"> Nové jméno proměnné. null => použít vlastnost <see cref="MonaUpgrader.RenameBetaWith"/>. </param>
+    /// <param name="newVarName"> Nové jméno proměnné. null => použít vlastnost <see cref="PhpUpgrader.RenameBetaWith"/>. </param>
     /// <param name="oldVarName"> Jmené původní proměnné, která se bude přejmenovávat. </param>
     /// <param name="content"> Obsah, ve kterém se proměnná přejmenovává. </param>
     /// <returns> Upravený <paramref name="content"/>. </returns>

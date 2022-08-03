@@ -1,11 +1,11 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeHandlers;
 
-public class MonaFindReplaceHandler
+public class MonaFindReplaceHandler : FindReplaceHandler
 {
     /// <summary>
     /// predelat soubory nahrazenim viz. >>> část Hledat >>> Nahradit
     /// </summary>
-    public void UpgradeFindReplace(FileWrapper file)
+    public override void UpgradeFindReplace(FileWrapper file)
     {
         foreach (var (find, replace) in Replacements)
         {
@@ -14,7 +14,7 @@ public class MonaFindReplaceHandler
     }
 
     /// <summary> Co a čím to nahradit. </summary>
-    public HashSet<(string find, string replace)> Replacements { get; } = new()
+    public override HashSet<(string find, string replace)> Replacements { get; } = new()
     {
         ( "=& new", "= new" ),
         ( "mysql_num_rows", "mysqli_num_rows" ),

@@ -38,7 +38,7 @@ class Program
             return;
         }
 
-        var upgrader = !rubicon ? new MonaUpgrader(baseFolder, webName)
+        PhpUpgrader upgrader = !rubicon ? new MonaUpgrader(baseFolder, webName)
         {
             AdminFolders = adminFolders,
             RenameBetaWith = beta,
@@ -56,7 +56,8 @@ class Program
         Console.Write(upgrader switch
         {
             RubiconUpgrader => "Rubicon",
-            MonaUpgrader => "Mona"
+            MonaUpgrader => "Mona",
+            _ => throw new InvalidOperationException($"{nameof(upgrader)} je neznámého typu {upgrader.GetType().Name}.")
         });
         Console.WriteLine(" upgraderu...");
 
