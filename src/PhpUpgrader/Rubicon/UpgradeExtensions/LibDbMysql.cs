@@ -4,7 +4,7 @@ public static class LibDbMysql
 {
     public static FileWrapper UpgradeLibDbMysql(this FileWrapper file)
     {
-        if (file.Path.EndsWith(Path.Join("lib", "db", "mysql.inc.php")))
+        if (file.Path.EndsWith(Path.Join("lib", "db", "mysql.inc.php"), StringComparison.Ordinal))
         {
             //zakomentovat blok if else kolem mysqli_connect/mysql_pconnect
             //(vždycky se bude používat mysqli_connect).
@@ -20,7 +20,8 @@ public static class LibDbMysql
             {
                 if (file.Content[i] == '\n')
                 {
-                    while (char.IsWhiteSpace(file.Content[++i])) ;
+                    do i++;
+                    while (char.IsWhiteSpace(file.Content[i]));
                     file.Content.Insert(i, "//");
                     commentedCount++;
                 }

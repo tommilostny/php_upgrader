@@ -11,7 +11,8 @@ public static class IfEmpty
         var updated = Regex.Replace(content,
                                     @"if\s?\(\$\w+\s?!=\s?""""\s?\|\|\s?\$\w+\s?!=\s?null\)",
                                     evaluator,
-                                    RegexOptions.IgnoreCase | RegexOptions.Compiled);
+                                    RegexOptions.IgnoreCase | RegexOptions.Compiled,
+                                    TimeSpan.FromSeconds(5));
         file.Content.Replace(content, updated);
         return file;
     }

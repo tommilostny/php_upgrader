@@ -8,10 +8,10 @@ public class MonaConnectHandler : ConnectHandler
     private const string _passwordVarPart = "$password_";
 
     /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
-    public override void UpgradeConnect(FileWrapper file, PhpUpgrader upgrader)
+    public override void UpgradeConnect(FileWrapper file, PhpUpgraderBase upgrader)
     {
         //konec, pokud aktuální soubor nepatří mezi validní connection soubory
-        if (ConnectionPaths(upgrader.ConnectionFile).Any(cf => file.Path.EndsWith(cf)))
+        if (ConnectionPaths(upgrader.ConnectionFile).Any(cf => file.Path.EndsWith(cf, StringComparison.Ordinal)))
         {
             //načtení hlavičky connect souboru.
             LoadConnectHeader(file);

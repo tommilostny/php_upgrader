@@ -21,7 +21,12 @@ public static class ScriptLanguagePhp
             if (line.Contains(oldScriptTagStart, StringComparison.OrdinalIgnoreCase))
             {
                 var lineStr = line.ToString();
-                var updated = Regex.Replace(lineStr, oldScriptTagStart, "<?php ", RegexOptions.IgnoreCase);
+                var updated = Regex.Replace(lineStr,
+                                            oldScriptTagStart,
+                                            "<?php ",
+                                            RegexOptions.IgnoreCase,
+                                            TimeSpan.FromSeconds(5));
+
                 line.Replace(lineStr, updated);
                 insidePhpScriptTag = true;
             }

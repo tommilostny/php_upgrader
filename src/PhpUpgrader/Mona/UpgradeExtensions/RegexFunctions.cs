@@ -2,6 +2,9 @@
 
 public static class RegexFunctions
 {
+    private static readonly RegexOptions _options = RegexOptions.Compiled | RegexOptions.ExplicitCapture;
+    private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(5);
+
     /// <summary>
     /// - funkci ereg nebo ereg_replace doplnit do prvního parametru delimetr na začátek a nakonec (if(ereg('.+@.+..+', $retezec))
     /// // puvodni, jiz nefunkcni >>> if(preg_match('#.+@.+..+#', $retezec)) // upravene - delimiter zvolen #)
@@ -21,13 +24,13 @@ public static class RegexFunctions
 
         var content = file.Content.ToString();
 
-        var updated = Regex.Replace(content, @"ereg(_replace|i)? ?\('(\\'|[^'])*'", evaluator, RegexOptions.Compiled);
-        updated = Regex.Replace(updated, @"ereg(_replace|i)? ?\(""(\\""|[^""])*""", evaluator, RegexOptions.Compiled);
+        var updated = Regex.Replace(content, @"ereg(_replace|i)? ?\('(\\'|[^'])*'", evaluator, _options, _timeout);
+        updated = Regex.Replace(updated, @"ereg(_replace|i)? ?\(""(\\""|[^""])*""", evaluator, _options, _timeout);
 
-        updated = Regex.Replace(updated, @"eregi? ?\( ?\$", "preg_match($", RegexOptions.Compiled);
-        updated = Regex.Replace(updated, @"ereg_replace ?\( ?\$", "preg_replace($", RegexOptions.Compiled);
+        updated = Regex.Replace(updated, @"eregi? ?\( ?\$", "preg_match($", _options, _timeout);
+        updated = Regex.Replace(updated, @"ereg_replace ?\( ?\$", "preg_replace($", _options, _timeout);
 
-        if (Regex.IsMatch(updated, @"\n[^//]{0,236}ereg[^(;"",]*\(", RegexOptions.Compiled))
+        if (Regex.IsMatch(updated, @"\n[^//]{0,236}ereg[^(;"",]*\(", _options, _timeout))
         {
             file.Warnings.Add("Nemodifikovaná funkce ereg!");
         }
@@ -51,18 +54,18 @@ public static class RegexFunctions
             if (!javascript && !line.Contains(".split") && line.Length > 7)
             {
                 var lineStr = line.ToString();
-                var updated = Regex.Replace(lineStr, @"\bsplit ?\('(\\'|[^'])*'", evaluator, RegexOptions.Compiled);
-                updated = Regex.Replace(updated, @"\bsplit ?\(""(\\""|[^""])*""", evaluator, RegexOptions.Compiled);
+                var updated = Regex.Replace(lineStr, @"\bsplit ?\('(\\'|[^'])*'", evaluator, _options, _timeout);
+                updated = Regex.Replace(updated, @"\bsplit ?\(""(\\""|[^""])*""", evaluator, _options, _timeout);
 
                 line.Replace(lineStr, updated);
             }
         }
         lines.JoinInto(file.Content);
 
-        if (!file.Path.EndsWith(Path.Join("facebook", "src", "Facebook", "SignedRequest.php"))
-            && !file.Path.EndsWith(Path.Join("funkce", "qrkod", "qrsplit.php"))
-            && !file.Path.EndsWith(Path.Join("funkce", "qrkod", "phpqrcode.php"))
-            && Regex.IsMatch(file.Content.ToString(), @"[^_\.]split ?\(", RegexOptions.Compiled))
+        if (!file.Path.EndsWith(Path.Join("facebook", "src", "Facebook", "SignedRequest.php"), StringComparison.Ordinal)
+            && !file.Path.EndsWith(Path.Join("funkce", "qrkod", "qrsplit.php"), StringComparison.Ordinal)
+            && !file.Path.EndsWith(Path.Join("funkce", "qrkod", "phpqrcode.php"), StringComparison.Ordinal)
+            && Regex.IsMatch(file.Content.ToString(), @"[^_\.]split ?\(", _options, _timeout))
         {
             file.Warnings.Add("Nemodifikovaná funkce split!");
         }
@@ -87,7 +90,9 @@ public static class RegexFunctions
         var evaluator = new MatchEvaluator(PatternDelimiterEscapeEvaluator);
         var pattern = Regex.Replace(match.Value[++bracketIndex..^1],
                                     $@"(^{_delimiter})|([^\\]{_delimiter})",
-                                    evaluator);
+                                    evaluator,
+                                    RegexOptions.None,
+                                    _timeout);
 
         return $"{pregFunction}({quote}{_delimiter}{pattern}{_delimiter}{ignoreFlag}{quote}";
     }

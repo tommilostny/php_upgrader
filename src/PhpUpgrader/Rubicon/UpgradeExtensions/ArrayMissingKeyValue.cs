@@ -17,16 +17,16 @@ public static class ArrayMissingKeyValue
     /// </remarks>
     public static FileWrapper UpgradeArrayMissingKeyValue(this FileWrapper file)
     {
-        if (file.Path.EndsWith(Path.Join("rubicon", "modules", "search", "main2.php")))
+        if (file.Path.EndsWith(Path.Join("rubicon", "modules", "search", "main2.php"), StringComparison.Ordinal))
         {
             var lines = file.Content.Split();
             foreach (var line in lines)
             {
                 var trimmed = line.ToString().Trim();
-                if (!trimmed.StartsWith("//") && trimmed.EndsWith("=>"))
+                if (!trimmed.StartsWith("//", StringComparison.Ordinal) && trimmed.EndsWith("=>", StringComparison.Ordinal))
                 {
                     var i = 0;
-                    for (; i < line.Length && char.IsWhiteSpace(line[i]); i++) ;
+                    while (i < line.Length && char.IsWhiteSpace(line[i])) i++;
                     line.Insert(i, "//");
                 }
             }

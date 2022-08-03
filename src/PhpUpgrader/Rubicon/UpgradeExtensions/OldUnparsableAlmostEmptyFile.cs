@@ -7,7 +7,7 @@ public static class OldUnparsableAlmostEmptyFile
     {
         foreach (var (path, code) in KnownOccurences())
         {
-            if (file.Path.EndsWith(path))
+            if (file.Path.EndsWith(path, StringComparison.Ordinal))
             {
                 var commented = $"/* {code} */";
                 if (!file.Content.Contains(commented))

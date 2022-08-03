@@ -10,7 +10,8 @@ public static class ArrayDuplicateKeys
         var updated = Regex.Replace(content,
                                     @"\$(cz_)?osetreni(_url)?\s?=\s?array\((""([^""]|\\""){0,9}""\s?=>\s?""([^""]|\\""){0,9}"",? ?)+\)",
                                     evaluator,
-                                    RegexOptions.Compiled);
+                                    RegexOptions.Compiled | RegexOptions.ExplicitCapture,
+                                    TimeSpan.FromSeconds(5));
 
         file.Content.Replace(content, updated);
         return file;
@@ -18,11 +19,12 @@ public static class ArrayDuplicateKeys
 
     private static string ArrayKeyValueEvaluator(Match match)
     {
-        var keys = new HashSet<string>();
+        var keys = new HashSet<string>(StringComparer.Ordinal);
         var kvExpressions = new Stack<string>();
         var matches = Regex.Matches(match.Value,
                                     @"""([^""]|\\""){0,9}""\s?=>\s?""([^""]|\\""){0,9}""",
-                                    RegexOptions.Compiled);
+                                    RegexOptions.Compiled | RegexOptions.ExplicitCapture,
+                                    TimeSpan.FromSeconds(5));
 
         foreach (var kv in matches.Reverse())
         {

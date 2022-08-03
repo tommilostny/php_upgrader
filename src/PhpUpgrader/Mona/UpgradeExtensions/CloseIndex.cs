@@ -9,12 +9,11 @@ public static class CloseIndex
         {
             return file;
         }
-        var closeFunction = upgrader is RubiconUpgrader ? "pg_close" : "mysqli_close";
+        var closeArg = upgrader is RubiconUpgrader ? "pg_close" : "mysqli_close";
 
-        if (!file.Content.Contains(closeFunction))
+        if (!file.Content.Contains(closeArg))
         {
-            file.Content.AppendLine();
-            file.Content.Append($"<?php {closeFunction}($beta); ?>");
+            file.Content.Append(new CloseFunctionFormat(), $"\n<?php {closeArg}($beta); ?>");
         }
         return file;
     }
@@ -22,7 +21,18 @@ public static class CloseIndex
     private static bool IsRootIndexFile(string path, MonaUpgrader upgrader)
     {
         const string indexFile = "index.php";
-        return path.EndsWith(Path.Join(upgrader.WebName, indexFile))
-            || upgrader.OtherRootFolders?.Any(rf => path.EndsWith(Path.Join(upgrader.WebName, rf, indexFile))) == true;
+        return path.EndsWith(Path.Join(upgrader.WebName, indexFile), StringComparison.Ordinal)
+            || upgrader.OtherRootFolders?.Any(rf => path.EndsWith(Path.Join(upgrader.WebName, rf, indexFile), StringComparison.Ordinal)) == true;
+    }
+
+    private class CloseFunctionFormat : IFormatProvider, ICustomFormatter
+    {
+        public string Format(string? format, object? arg, IFormatProvider? formatProvider) => arg switch
+        {
+            not null and string stringArg when stringArg.EndsWith("_close", StringComparison.OrdinalIgnoreCase) => stringArg,
+            _ => null
+        };
+
+        public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : null;
     }
 }

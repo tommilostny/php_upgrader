@@ -9,7 +9,7 @@ public static class RenameVariable
 {
     /// <summary> Přejmenuje proměnnou $<paramref name="oldVarName"/> v instanci <see cref="StringBuilder"/>. </summary>
     /// <param name="upgrader"></param>
-    /// <param name="newVarName"> Nové jméno proměnné. null => použít vlastnost <see cref="PhpUpgrader.RenameBetaWith"/>. </param>
+    /// <param name="newVarName"> Nové jméno proměnné. null => použít vlastnost <see cref="PhpUpgraderBase.RenameBetaWith"/>. </param>
     /// <param name="oldVarName"> Jmené původní proměnné, která se bude přejmenovávat. </param>
     /// <param name="content"> Obsah, ve kterém se proměnná přejmenovává. </param>
     public static void RenameVar(this MonaUpgrader upgrader, StringBuilder content, string? newVarName = null, string oldVarName = "beta")
@@ -17,7 +17,7 @@ public static class RenameVariable
         if ((newVarName ??= upgrader.RenameBetaWith) is not null)
         {
             content.Replace($"${oldVarName}", $"${newVarName}");
-            if (!newVarName.Contains("->"))
+            if (!newVarName.Contains("->", StringComparison.Ordinal))
             {
                 content.Replace($"_{oldVarName}", $"_{newVarName}");
             }
@@ -26,7 +26,7 @@ public static class RenameVariable
 
     /// <summary> Přejmenuje proměnnou $<paramref name="oldVarName"/>. </summary>
     /// <param name="upgrader"></param>
-    /// <param name="newVarName"> Nové jméno proměnné. null => použít vlastnost <see cref="PhpUpgrader.RenameBetaWith"/>. </param>
+    /// <param name="newVarName"> Nové jméno proměnné. null => použít vlastnost <see cref="PhpUpgraderBase.RenameBetaWith"/>. </param>
     /// <param name="oldVarName"> Jmené původní proměnné, která se bude přejmenovávat. </param>
     /// <param name="content"> Obsah, ve kterém se proměnná přejmenovává. </param>
     /// <returns> Upravený <paramref name="content"/>. </returns>
@@ -50,7 +50,7 @@ public static class RenameVariable
         var renamedItems = new Stack<(string, string, string, string)>();
         foreach (var (find, replace) in upgrader.FindReplaceHandler.Replacements)
         {
-            if (find.Contains(oldVarName) || replace.Contains(oldVarName))
+            if (find.Contains(oldVarName, StringComparison.Ordinal) || replace.Contains(oldVarName, StringComparison.Ordinal))
             {
                 var newKey = RenameVar(upgrader, find, newVarName, oldVarName);
                 var newValue = RenameVar(upgrader, replace, newVarName, oldVarName);

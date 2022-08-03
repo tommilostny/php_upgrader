@@ -27,7 +27,7 @@ public class FileWrapper
     public const string WarningSymbol = "⚠️";
 
     /// <summary> Seznam varování o možných chybách. Zobrazí se za výpisem stavu o souboru. </summary>
-    public List<string> Warnings { get; } = new();
+    public ICollection<string> Warnings { get; } = new List<string>();
 
     /// <summary> Přejmenování/přesunutí souboru na tuto cestu při ukládání, pokud není null. </summary>
     public string? MoveOnSavePath { get; set; } = null;
@@ -75,7 +75,7 @@ public class FileWrapper
     public void WriteStatus(bool modified)
     {
         var s = SystemPath.DirectorySeparatorChar;
-        var webyIndex = Path.IndexOf($"{s}weby{s}");
+        var webyIndex = Path.IndexOf($"{s}weby{s}", StringComparison.Ordinal);
 
         var displayName = webyIndex != -1 ? Path.AsSpan(webyIndex + 6) : Path;
 

@@ -15,7 +15,7 @@ public sealed class RubiconUpgrader : MonaUpgrader
     }
 
     /// <summary> Procedura aktualizace Rubicon souborů. </summary>
-    /// <remarks> Použita ve volání metody <see cref="PhpUpgrader.UpgradeAllFilesRecursively"/>. </remarks>
+    /// <remarks> Použita ve volání metody <see cref="PhpUpgraderBase.UpgradeAllFilesRecursively"/>. </remarks>
     /// <returns> Upravený soubor. </returns>
     protected override FileWrapper? UpgradeProcedure(string filePath)
     {

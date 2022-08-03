@@ -12,16 +12,20 @@ public static class ObjectClass
         {
             return file;
         }
-        if (file.Path.EndsWith(Path.Join("classes", "Object.php")) && file.Content.Contains("abstract class Object"))
+        if (file.Path.EndsWith(Path.Join("classes", "Object.php"), StringComparison.Ordinal) && file.Content.Contains("abstract class Object"))
         {
             file.Content.Replace("abstract class Object", "abstract class ObjectBase");
             var content = file.Content.ToString();
-
-            var updated = Regex.Replace(content, @"function\s+Object\s*\(", "function ObjectBase(");
+            var updated = Regex.Replace(content,
+                                        @"function\s+Object\s*\(",
+                                        "function ObjectBase(",
+                                        RegexOptions.None,
+                                        TimeSpan.FromSeconds(5));
+            
             file.Content.Replace(content, updated);
-
             file.MoveOnSavePath = file.Path.Replace(Path.Join("classes", "Object.php"),
-                                                    Path.Join("classes", "ObjectBase.php"));
+                                                    Path.Join("classes", "ObjectBase.php"),
+                                                    StringComparison.Ordinal);
         }
         file.Content.Replace("extends Object", "extends ObjectBase")
                     .Replace("@param Object", "@param ObjectBase")

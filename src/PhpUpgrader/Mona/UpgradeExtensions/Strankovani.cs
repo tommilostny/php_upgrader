@@ -12,7 +12,7 @@ public static class Strankovani
     {
         switch (file)
         {
-            case { Path: var p } when !p.Contains(Path.Join("funkce", "strankovani.php")):
+            case { Path: var p } when !p.Contains(Path.Join("funkce", "strankovani.php"), StringComparison.Ordinal):
             case { Content: var c } when !c.Contains(_pdFunc):
                 return file;
         }

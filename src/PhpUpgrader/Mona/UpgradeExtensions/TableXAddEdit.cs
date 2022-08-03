@@ -13,8 +13,8 @@ public static class TableXAddEdit
         const string variable = "$pocet_text_all";
         const string variableWithAtSign = $"@{variable}";
 
-        if (adminFolders.Any(af => file.Path.Contains(Path.Join(af, "table_x_add.php"))
-                                 || file.Path.Contains(Path.Join(af, "table_x_edit.php")))
+        if (adminFolders.Any(af => file.Path.Contains(Path.Join(af, "table_x_add.php"), StringComparison.Ordinal)
+                                 || file.Path.Contains(Path.Join(af, "table_x_edit.php"), StringComparison.Ordinal))
             && !file.Content.Contains(variableWithAtSign))
         {
             file.Content.Replace($"{variable} = mysqli_num_rows", $"{variableWithAtSign} = mysqli_num_rows");

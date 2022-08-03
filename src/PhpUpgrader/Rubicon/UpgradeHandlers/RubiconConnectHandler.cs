@@ -6,7 +6,7 @@ namespace PhpUpgrader.Rubicon.UpgradeHandlers;
 public class RubiconConnectHandler : MonaConnectHandler
 {
     /// <summary> Aktualizace souborů připojení systému Rubicon. </summary>
-    public override void UpgradeConnect(FileWrapper file, PhpUpgrader upgrader)
+    public override void UpgradeConnect(FileWrapper file, PhpUpgraderBase upgrader)
     {
         UpgradeMonaLikeConnect(file, upgrader, "rubicon_import.php", "sportmall_import");
         UpgradeMonaLikeConnect(file, upgrader, "hodnoceni.php", "hodnoceni_conn");
@@ -17,19 +17,19 @@ public class RubiconConnectHandler : MonaConnectHandler
     }
 
     /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php. </summary>
-    public void UpgradeMonaLikeConnect(FileWrapper file, PhpUpgrader upgrader, string fileName, string varName)
+    public void UpgradeMonaLikeConnect(FileWrapper file, PhpUpgraderBase upgrader, string fileName, string varName)
     {
-        if (!file.Path.EndsWith(Path.Join("Connections", fileName)))
+        if (!file.Path.EndsWith(Path.Join("Connections", fileName), StringComparison.Ordinal))
         {
             return;
         }
         //načíst původní dotazy z konce souboru.
         StringBuilder mysqlQueries = new();
-        IEnumerable<Match> matches = Regex.Matches(file.Content.ToString(), @"mysql_query\("".+""\);", RegexOptions.Compiled);
+        IEnumerable<Match> matches = Regex.Matches(file.Content.ToString(), @"mysql_query\("".+""\);", RegexOptions.Compiled, TimeSpan.FromSeconds(5));
         foreach (var match in matches)
         {
             var queryStartIndex = match.ValueSpan.IndexOf('"');
-            mysqlQueries.AppendLine($"mysqli_query(${varName}, {match.ValueSpan[queryStartIndex..]}");
+            mysqlQueries.AppendLine(new MysqliQueryParamsFormat(), $"mysqli_query({varName}, {match.Value[queryStartIndex..]}");
         }
         //aktualizovat stejně jako connect pro RS Mona, jen s proměnnou $sportmall_import.
         var backup = upgrader.ConnectionFile;
@@ -46,9 +46,9 @@ public class RubiconConnectHandler : MonaConnectHandler
     }
 
     /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
-    public static void UpgradeSetup(FileWrapper file, PhpUpgrader upgrader)
+    public static void UpgradeSetup(FileWrapper file, PhpUpgraderBase upgrader)
     {
-        if (!file.Path.EndsWith(Path.Join(upgrader.WebName, "setup.php")))
+        if (!file.Path.EndsWith(Path.Join(upgrader.WebName, "setup.php"), StringComparison.Ordinal))
         {
             return;
         }
@@ -63,7 +63,7 @@ public class RubiconConnectHandler : MonaConnectHandler
         var content = file.Content.ToString();
         var evaluator = new MatchEvaluator(_NewCredentialAndComment);
 
-        var updated = Regex.Replace(content, @"\$setup_connect.*= ?"".*"";", evaluator, RegexOptions.Compiled);
+        var updated = Regex.Replace(content, @"\$setup_connect.*= ?"".*"";", evaluator, RegexOptions.Compiled, TimeSpan.FromSeconds(5));
 
         file.Content.Replace(content, updated)
                     .Replace("////", "//");
@@ -84,7 +84,7 @@ public class RubiconConnectHandler : MonaConnectHandler
 
         string _NewCredentialAndComment(Match match)
         {
-            if (content.AsSpan(0, match.Index).EndsWith("//"))
+            if (content.AsSpan(0, match.Index).EndsWith("//", StringComparison.Ordinal))
             {
                 return match.Value;
             }
@@ -92,26 +92,26 @@ public class RubiconConnectHandler : MonaConnectHandler
             var varName = match.ValueSpan[..eqIndex].Trim();
             var credential = varName switch
             {
-                var vn when vn.EndsWith("username") && (usernameLoaded = true) => upgrader.Username,
-                var vn when vn.EndsWith("password") && (passwordLoaded = true) => upgrader.Password,
-                var vn when vn.EndsWith("db") && (databaseLoaded = true) => upgrader.Database,
+                var vn when vn.EndsWith("username", StringComparison.Ordinal) && (usernameLoaded = true) => upgrader.Username,
+                var vn when vn.EndsWith("password", StringComparison.Ordinal) && (passwordLoaded = true) => upgrader.Password,
+                var vn when vn.EndsWith("db", StringComparison.Ordinal) && (databaseLoaded = true) => upgrader.Database,
                 _ => null
             };
             return credential is null ? match.Value : $"//{match.Value}\n{varName} = '{credential}';";
         }
     }
 
-    /// <summary> Aktualizace hostname z mcrai1 na <see cref="PhpUpgrader.Hostname"/>. </summary>
-    public static void UpgradeHostname(FileWrapper file, PhpUpgrader upgrader)
+    /// <summary> Aktualizace hostname z mcrai1 na <see cref="PhpUpgraderBase.Hostname"/>. </summary>
+    public static void UpgradeHostname(FileWrapper file, PhpUpgraderBase upgrader)
     {
-        var connBeta = file.Path.EndsWith(Path.Join("Connections", "beta.php"));
-        var moneyXmlInclude = file.Path.EndsWith("MONEY_XML_INCLUDE.php");
-        var pListina = file.Path.EndsWith(Path.Join("pdf", "p_listina.php"))
-                     || file.Path.EndsWith(Path.Join("pdf", "p_listina_u.php"));
+        var connBeta = file.Path.EndsWith(Path.Join("Connections", "beta.php"), StringComparison.Ordinal);
+        var moneyXmlInclude = file.Path.EndsWith("MONEY_XML_INCLUDE.php", StringComparison.Ordinal);
+        var pListina = file.Path.EndsWith(Path.Join("pdf", "p_listina.php"), StringComparison.Ordinal)
+                     || file.Path.EndsWith(Path.Join("pdf", "p_listina_u.php"), StringComparison.Ordinal);
 
         foreach (var hn in HostnamesToReplace())
         {
-            if (upgrader.Hostname == hn)
+            if (string.Equals(upgrader.Hostname, hn, StringComparison.Ordinal))
             {
                 continue;
             }
@@ -134,7 +134,7 @@ public class RubiconConnectHandler : MonaConnectHandler
         }
     }
 
-    /// <summary> Hodnoty <b>$hostname_beta</b>, které nahradit <see cref="PhpUpgrader.Hostname"/>. </summary>
+    /// <summary> Hodnoty <b>$hostname_beta</b>, které nahradit <see cref="PhpUpgraderBase.Hostname"/>. </summary>
     private static IEnumerable<string> HostnamesToReplace()
     {
         yield return "93.185.102.228";
@@ -154,7 +154,11 @@ public class RubiconConnectHandler : MonaConnectHandler
         {
             var content = file.Content.ToString();
             var evaluator = new MatchEvaluator(_DCMatchEvaluator);
-            var updated = Regex.Replace(content, @$"( |\t)*Database::connect\('{oldHost}'.+\);", evaluator);
+            var updated = Regex.Replace(content,
+                                        @$"( |\t)*Database::connect\('{oldHost}'.+\);",
+                                        evaluator,
+                                        RegexOptions.None,
+                                        TimeSpan.FromSeconds(5));
 
             file.Content.Replace(content, updated);
         }
@@ -174,9 +178,9 @@ public class RubiconConnectHandler : MonaConnectHandler
     /// Nalezeno v importy/_importy_old/DB_connect.php.
     /// (Raději také aktualizovat. Stejný soubor se někde může ještě používat.)
     /// </summary>
-    public static void UpgradeOldDbConnect(FileWrapper file, PhpUpgrader upgrader)
+    public static void UpgradeOldDbConnect(FileWrapper file, PhpUpgraderBase upgrader)
     {
-        if (file.Path.EndsWith("DB_connect.php"))
+        if (file.Path.EndsWith("DB_connect.php", StringComparison.Ordinal))
         {
             file.Content.Replace("$DBLink = mysqli_connect ($host,$user,$pass) or mysql_errno() + mysqli_error($beta);",
                                  "$DBLink = mysqli_connect($host, $user, $pass);")
@@ -192,12 +196,26 @@ public class RubiconConnectHandler : MonaConnectHandler
 
     public static void UpgradeRubiconModulesDB(FileWrapper file)
     {
-        if (file.Path.EndsWith(Path.Join("core", "modules", "core", "module.php")))
+        if (file.Path.EndsWith(Path.Join("core", "modules", "core", "module.php"), StringComparison.Ordinal))
         {
             file.Content.Replace("mysql_pconnect($rubicon_db->mysql_hostname, $rubicon_db->mysql_username, $rubicon_db->mysql_password)",
                                  "mysqli_connect($rubicon_db->mysql_hostname, $rubicon_db->mysql_username, $rubicon_db->mysql_password)")
                         .Replace("mysql_select_db($rubicon_db->mysql_database, $its_connect)",
                                  "mysqli_select_db($its_connect, $rubicon_db->mysql_database)");
         }
+    }
+
+    private class MysqliQueryParamsFormat : IFormatProvider, ICustomFormatter
+    {
+        private char[]? _startChars;
+
+        public string Format(string? format, object? arg, IFormatProvider? formatProvider) => arg switch
+        {
+            null => null,
+            string var and { Length: > 0 } => (_startChars ??= new char[] { '$', '\"', '\'' }).Any(c => var[0] == c) ? var : '$' + var,
+            var other => other.ToString()
+        };
+
+        public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : null;
     }
 }

@@ -9,7 +9,10 @@ public static class GlobalBeta
     public static FileWrapper UpgradeGlobalBeta(this FileWrapper file)
     {
         if (file.Content.Contains("$this")
-            || !Regex.IsMatch(file.Content.ToString(), "(?s)^(?=.*?function )(?=.*?mysqli_)", RegexOptions.Compiled))
+            || !Regex.IsMatch(file.Content.ToString(),
+                              "(?s)^(?=.*?function )(?=.*?mysqli_)",
+                              RegexOptions.Compiled,
+                              TimeSpan.FromSeconds(5)))
         {
             return file;
         }
@@ -23,8 +26,8 @@ public static class GlobalBeta
             if (line.Contains("<script")) javascript = true;
             if (line.Contains("</script")) javascript = false;
 
-            if (Regex.IsMatch(line.ToString(), @"function\s", RegexOptions.Compiled)
-                && !javascript
+            if (!javascript
+                && Regex.IsMatch(line.ToString(), @"function\s", RegexOptions.Compiled, TimeSpan.FromSeconds(5))
                 && MysqliAndBetaInFunction(i, lines))
             {
                 if ((line = lines[++i]).Contains('{'))
@@ -56,7 +59,7 @@ public static class GlobalBeta
             if (line.Contains("/*")) inComment = true;
             if (line.Contains("*/")) inComment = false;
 
-            if (!inComment && !line.ToString().TrimStart().StartsWith("//"))
+            if (!inComment && !line.ToString().TrimStart().StartsWith("//", StringComparison.Ordinal))
             {
                 if (line.Contains("mysqli_")) foundMysqli = true;
                 if (line.Contains("$beta")) foundBeta = true;

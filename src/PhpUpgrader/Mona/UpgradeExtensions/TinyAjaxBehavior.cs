@@ -8,10 +8,10 @@ public static class TinyAjaxBehavior
     /// <returns> <b>True</b> <em>(není třeba aktualizovat)</em>, pokud se jednalo o TinyAjaxBehavior, jinak <b>False</b>. </returns>
     public static bool UpgradeTinyAjaxBehavior(this MonaUpgrader upgrader, string filePath)
     {
-        var isTinyAjaxBehavior = upgrader.AdminFolders.Any(af => filePath.Contains(Path.Join(af, "include", "TinyAjaxBehavior.php")));
+        var isTinyAjaxBehavior = upgrader.AdminFolders.Any(af => filePath.Contains(Path.Join(af, "include", "TinyAjaxBehavior.php"), StringComparison.Ordinal));
         if (isTinyAjaxBehavior)
         {
-            var file = new FileWrapper(filePath, null);
+            var file = new FileWrapper(filePath, content: null);
             var tabPath = Path.Join(upgrader.BaseFolder, "important", "TinyAjaxBehavior.txt");
 
             if (File.GetLastWriteTime(tabPath) == File.GetLastWriteTime(file.Path))

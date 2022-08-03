@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace PhpUpgrader;
 
 class Program
 {
@@ -20,6 +22,7 @@ class Program
     /// <param name="ignoreConnect">Ignore DB connection arguments (--host, --db, --user, --password).</param>
     /// <param name="useBackup"> Neptat se a vždy načítat soubory ze zálohy. </param>
     /// <param name="ignoreBackup"> Neptat se a vždy ignorovat zálohu. </param>
+    [SuppressMessage("Design", "MA0051:Method is too long", Justification = "Program main entry point method.")]
     static void Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
         string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
         string host = "localhost", string? beta = null, string connectionFile = "connection.php",
@@ -38,11 +41,11 @@ class Program
             return;
         }
 
-        PhpUpgrader upgrader = !rubicon ? new MonaUpgrader(baseFolder, webName)
+        PhpUpgraderBase upgrader = !rubicon ? new MonaUpgrader(baseFolder, webName)
         {
             AdminFolders = adminFolders,
             RenameBetaWith = beta,
-            ConnectionFile = connectionFile
+            ConnectionFile = connectionFile,
         }
         : new RubiconUpgrader(baseFolder, webName);
 

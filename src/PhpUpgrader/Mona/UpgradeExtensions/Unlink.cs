@@ -9,7 +9,7 @@ public static class Unlink
     /// </summary>
     public static FileWrapper UpgradeUnlink(this FileWrapper file)
     {
-        if (InvalidPathParts().All(ipp => !file.Path.Contains(ipp)))
+        if (InvalidPathParts().All(ipp => !file.Path.Contains(ipp, StringComparison.Ordinal)))
         {
             file.Content.Replace("unlink", "@unlink")
                         .Replace("@@unlink", "@unlink");

@@ -7,12 +7,14 @@ public static class ResultFuncion
     /// </summary>
     public static FileWrapper UpgradeResultFunction(this FileWrapper file, MonaUpgrader upgrader)
     {
-        if (file.Path.EndsWith(Path.Join("funkce", "secure", "login.php")))
+        if (file.Path.EndsWith(Path.Join("funkce", "secure", "login.php"), StringComparison.Ordinal))
         {
             var content = file.Content.ToString();
             var updated = Regex.Replace(content,
                                         @"\$loginStrGroup\s*=\s*mysql_result\(\$LoginRS,\s*0,\s*'valid'\);\s*\n\s*\$loginUserid\s*=\s*mysql_result\(\$LoginRS,\s*0,\s*'user_id'\);",
-                                        "mysqli_field_seek($LoginRS, 0);\n    $field = mysqli_fetch_field($LoginRS);\n    $loginStrGroup = $field->valid;\n    $loginUserid  = $field->user_id;\n    mysqli_free_result($LoginRS);");
+                                        "mysqli_field_seek($LoginRS, 0);\n    $field = mysqli_fetch_field($LoginRS);\n    $loginStrGroup = $field->valid;\n    $loginUserid  = $field->user_id;\n    mysqli_free_result($LoginRS);",
+                                        RegexOptions.None,
+                                        TimeSpan.FromSeconds(5));
             file.Content.Replace(content, updated);
         }
 

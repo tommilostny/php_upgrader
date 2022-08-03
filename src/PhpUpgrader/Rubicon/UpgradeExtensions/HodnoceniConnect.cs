@@ -8,9 +8,9 @@ public static class HodnoceniConnect
     /// </summary>
     public static FileWrapper UpgradeHodnoceniDBCalls(this FileWrapper file)
     {
-        if (AllUpgradableFiles().Any(f => file.Path.EndsWith(f)))
+        if (AllUpgradableFiles().Any(f => file.Path.EndsWith(f, StringComparison.Ordinal)))
         {
-            var (connVar, dbVar) = HodnoceniConnFiles().Any(f => file.Path.EndsWith(f))
+            var (connVar, dbVar) = HodnoceniConnFiles().Any(f => file.Path.EndsWith(f, StringComparison.Ordinal))
                                  ? ("hodnoceni_conn", "database_hodnoceni_conn") 
                                  : ("beta_hod", "dtb_hod");
 
@@ -21,7 +21,7 @@ public static class HodnoceniConnect
 
             var evaluator = new MatchEvaluator(_MysqliQueryEvaluator);
             var content = file.Content.ToString();
-            var updated = Regex.Replace(content, @"mysqli_query\(\$beta,.+;", evaluator);
+            var updated = Regex.Replace(content, @"mysqli_query\(\$beta,.+;", evaluator, RegexOptions.None, TimeSpan.FromSeconds(5));
             file.Content.Replace(content, updated);
 
             string _MysqliQueryEvaluator(Match match)

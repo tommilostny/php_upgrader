@@ -10,7 +10,9 @@ public static class FloatExplodeConversions
             var content = file.Content.ToString();
             var updated = Regex.Replace(content,
                                         @"\s\$stranka_end = \$stranka_pocet \/ 10;\s+\$stranka_end = explode\(""\."", \$stranka_end\);\s+\$stranka_end = \$stranka_end\[0\];\s+\$stranka_end = \$stranka_end \* 10 \+ 10;",
-                                        "\n$stranka_end = (int)($stranka_pocet / 10);\n$stranka_end = $stranka_end * 10 + 10;");
+                                        "\n$stranka_end = (int)($stranka_pocet / 10);\n$stranka_end = $stranka_end * 10 + 10;",
+                                        RegexOptions.None,
+                                        TimeSpan.FromSeconds(5));
             file.Content.Replace(content, updated);
         }
         return file;

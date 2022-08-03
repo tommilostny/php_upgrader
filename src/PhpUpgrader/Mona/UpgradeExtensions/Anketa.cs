@@ -8,7 +8,7 @@ public static class Anketa
     /// </summary>
     public static FileWrapper UpgradeAnketa(this FileWrapper file)
     {
-        if (file.Path.Contains(Path.Join("anketa", "anketa.php")))
+        if (file.Path.Contains(Path.Join("anketa", "anketa.php"), StringComparison.Ordinal))
         {
             file.Content.Replace(@"include_once(""../setup.php"")", @"include_once(""setup.php"")");
         }

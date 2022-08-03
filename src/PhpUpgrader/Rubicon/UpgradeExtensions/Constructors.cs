@@ -17,7 +17,7 @@ public static class Constructors
         for (var i = 0; i < file.Content.Length; i++)
         {
             //nalézt další třídu v souboru a přesunout se na její index.
-            var classMatch = Regex.Match(contentAhead, @"class\s.+\s*\{", RegexOptions.Multiline | RegexOptions.Compiled);
+            var classMatch = Regex.Match(contentAhead, @"class\s.+\s*\{", RegexOptions.Multiline | RegexOptions.Compiled, TimeSpan.FromSeconds(5));
             if (!classMatch.Success) //skončit, pokud kód neobsahuje další třídu.
             {
                 break;
@@ -39,29 +39,7 @@ public static class Constructors
             //která zkontroluje, zda se jedná o konstruktor a případně jej aktualizuje.
             GoThroughClass(contentStr, i, onFunctionFindAction: (j) =>
             {
-                var lowerHalf = contentStr.AsSpan(0, j + 2);
-                var higherHalf = contentStr[(j + 2)..];
-                //jedná se o funkci {className}, aka starý konstruktor?
-                var match = Regex.Match(higherHalf, $@"^{className}\s?\(.*\)\s");
-                if (match.Success)
-                {
-                    //ano, jedná se o starý konstruktor. Pokud neexistuje jeho aktualizovaná varianta __construct, doplň.
-                    var @params = LoadParameters(match.Value);
-                    if (!constructors[ParametersKey(@params)])
-                    {
-                        var oldConstructor = $"{className}({@params})";
-                        higherHalf = $"__construct{higherHalf.AsSpan(className.Length)}";
-
-                        var compatibilityConstructorBuilder = new StringBuilder(oldConstructor)
-                            .AppendLine()
-                            .AppendLine("    {")
-                            .AppendLine($"        self::__construct({ParametersWithoutDefaultValues(@params)});")
-                            .AppendLine("    }")
-                            .AppendLine();
-
-                        contentStr = $"{lowerHalf}{compatibilityConstructorBuilder}    public function {higherHalf}";
-                    }
-                }
+                AddCompatibilityConstructor(ref contentStr, className, j, constructors);
             });
             //uložit aktualizovaný kód třídy do "souboru" před přesunem na další.
             file.Content.Replace(initialContent, contentStr);
@@ -86,17 +64,20 @@ public static class Constructors
 
     private static IReadOnlyDictionary<string, bool> LoadContructorsParameters(string content, string className)
     {
-        var result = new Dictionary<string, bool>();
+        var result = new Dictionary<string, bool>(StringComparer.Ordinal);
 
         GoThroughClass(content, 0, onFunctionFindAction: (i) =>
         {
-            var match = Regex.Match(content[(i + 2)..], $@"^(__construct|{className})\s?\(.*\)\s");
+            var match = Regex.Match(content[(i + 2)..],
+                                    $@"^(__construct|{className})\s?\(.*\)\s",
+                                    RegexOptions.None,
+                                    TimeSpan.FromSeconds(5));
             if (match.Success)
             {
                 var @params = LoadParameters(match.Value);
                 var key = ParametersKey(@params);
 
-                if (match.Value.StartsWith("__construct"))
+                if (match.Value.StartsWith("__construct", StringComparison.Ordinal))
                 {
                     result[key] = true;
                     return;
@@ -109,14 +90,14 @@ public static class Constructors
 
     private static string LoadParameters(string functionMatch)
     {
-        var paramsStartIndex = functionMatch.IndexOf('(') + 1;
+        var paramsStartIndex = functionMatch.IndexOf('(', StringComparison.Ordinal) + 1;
         var paramsEndIndex = functionMatch.LastIndexOf(')');
         return functionMatch[paramsStartIndex..paramsEndIndex];
     }
 
     private static string ParametersKey(string parameters)
     {
-        return parameters.Replace(" ", string.Empty);
+        return parameters.Replace(" ", string.Empty, StringComparison.Ordinal);
     }
 
     private static void GoThroughClass(string content, int startIndex, Action<int> onFunctionFindAction)
@@ -200,18 +181,55 @@ public static class Constructors
         return false;
     }
 
-    private static string ParametersWithoutDefaultValues(ReadOnlySpan<char> parameters)
+    private static void AddCompatibilityConstructor(ref string contentStr, string className, int index, IReadOnlyDictionary<string, bool> constructors)
     {
-        var sb = new StringBuilder().Append(parameters);
-        var @params = sb.Split(',');
-        for (var i = 0; i < @params.Count; i++)
+        var lowerHalf = contentStr.AsSpan(0, index + 2);
+        var higherHalf = contentStr[(index + 2)..];
+        //jedná se o funkci {className}, aka starý konstruktor?
+        var match = Regex.Match(higherHalf, $@"^{className}\s?\(.*\)\s", RegexOptions.None, TimeSpan.FromSeconds(5));
+        if (match.Success)
         {
-            var param = @params[i];
-            var name = param.Split('=')[0].Replace(" ", string.Empty).Replace("&", string.Empty);
-            param.Clear();
-            param.Append(name);
+            //ano, jedná se o starý konstruktor. Pokud neexistuje jeho aktualizovaná varianta __construct, doplň.
+            var @params = LoadParameters(match.Value);
+            if (!constructors[ParametersKey(@params)])
+            {
+                var oldConstructor = $"{className}({@params})";
+                higherHalf = $"__construct{higherHalf.AsSpan(className.Length)}";
+
+                var compatibilityConstructorBuilder = new StringBuilder(oldConstructor)
+                    .AppendLine()
+                    .AppendLine("    {")
+                    .Append("        ")
+                    .AppendLine(new ParametersWithoutDefaultValuesFormat(), $"self::__construct({@params});")
+                    .AppendLine("    }")
+                    .AppendLine();
+
+                contentStr = $"{lowerHalf}{compatibilityConstructorBuilder}    public function {higherHalf}";
+            }
         }
-        @params.JoinInto(sb, ", ");
-        return sb.ToString();
+    }
+
+    private class ParametersWithoutDefaultValuesFormat : IFormatProvider, ICustomFormatter
+    {
+        public string Format(string? format, object? arg, IFormatProvider? formatProvider)
+        {
+            if (arg is not null and string paramsString)
+            {
+                var sb = new StringBuilder(paramsString);
+                var @params = sb.Split(',');
+                for (var i = 0; i < @params.Count; i++)
+                {
+                    var param = @params[i];
+                    var name = param.Split('=')[0].Replace(" ", string.Empty).Replace("&", string.Empty);
+                    param.Clear();
+                    param.Append(name);
+                }
+                @params.JoinInto(sb, ", ");
+                return sb.ToString();
+            }
+            return null;
+        }
+
+        public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : null;
     }
 }

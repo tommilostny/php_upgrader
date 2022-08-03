@@ -10,11 +10,11 @@ public static class GetMagicQuotesGpc
         Lazy<string> contentStr = new(() => file.Content.ToString());
         switch (file.Path)
         {
-            case var p when p.EndsWith(Path.Join("piwika", "libs", "HTML", "QuickForm2.php")):
+            case var p when p.EndsWith(Path.Join("piwika", "libs", "HTML", "QuickForm2.php"), StringComparison.Ordinal):
                 file.Content.Replace("$method, get_magic_quotes_gpc()", "$method /*, get_magic_quotes_gpc()*/");
                 break;
 
-            case var p when p.EndsWith(Path.Join("piwika", "core", "Common.php")):
+            case var p when p.EndsWith(Path.Join("piwika", "core", "Common.php"), StringComparison.Ordinal):
                 file.Content.Replace("&& get_magic_quotes_gpc()", "&& /*get_magic_quotes_gpc()*/ false");
                 break;
         }
@@ -27,14 +27,17 @@ public static class GetMagicQuotesGpc
         var updated = Regex.Replace(contentStr.Value,
                                     @"\(?!?get_magic_quotes_gpc\(\)\)?\s{0,5}\?\s{0,5}(/\*.*\*/)?\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s{0,5}:\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))",
                                     evaluator,
-                                    RegexOptions.Compiled);
+                                    RegexOptions.Compiled | RegexOptions.ExplicitCapture,
+                                    TimeSpan.FromSeconds(5));
         //Pokud výraz s get_magic_quotes_gpc nebyl aktualizován, jedná se pravděpodobně o variantu s if else.
         if (!Is_GMQG_Commented(updated))
         {
             evaluator = new MatchEvaluator(GetMagicQuotesGpcIfElseEvaluator);
             updated = Regex.Replace(contentStr.Value,
                                     @"if\s?\(\s?get_magic_quotes_gpc\(\)\s?\)(\n|.){0,236}else(\n|.){0,236};",
-                                    evaluator);
+                                    evaluator,
+                                    RegexOptions.ExplicitCapture,
+                                    TimeSpan.FromSeconds(5));
 
             if (!Is_GMQG_Commented(updated))
             {
@@ -48,7 +51,10 @@ public static class GetMagicQuotesGpc
 
     private static bool Is_GMQG_Commented(string str)
     {
-        return Regex.IsMatch(str, @"/\*.{0,6}get_magic_quotes_gpc\(\)(\n|.){0,236}\*/", RegexOptions.Compiled);
+        return Regex.IsMatch(str,
+                             @"/\*.{0,6}get_magic_quotes_gpc\(\)(\n|.){0,236}\*/",
+                             RegexOptions.Compiled | RegexOptions.ExplicitCapture,
+                             TimeSpan.FromSeconds(5));
     }
 
     private static string GetMagicQuotesGpcTernaryEvaluator(Match match)
@@ -67,7 +73,7 @@ public static class GetMagicQuotesGpc
 
         //běžný podmíněný výraz, vybrat false část za ':'.
         var beforeColon = match.ValueSpan.Contains("*/", StringComparison.Ordinal)
-            ? match.Value[..colonIndex].Replace("*/", "*//*") //volat string replace jen pokud je opravdu potřeba
+            ? match.Value[..colonIndex].Replace("*/", "*//*", StringComparison.Ordinal) //volat string replace jen pokud je opravdu potřeba
             : match.ValueSpan[..colonIndex];
 
         return $"/*{beforeColon}*/{afterColon}";
@@ -76,7 +82,7 @@ public static class GetMagicQuotesGpc
     private static string GetMagicQuotesGpcIfElseEvaluator(Match match)
     {
         //zakomentovat if else s get_magic_quotes_gpc a ponechat pouze else část.
-        var elseIndex = match.ValueSpan.IndexOf("else") + 4;
+        var elseIndex = match.ValueSpan.IndexOf("else", StringComparison.Ordinal) + 4;
         var beforeElse = match.ValueSpan[..elseIndex];
         var afterElse = match.ValueSpan[elseIndex..];
 

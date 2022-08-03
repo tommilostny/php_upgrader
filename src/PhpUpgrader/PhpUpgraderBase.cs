@@ -1,9 +1,9 @@
 ﻿namespace PhpUpgrader;
 
-public abstract class PhpUpgrader
+public abstract class PhpUpgraderBase
 {
     /// <summary> Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce. </summary>
-    public List<UnmodifiedMysql_File> FilesContainingMysql { get; } = new();
+    public ICollection<UnmodifiedMysql_File> FilesContainingMysql { get; } = new List<UnmodifiedMysql_File>();
 
     /// <summary> Handler zajišťující část aktualizace najít >> nahradit. </summary>
     public FindReplaceHandler FindReplaceHandler { get; }
@@ -53,7 +53,7 @@ public abstract class PhpUpgrader
     public uint TotalFilesCount { get; private set; } = 0;
 
     /// <summary> Inicializace povinných atributů. </summary>
-    protected PhpUpgrader(string baseFolder, string webName, FindReplaceHandler findReplaceHandler, ConnectHandler connectHandler)
+    protected PhpUpgraderBase(string baseFolder, string webName, FindReplaceHandler findReplaceHandler, ConnectHandler connectHandler)
     {
         BaseFolder = baseFolder;
         WebName = webName;

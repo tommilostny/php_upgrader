@@ -13,7 +13,7 @@ public static class SitemapSave
         const string adding = "if($query_text_all !== FALSE)";
         const string addingLine = $"          {adding}\n          {{\n";
 
-        if (!adminFolders.Any(af => file.Path.EndsWith(Path.Join(af, "sitemap_save.php")))
+        if (!adminFolders.Any(af => file.Path.EndsWith(Path.Join(af, "sitemap_save.php"), StringComparison.Ordinal))
             || !file.Content.Contains(lookingFor) || file.Content.Contains(adding))
         {
             return file;
@@ -31,12 +31,22 @@ public static class SitemapSave
             }
             if (line.Contains('}') && sfBracket)
             {
-                line.Append($"\n{line}");
-                line.Insert(0, "    ");
+                line.Append(new LineFormat(), $"\n{line}");
                 sfBracket = false;
             }
         }
         lines.JoinInto(file.Content);
         return file;
+    }
+
+    private class LineFormat : IFormatProvider, ICustomFormatter
+    {
+        public string Format(string? format, object? arg, IFormatProvider? formatProvider) => arg switch
+        {
+            not null and StringBuilder sb => sb.ToString()[4..],
+            _ => null
+        };
+
+        public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : null;
     }
 }

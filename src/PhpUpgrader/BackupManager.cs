@@ -14,7 +14,8 @@ public static class BackupManager
     {
         var s = Path.DirectorySeparatorChar;
         var backupFile = new FileInfo(filePath.Replace($"{baseFolder}{s}weby{s}{webName}{s}",
-                                                       $"{baseFolder}{s}weby{s}{_backupFolder}{s}{webName}{s}"));
+                                                       $"{baseFolder}{s}weby{s}{_backupFolder}{s}{webName}{s}",
+                                                       StringComparison.Ordinal));
         backupFile.Directory.Create();
         if (!backupFile.Exists)
         {
@@ -60,7 +61,9 @@ public static class BackupManager
         }
         foreach (var backupFile in backupDir.GetFiles())
         {
-            var destinationFile = backupFile.FullName.Replace(backupPathPart, destinationPathPart);
+            var destinationFile = backupFile.FullName.Replace(backupPathPart,
+                                                              destinationPathPart,
+                                                              StringComparison.Ordinal);
             Console.Write("Kopíruji zálohu souboru ");
             Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.Write(destinationFile);
