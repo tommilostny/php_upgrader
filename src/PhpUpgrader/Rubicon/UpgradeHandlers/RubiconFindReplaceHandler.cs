@@ -4,16 +4,16 @@ namespace PhpUpgrader.Rubicon.UpgradeHandlers;
 
 public class RubiconFindReplaceHandler : MonaFindReplaceHandler
 {
-    /// <remarks> Do <see cref="MonaFindReplaceHandler.Replacements"/> přidá případy specifické pro Rubicon. </remarks>
+    /// <summary> Do <see cref="MonaFindReplaceHandler.Replacements"/> přidá případy specifické pro Rubicon. </summary>
     public RubiconFindReplaceHandler()
     {
-        foreach (var (find, replace) in AdditionalFindReplace())
+        foreach (var fr in AdditionalReplacements())
         {
-            Replacements.Add(find, replace);
+            Replacements.Add(fr);
         }
     }
 
-    private static IEnumerable<(string find, string replace)> AdditionalFindReplace()
+    private static IEnumerable<(string find, string replace)> AdditionalReplacements()
     {
         yield return ("mysql_select_db($database_beta);",
                       "//mysql_select_db($database_beta);"

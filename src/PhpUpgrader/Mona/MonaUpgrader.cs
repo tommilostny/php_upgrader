@@ -10,10 +10,10 @@ public class MonaUpgrader
     public List<UnmodifiedMysql_File> FilesContainingMysql { get; } = new();
 
     /// <summary> Handler zajišťující část aktualizace najít >> nahradit. </summary>
-    public MonaFindReplaceHandler FindReplaceHandler { get; protected set; } = new();
+    public MonaFindReplaceHandler FindReplaceHandler { get; }
 
     /// <summary> Handler zajišťující část aktualizace připojení k databázi. </summary>
-    public MonaConnectHandler ConnectHandler { get; protected set; } = new();
+    public MonaConnectHandler ConnectHandler { get; }
 
     /// <summary> Absolutní cesta základní složky, kde jsou složky 'weby' a 'important'. </summary>
     public string BaseFolder { get; }
@@ -68,11 +68,20 @@ public class MonaUpgrader
     public uint TotalFilesCount { get; private set; } = 0;
 
     /// <summary> Inicializace povinných atributů. </summary>
-    public MonaUpgrader(string baseFolder, string webName)
+    protected MonaUpgrader(string baseFolder, string webName, MonaFindReplaceHandler findReplaceHandler, MonaConnectHandler connectHandler)
     {
         BaseFolder = baseFolder;
         WebName = webName;
-        Regex.CacheSize = 30;
+        FindReplaceHandler = findReplaceHandler;
+        ConnectHandler = connectHandler;
+        Regex.CacheSize = 32;
+    }
+
+    public MonaUpgrader(string baseFolder, string webName)
+        : this(baseFolder, webName,
+               new MonaFindReplaceHandler(),
+               new MonaConnectHandler())
+    {
     }
 
     /// <summary> Rekurzivní upgrade .php souborů ve všech podadresářích. </summary>

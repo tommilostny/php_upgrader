@@ -7,10 +7,11 @@ namespace PhpUpgrader.Rubicon;
 public class RubiconUpgrader : MonaUpgrader
 {
     /// <summary> Konstruktor Rubicon > Mona upgraderu. </summary>
-    public RubiconUpgrader(string baseFolder, string webName) : base(baseFolder, webName)
+    public RubiconUpgrader(string baseFolder, string webName)
+        : base(baseFolder, webName,
+               new RubiconFindReplaceHandler(),
+               new RubiconConnectHandler())
     {
-        FindReplaceHandler = new RubiconFindReplaceHandler();
-        ConnectHandler = new RubiconConnectHandler();
     }
 
     /// <summary> Procedura aktualizace Rubicon souborů. </summary>

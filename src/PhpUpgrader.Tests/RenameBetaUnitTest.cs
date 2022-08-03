@@ -74,19 +74,43 @@ public class RenameBetaUnitTest : UnitTestWithOutputBase
     }
 
     [Fact]
-    public void SettingShouldRenameBetaInFindReplaceDictionary()
+    public void Mona_RenameBetaInFindReplace()
+    {
+        TestRenameInFindReplaceFor(new MonaUpgraderFixture());
+    }
+
+    [Fact]
+    public void Rubicon_RenameBetaInFindReplace()
+    {
+        TestRenameInFindReplaceFor(new RubiconUpgrader(null, null));
+    }
+
+    private static void TestRenameInFindReplaceFor(MonaUpgrader upgrader)
     {
         //Arrange
-        var upgrader = new MonaUpgraderFixture();
+        var originalCount = upgrader.FindReplaceHandler.Replacements.Count;
+        var unchangedItemsWithIndexes = new Dictionary<int, (string find, string replace)>();
+        for (int i = 0; i < upgrader.FindReplaceHandler.Replacements.Count; i++)
+        {
+            var item = upgrader.FindReplaceHandler.Replacements.ElementAt(i);
+            if (!item.find.Contains("beta") && !item.replace.Contains("beta"))
+            {
+                unchangedItemsWithIndexes[i] = item;
+            }
+        }
 
         //Act, Assert
-        var originalCount = upgrader.FindReplaceHandler.Replacements.Count;
-
-        Assert.Contains(upgrader.FindReplaceHandler.Replacements, fr => fr.Key.Contains("beta") || fr.Value.Contains("beta"));
+        Assert.Contains(upgrader.FindReplaceHandler.Replacements, fr => fr.find.Contains("beta") || fr.replace.Contains("beta"));
         upgrader.RenameBetaWith = "gama";
-        Assert.DoesNotContain(upgrader.FindReplaceHandler.Replacements, fr => fr.Key.Contains("beta") || fr.Value.Contains("beta"));
-        Assert.Contains(upgrader.FindReplaceHandler.Replacements, fr => fr.Key.Contains("gama") || fr.Value.Contains("gama"));
+        Assert.DoesNotContain(upgrader.FindReplaceHandler.Replacements, fr => fr.find.Contains("beta") || fr.replace.Contains("beta"));
+        Assert.Contains(upgrader.FindReplaceHandler.Replacements, fr => fr.find.Contains("gama") || fr.replace.Contains("gama"));
 
         Assert.Equal(originalCount, upgrader.FindReplaceHandler.Replacements.Count);
+
+        foreach (var item in unchangedItemsWithIndexes) //nezměněné pořadí (nové položky nebyly přidány na konec).
+        {
+            var updated = upgrader.FindReplaceHandler.Replacements.ElementAt(item.Key);
+            Assert.Equal(item.Value, updated);
+        }
     }
 }
