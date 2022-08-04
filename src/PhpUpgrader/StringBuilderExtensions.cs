@@ -38,14 +38,7 @@ internal static class StringBuilderExtensions
     /// <returns>Příznak existence znaku.</returns>
     internal static bool Contains(this StringBuilder source, char value)
     {
-        for (var i = 0; i < source.Length; i++)
-        {
-            if (source[i] == value)
-            {
-                return true;
-            }
-        }
-        return false;
+        return source.IndexOf(value) != -1;
     }
 
     /// <summary>
@@ -130,7 +123,7 @@ internal static class StringBuilderExtensions
     /// </summary>
     /// <param name="source">Řetězec, kde se hledá.</param>
     /// <param name="value">Hledaná hodnota.</param>
-    /// <returns>Index začátku <paramref name="value"/> v <paramref name="source"/> nebo -1, pokud není nalezena.</returns>
+    /// <returns>Index začátku <paramref name="value"/> v <paramref name="source"/> nebo <b>-1</b>, pokud není nalezena.</returns>
     internal static int IndexOf(this StringBuilder source, ReadOnlySpan<char> value)
     {
         for (var (i, j) = (0, 0); i < source.Length; i++)
@@ -143,6 +136,24 @@ internal static class StringBuilderExtensions
             if (++j == value.Length)
             {
                 return i - j;
+            }
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Nalezne index dané hodnoty v instanci <seealso cref="StringBuilder"/>.
+    /// </summary>
+    /// <param name="source">Řetězec, kde se hledá.</param>
+    /// <param name="value">Hledaná hodnota.</param>
+    /// <returns>Index <paramref name="value"/> v <paramref name="source"/> nebo <b>-1</b>, pokud není nalezena.</returns>
+    internal static int IndexOf(this StringBuilder source, char value)
+    {
+        for (var i = 0; i < source.Length; i++)
+        {
+            if (source[i] == value)
+            {
+                return i;
             }
         }
         return -1;

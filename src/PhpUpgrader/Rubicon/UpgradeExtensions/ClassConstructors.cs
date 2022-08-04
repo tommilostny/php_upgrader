@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeExtensions;
 
-public static class Constructors
+public static class ClassConstructors
 {
     /// <summary> Old style constructor function ClassName() => function __construct() </summary>
     /// <remarks> Deprecated: Methods with the same name as their class will not be constructors in a future version of PHP; </remarks>
@@ -37,7 +37,7 @@ public static class Constructors
             }
             //prochází třídu, dokud nenarazí na funkci, zde se zavolá následující akce,
             //která zkontroluje, zda se jedná o konstruktor a případně jej aktualizuje.
-            GoThroughClass(contentStr, i, onFunctionFindAction: (j) =>
+            GoThroughClass(contentStr, i, onFunctionFindAction: (int j) =>
             {
                 AddCompatibilityConstructor(ref contentStr, className, j, constructors);
             });
@@ -66,7 +66,7 @@ public static class Constructors
     {
         var result = new Dictionary<string, bool>(StringComparer.Ordinal);
 
-        GoThroughClass(content, 0, onFunctionFindAction: (i) =>
+        GoThroughClass(content, 0, onFunctionFindAction: (int i) =>
         {
             var match = Regex.Match(content[(i + 2)..],
                                     $@"^(__construct|{className})\s?\(.*\)\s",
@@ -100,9 +100,9 @@ public static class Constructors
         return parameters.Replace(" ", string.Empty, StringComparison.Ordinal);
     }
 
-    private static void GoThroughClass(string content, int startIndex, Action<int> onFunctionFindAction)
+    internal static void GoThroughClass(string content, int startIndex, Action<int> onFunctionFindAction)
     {
-        short scope = 1;
+        ushort scope = 1;
         byte functionCursor = 0;
         bool functionFlag = false, inBlockComment = false, inLineComment = false;
 

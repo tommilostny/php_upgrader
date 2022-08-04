@@ -110,5 +110,7 @@ public class RubiconFindReplaceHandler : MonaFindReplaceHandler
         ("mysql_stat($link)",
          "mysqli_stat($link)"
         ),
+        ("= &func_get_args();",
+         "= func_get_args();"),
     };
 }
