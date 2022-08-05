@@ -59,7 +59,7 @@ public abstract class PhpUpgraderBase
         WebName = webName;
         FindReplaceHandler = findReplaceHandler;
         ConnectHandler = connectHandler;
-        Regex.CacheSize = 32;
+        Regex.CacheSize = 42;
     }
 
     /// <summary> Procedura aktualizace zadaného souboru. </summary>
