@@ -37,8 +37,13 @@ public static class BackupManager
         var dir = new DirectoryInfo(Path.Join(baseFolder, backupDirPath));
         if (dir.Exists && (useBackup || AskIfLoadBackup(dir.FullName)))
         {
-            LoadBackupFiles(dir, backupDirPath, destDirPath);
-            Console.WriteLine();
+            Console.Write("\nKopíruji soubory ze zálohy ");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write(dir.FullName);
+            Console.ResetColor();
+            Console.WriteLine("...");
+
+            LoadBackupFiles(dir, backupDirPath, destDirPath);            
         }
     }
 
@@ -64,12 +69,7 @@ public static class BackupManager
             var destinationFile = backupFile.FullName.Replace(backupPathPart,
                                                               destinationPathPart,
                                                               StringComparison.Ordinal);
-            Console.Write("Kopíruji zálohu souboru ");
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.Write(destinationFile);
-            Console.ResetColor();
-            Console.WriteLine(" ...");
-            
+
             backupFile.CopyTo(destinationFile, overwrite: true);
         }
     }
