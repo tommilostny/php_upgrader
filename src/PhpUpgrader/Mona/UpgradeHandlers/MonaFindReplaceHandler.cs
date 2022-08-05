@@ -50,5 +50,6 @@ public class MonaFindReplaceHandler : FindReplaceHandler
         ( "$table_all .= \"`\".mysql_tablename($result, $i).\"`\";", "$table_all .= \"`\".mysqli_fetch_row($result)[0].\"`\";" ),
         ( "<?php/", "<?php /" ),
         ( "<?PHP/", "<?PHP /" ),
+        ( "read_exif_data", "exif_read_data" ),
     };
 }

@@ -38,6 +38,7 @@ public sealed class RubiconUpgrader : MonaUpgrader
                             .UpgradeLibDbMysql()
                             .UpgradeArrayMissingKeyValue()
                             .UpgradePiwikaLibsPearRaiseError()
+                            .UpgradeClassMcBalikovna()
         };
     }
 }
