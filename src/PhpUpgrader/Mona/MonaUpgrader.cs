@@ -6,19 +6,19 @@ namespace PhpUpgrader.Mona;
 /// <summary> PHP upgrader pro RS Mona z verze 5 na verzi 7. </summary>
 public class MonaUpgrader : PhpUpgraderBase
 {
-    public MonaUpgrader(string baseFolder, string webName)
-        : this(baseFolder, webName,
-               new MonaFindReplaceHandler(),
-               new MonaConnectHandler())
+    /// <summary> Složky obsahující administraci RS Mona (null => 1 složka 'admin') </summary>
+    public string[] AdminFolders
     {
+        get => _adminFolders ??= new string[] { "admin" };
+        set => _adminFolders = value ?? new string[] { "admin" };
     }
+    private string[] _adminFolders;
 
-    protected MonaUpgrader(string baseFolder, string webName, IFindReplaceHandler findReplaceHandler, IConnectHandler connectHandler)
-        : base(baseFolder, webName, findReplaceHandler, connectHandler)
-    {
-    }
+    /// <summary> Root složky obsahující index.php, do kterého vložit mysqli_close na konec. </summary>
+    public string[]? OtherRootFolders { get; set; }
 
-    public override string? RenameBetaWith
+    /// <summary> Přejmenovat proměnnou $beta tímto názvem (null => nepřejmenovávat). </summary>
+    public string? RenameBetaWith
     {
         get => _replaceBetaWith;
         set
@@ -30,6 +30,18 @@ public class MonaUpgrader : PhpUpgraderBase
         }
     }
     private string? _replaceBetaWith;
+
+    public MonaUpgrader(string baseFolder, string webName)
+        : this(baseFolder, webName,
+               new MonaFindReplaceHandler(),
+               new MonaConnectHandler())
+    {
+    }
+
+    protected MonaUpgrader(string baseFolder, string webName, IFindReplaceHandler findReplaceHandler, IConnectHandler connectHandler)
+        : base(baseFolder, webName, findReplaceHandler, connectHandler)
+    {
+    }
 
     protected override FileWrapper? UpgradeProcedure(string filePath)
     {

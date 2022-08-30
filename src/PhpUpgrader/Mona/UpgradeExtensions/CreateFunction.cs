@@ -7,19 +7,18 @@ public static class CreateFunction
         if (file.Content.Contains("create_function"))
         {
             var content = file.Content.ToString();
-            (var updated, _) = UpgradeCreateFunction(content);
+            (var updated, _) = UpgradeCreateFunction(content, file.Warnings);
 
             file.Content.Replace(content, updated);
-            file.Warnings.Add("create_function!!!");
         }
         return file;
     }
 
-    private static (string updated, string[] args) UpgradeCreateFunction(string content)
+    private static (string updated, string[] args) UpgradeCreateFunction(string content, ICollection<string> warningsCollection, uint lineOffset = 0)
     {
         var args = Array.Empty<string>(); //parametry výsledné anonymní funkce.
 
-        var evaluator = new MatchEvaluator(m => CreateFunctionToAnonymousFunction(m, content, out args));
+        var evaluator = new MatchEvaluator(m => CreateFunctionToAnonymousFunction(m, content, warningsCollection, lineOffset, out args));
         var updated = Regex.Replace(content,
                                     @"@?create_function\s?\(\s*'(?<args>.*)'\s?,\s*(?<quote>'|"")(?<code>(.|\n)*?(;|\}|\s))\k<quote>\s*\)",
                                     evaluator,
@@ -29,8 +28,11 @@ public static class CreateFunction
         return (updated, args);
     }
 
-    private static string CreateFunctionToAnonymousFunction(Match match, string content, out string[] args)
+    private static string CreateFunctionToAnonymousFunction(Match match, string content, ICollection<string> warningsCollection, uint lineOffset, out string[] args)
     {
+        //zaznamenat ve výpisu, že šlo o nahrazení create_function za anonymní funkci (raději ať uživatel výsledek překontroluje).
+        var lineNumber = AddWarning(match.Index, content, warningsCollection, lineOffset);
+
         //bílé znaky od začátku aktuálního řádku, kde se volá create_function.
         var whitespace = LoadLineStartWhiteSpace(match, content);
 
@@ -48,17 +50,31 @@ public static class CreateFunction
         code = UpgradeConcats(code);
 
         //doplnění use (...), pokud jsou nějaké proměnné z rodičovského scope.
-        var useStatement = CreateUseStatement(ref code, parentVars);
+        var useStatement = CreateUseStatement(ref code, parentVars, warningsCollection, lineNumber);
 
         return $"function ({string.Join(", ", args)}){useStatement} {{\n{whitespace}    {code}\n{whitespace}}}";
     }
 
-    private static string CreateUseStatement(ref string code, HashSet<string> parentVars)
+    private static uint AddWarning(int matchIndex, string content, ICollection<string> warningsCollection, uint lineOffset)
+    {
+        uint lineNumber = 1 + lineOffset;
+        for (int i = matchIndex; i >= 0; i--)
+        {
+            if (content[i] == '\n')
+            {
+                lineNumber++;
+            }
+        }
+        warningsCollection.Add($"Nahrazeno volání funkce create_function anonymní funkcí. (řádek {lineNumber})");
+        return lineNumber;
+    }
+
+    private static string CreateUseStatement(ref string code, HashSet<string> parentVars, ICollection<string> warningsCollection, uint lineOffset)
     {
         //zkontrolovat, jestli kód anonymní funkce také neobsahuje create_function (+ smazat z use její argumenty).
         if (code.Contains("create_function", StringComparison.Ordinal))
         {
-            (code, var childArgs) = UpgradeCreateFunction(code.Replace("\\'", "'", StringComparison.Ordinal));
+            (code, var childArgs) = UpgradeCreateFunction(code.Replace("\\'", "'", StringComparison.Ordinal), warningsCollection, lineOffset);
             foreach (var arg in childArgs)
             {
                 parentVars.Remove(arg);

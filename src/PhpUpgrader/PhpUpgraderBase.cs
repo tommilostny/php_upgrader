@@ -17,17 +17,6 @@ public abstract class PhpUpgraderBase
     /// <summary> Název webu ve složce 'weby'. </summary>
     public string WebName { get; }
 
-    /// <summary> Složky obsahující administraci RS Mona (null => 1 složka 'admin') </summary>
-    public string[] AdminFolders
-    {
-        get => _adminFolders ??= new string[] { "admin" };
-        set => _adminFolders = value ?? new string[] { "admin" };
-    }
-    private string[] _adminFolders;
-
-    /// <summary> Root složky obsahující index.php, do kterého vložit mysqli_close na konec. </summary>
-    public string[]? OtherRootFolders { get; set; }
-
     /// <summary> URL k databázovému serveru. </summary>
     public string? Hostname { get; set; }
 
@@ -42,9 +31,6 @@ public abstract class PhpUpgraderBase
 
     /// <summary> Název souboru ve složce 'connect'. </summary>
     public string ConnectionFile { get; set; }
-
-    /// <summary> Přejmenovat proměnnou $beta tímto názvem (null => nepřejmenovávat). </summary>
-    public abstract string? RenameBetaWith { get; set; }
 
     /// <summary> Počet modifikovaných souborů během procesu aktualizace. </summary>
     public uint ModifiedFilesCount { get; internal set; } = 0;
