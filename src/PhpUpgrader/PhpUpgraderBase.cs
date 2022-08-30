@@ -6,10 +6,10 @@ public abstract class PhpUpgraderBase
     public ICollection<UnmodifiedMysql_File> FilesContainingMysql { get; } = new List<UnmodifiedMysql_File>();
 
     /// <summary> Handler zajišťující část aktualizace najít >> nahradit. </summary>
-    public FindReplaceHandler FindReplaceHandler { get; }
+    public IFindReplaceHandler FindReplaceHandler { get; }
 
     /// <summary> Handler zajišťující část aktualizace připojení k databázi. </summary>
-    public ConnectHandler ConnectHandler { get; }
+    public IConnectHandler ConnectHandler { get; }
 
     /// <summary> Absolutní cesta základní složky, kde jsou složky 'weby' a 'important'. </summary>
     public string BaseFolder { get; }
@@ -53,7 +53,7 @@ public abstract class PhpUpgraderBase
     public uint TotalFilesCount { get; private set; } = 0;
 
     /// <summary> Inicializace povinných atributů. </summary>
-    protected PhpUpgraderBase(string baseFolder, string webName, FindReplaceHandler findReplaceHandler, ConnectHandler connectHandler)
+    protected PhpUpgraderBase(string baseFolder, string webName, IFindReplaceHandler findReplaceHandler, IConnectHandler connectHandler)
     {
         BaseFolder = baseFolder;
         WebName = webName;

@@ -2,14 +2,14 @@
 
 namespace PhpUpgrader.Rubicon.UpgradeHandlers;
 
-public class RubiconFindReplaceHandler : MonaFindReplaceHandler
+public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindReplaceHandler
 {
-    /// <summary> <see cref="FindReplaceHandler.Replacements"/> se specifickými případy pro Rubicon. </summary>
+    /// <summary> <see cref="IFindReplaceHandler.Replacements"/> se specifickými případy pro Rubicon. </summary>
     /// <remarks>
     /// Před prvním zavoláním je stejné jako pro <seealso cref="MonaFindReplaceHandler"/>.
     /// Do této kolekce jsou přidány předpřipravené případy z <see cref="_additionalReplacements"/>, které je poté smazáno a nastaveno na null.
     /// </remarks>
-    public override HashSet<(string find, string replace)> Replacements
+    public override ISet<(string find, string replace)> Replacements
     {
         get
         {

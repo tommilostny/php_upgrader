@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeHandlers;
 
-public class MonaConnectHandler : ConnectHandler
+public class MonaConnectHandler : IConnectHandler
 {
     private const string _hostnameVarPart = "$hostname_";
     private const string _databaseVarPart = "$database_";
@@ -8,7 +8,7 @@ public class MonaConnectHandler : ConnectHandler
     private const string _passwordVarPart = "$password_";
 
     /// <summary> predelat soubor connect/connection.php >>> dle vzoru v adresari rs mona </summary>
-    public override void UpgradeConnect(FileWrapper file, PhpUpgraderBase upgrader)
+    public virtual void UpgradeConnect(FileWrapper file, PhpUpgraderBase upgrader)
     {
         //konec, pokud aktuální soubor nepatří mezi validní connection soubory
         if (ConnectionPaths(upgrader.ConnectionFile).Any(cf => file.Path.EndsWith(cf, StringComparison.Ordinal)))

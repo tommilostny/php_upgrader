@@ -13,7 +13,7 @@ public class MonaUpgrader : PhpUpgraderBase
     {
     }
 
-    protected MonaUpgrader(string baseFolder, string webName, FindReplaceHandler findReplaceHandler, ConnectHandler connectHandler)
+    protected MonaUpgrader(string baseFolder, string webName, IFindReplaceHandler findReplaceHandler, IConnectHandler connectHandler)
         : base(baseFolder, webName, findReplaceHandler, connectHandler)
     {
     }

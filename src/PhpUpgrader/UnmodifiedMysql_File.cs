@@ -3,7 +3,7 @@
 /// <summary>
 /// Záznam o funkcích "mysql_" nalezených v souboru <see cref="FileName"/>.
 /// </summary>
-public record UnmodifiedMysql_File
+public sealed record UnmodifiedMysql_File
 {
     public string FileName { get; }
 

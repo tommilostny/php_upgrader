@@ -1,8 +1,6 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿namespace PhpUpgrader;
 
-namespace PhpUpgrader;
-
-class Program
+public static class Program
 {
     /// <summary>
     /// RS Mona a Rubicon PHP upgrader z verze 5 na verzi 7 (vytvořeno pro McRAI).
@@ -22,26 +20,37 @@ class Program
     /// <param name="ignoreConnect">Ignore DB connection arguments (--host, --db, --user, --password).</param>
     /// <param name="useBackup"> Neptat se a vždy načítat soubory ze zálohy. </param>
     /// <param name="ignoreBackup"> Neptat se a vždy ignorovat zálohu. </param>
-    [SuppressMessage("Design", "MA0051:Method is too long", Justification = "Program main entry point method.")]
-    static void Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
+    public static void Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
         string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
         string host = "localhost", string? beta = null, string connectionFile = "connection.php",
         bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false)
     {
-        var workDir = Path.Join(baseFolder, "weby", webName);
+        var upgrader = LoadPhpUpgrader(baseFolder, webName, rubicon, adminFolders, rootFolders, beta,
+                                       connectionFile, ignoreConnect, db, user, password, host,
+                                       out var workDir);
+        if (upgrader is not null)
+        {
+            RunUpgrade(upgrader, webName, baseFolder, useBackup, ignoreBackup, workDir);
+            PrintUpgradeResults(upgrader);
+        }
+    }
+
+    private static PhpUpgraderBase? LoadPhpUpgrader(string baseFolder, string webName, bool rubicon, string[] adminFolders, string[] rootFolders, string beta, string connectionFile, bool ignoreConnect, string db, string user, string password, string host, out string workDir)
+    {
+        workDir = Path.Join(baseFolder, "weby", webName);
 
         if (webName == string.Empty)
         {
             Console.Error.WriteLine($"Složka {workDir} není validní, protože parametr '--web-name' není zadán.");
-            return;
+            return null;
         }
         if (!Directory.Exists(workDir))
         {
             Console.Error.WriteLine($"Složka {workDir} neexistuje.");
-            return;
+            return null;
         }
 
-        PhpUpgraderBase upgrader = !rubicon ? new MonaUpgrader(baseFolder, webName)
+        var upgrader = !rubicon ? new MonaUpgrader(baseFolder, webName)
         {
             AdminFolders = adminFolders,
             RenameBetaWith = beta,
@@ -49,12 +58,19 @@ class Program
         }
         : new RubiconUpgrader(baseFolder, webName);
 
-        upgrader.Database = ignoreConnect ? null : db;
-        upgrader.Username = ignoreConnect ? null : user;
-        upgrader.Password = ignoreConnect ? null : password;
-        upgrader.Hostname = ignoreConnect ? null : host;
+        if (!ignoreConnect)
+        {
+            upgrader.Database = db;
+            upgrader.Username = user;
+            upgrader.Password = password;
+            upgrader.Hostname = host;
+        }
         upgrader.OtherRootFolders = rootFolders;
+        return upgrader;
+    }
 
+    private static void RunUpgrade(PhpUpgraderBase upgrader, string webName, string baseFolder, bool useBackup, bool ignoreBackup, string workDir)
+    {
         Console.Write($"Spuštěn PHP upgrade pro '{webName}' použitím ");
         Console.Write(upgrader switch
         {
@@ -79,9 +95,12 @@ class Program
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine($"\nAutomatický upgrade PHP webu {webName} je dokončen!");
         Console.ResetColor();
+    }
 
+    private static void PrintUpgradeResults(PhpUpgraderBase upgrader)
+    {
         Console.WriteLine($"Celkem upravených souborů: {upgrader.ModifiedFilesCount}/{upgrader.TotalFilesCount}");
-        
+
         Console.WriteLine($"Soubory obsahující mysql_: {upgrader.FilesContainingMysql.Count}\n");
         foreach (var (fileName, matches) in upgrader.FilesContainingMysql)
         {

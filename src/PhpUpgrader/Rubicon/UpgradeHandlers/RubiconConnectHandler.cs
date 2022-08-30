@@ -3,7 +3,7 @@ using PhpUpgrader.Mona.UpgradeHandlers;
 
 namespace PhpUpgrader.Rubicon.UpgradeHandlers;
 
-public class RubiconConnectHandler : MonaConnectHandler
+public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
 {
     /// <summary> Aktualizace souborů připojení systému Rubicon. </summary>
     public override void UpgradeConnect(FileWrapper file, PhpUpgraderBase upgrader)

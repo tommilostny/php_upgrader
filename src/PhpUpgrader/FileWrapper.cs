@@ -3,7 +3,7 @@
 namespace PhpUpgrader;
 
 /// <summary> Třída udržující informace o souboru (obsah, cesta, příznak modifikace). </summary>
-public class FileWrapper
+public sealed class FileWrapper
 {
     /// <summary> Cesta k souboru. </summary>
     public string Path { get; }
