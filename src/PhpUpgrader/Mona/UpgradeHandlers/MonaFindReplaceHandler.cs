@@ -2,18 +2,6 @@
 
 public class MonaFindReplaceHandler : IFindReplaceHandler
 {
-    /// <summary>
-    /// predelat soubory nahrazenim viz. >>> část Hledat >>> Nahradit
-    /// </summary>
-    public void UpgradeFindReplace(FileWrapper file)
-    {
-        foreach (var (find, replace) in Replacements)
-        {
-            file.Content.Replace(find, replace);
-        }
-    }
-
-    /// <summary> Co a čím to nahradit. </summary>
     public virtual ISet<(string find, string replace)> Replacements { get; } = new HashSet<(string find, string replace)>()
     {
         ( "=& new", "= new" ),

@@ -2,18 +2,20 @@
 
 Vytvořeno pro *McRAI* Tomášem Milostným jako nástroj aktualizace webových prezentací z PHP verze 5 na verzi 7.
 
+Podrobný popis činnosti programu, viz **[src/PhpUpgrader/README.md](src/PhpUpgrader/README.md)**.
+
 ### Nastavení a spuštění:
 
 1. Ke spuštění je potřeba nainstalovat [.NET 6.0 SDK](https://dotnet.microsoft.com/download). 
-2. Skript se spouští přes příkazovou řádku (viz **příklady spuštění**) a pracuje s následujícími argumenty:
-  - **``--web-name``**, ``--admin-folders``, ``--base-folder``, ``--db``, ``--user``, ``--password``, ``--host``, ``--beta`` a ``--connection-file`` (pro podrobé informace spusťte s argumentem **``--help``**).
+2. Skript se spouští přes příkazovou řádku (viz **příklady spuštění**) a pracuje s následujícími argumenty **(viz spuštění s argumentem ``--help``)**:
+  - **``--web-name``**, ``--admin-folders``, ``--root-folders``, ``--base-folder``, ``--db``, ``--user``, ``--password``, ``--host``, ``--beta``, ``--connection-file``, ``--ignore-connect``, ``--use-backup`` a ``--ignore-backup``.
   - ``--rubicon`` přepíná upgrader do režimu pro Rubicon (pracuje pak s argumenty **``--web-name``**, ``--db``, ``--user``, ``--password``, ``--host``).
 
 Název webu odpovídá složce v adresáři *"C:\McRAI\weby\"*, kde **C:\McRAI\\** je výchozím nastavením parametru *--base-folder* a **weby** je podadresářem *C:\McRAI\\*.
 
 Archiv rovněž obsahuje složku "important", kterou je třeba umístit jako *"C:\McRAI\important"*.
 
-Navrženo pro běh na OS *Windows* a **doporučeno** spusit v terminálu podporující *Unicode* (např. *Windows Terminal*).
+Navrženo pro multiplatformní běh (*Windows* i *Unix*, testováno pouze na OS *Windows*). **Doporučeno** spusit v terminálu podporující *Unicode* (např. *Windows Terminal*).
 
 ---
 
@@ -25,8 +27,10 @@ Navrženo pro běh na OS *Windows* a **doporučeno** spusit v terminálu podporu
   - ``dotnet run -- --web-name kalimera-greece --admin-folders slozka1 slozka2 slozka3``
 - Výchozí 1 nepřejmenovaná složka *admin* + nové údaje k databázi na serveru mcrai2:
   - ``dotnet run -- --web-name smluvniservis --db smluvniservis_n --user smluvniservis_u --password 'heslo'``
-- Uprade webu se systémem Rubicon:
+- Upgrade webu se systémem Rubicon:
   - ``dotnet run -- --rubicon --web-name olejemaziva --db olejemaziva_n --user olejemaziva_u --password 'heslo'``
+- Načtení zálohovaných souborů bez nutnosti tázání uživatele programem (naopak lze použít ``--ignore-backup`` pro ignorování zálohy a použití aktuálních souborů webu):
+  - ``dotnet run -c Release -- --rubicon --use-backup --web-name hokejova-vystroj``
 
 Informace k ``dotnet run`` viz [https://docs.microsoft.com/cs-cz/dotnet/core/tools/dotnet-run](https://docs.microsoft.com/cs-cz/dotnet/core/tools/dotnet-run) (práce s ním a jak zadávat argumenty aplikace atd.).
 

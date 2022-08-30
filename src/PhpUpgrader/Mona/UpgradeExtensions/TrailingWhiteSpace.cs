@@ -5,7 +5,7 @@
 /// This may cause problems when running the code in the web browser.
 /// Remove the closing ?> mark or remove the whitespace.
 /// </summary>
-public static class TrailingWhitespaces
+public static class TrailingWhiteSpace
 {
     /// <summary> Odstraní bílé znaky z konce souboru. </summary>
     /// <exception cref="IndexOutOfRangeException"> Prázdný soubor. </exception>

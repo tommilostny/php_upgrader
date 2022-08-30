@@ -21,9 +21,9 @@ public static class Program
     /// <param name="useBackup"> Neptat se a vždy načítat soubory ze zálohy. </param>
     /// <param name="ignoreBackup"> Neptat se a vždy ignorovat zálohu. </param>
     public static void Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
-        string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
-        string host = "localhost", string? beta = null, string connectionFile = "connection.php",
-        bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false)
+                            string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
+                            string host = "localhost", string? beta = null, string connectionFile = "connection.php",
+                            bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false)
     {
         var upgrader = LoadPhpUpgrader(baseFolder, webName, rubicon, adminFolders, rootFolders, beta,
                                        connectionFile, ignoreConnect, db, user, password, host,

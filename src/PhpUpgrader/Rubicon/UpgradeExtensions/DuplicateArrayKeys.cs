@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeExtensions;
 
-public static class ArrayDuplicateKeys
+public static class DuplicateArrayKeys
 {
     /// <summary> PHPStan: Array has 2 duplicate keys </summary>
     public static FileWrapper UpgradeDuplicateArrayKeys(this FileWrapper file)
