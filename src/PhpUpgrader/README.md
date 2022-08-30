@@ -3,6 +3,7 @@ Abstraktní třída, která obsahuje společné prvky pro RS Mona i Rubicon, jak
 
 Veřejná metoda této třídy ``UpgradeAllFilesRecursively`` prochází zadanou složku se soubory aktualizovaného webu **rekurzivně** a volá abstraktní metodu ``UpgradeProcedure``, která provádí aktualizační rutinu pro jeden soubor. Implementace této metody je na obsažena ve specializované třídě.
 
+---
 ## [FileWrapper](FileWrapper.cs)
 Třída, která udržuje informace o zpracovávaném souboru (obsah, cesta, příznak modifikace). Umožňuje výpis stavu souboru do konzole během aktualizace (společně s kolekcí varování pro uživatele programu) a uložit aktualizovaný obsah souboru, pouze pokud byl upraven.
 
@@ -23,6 +24,7 @@ Rozhraní obsahující metodu ``UpgradeConnect``. Implementace PhpUpgraderBase m
 
 Oba systémy mají rozdílný způsob připojení k databázi. Implementace přes rozhraní umožní je jednoduše rozlišit a provést správné kroky pro daný systém.
 
+---
 ## [IFindReplaceHandler](IFindReplaceHandler.cs)
 Rozhraní pro funkcionalitu **Hledat** >> **Nahradit**. Obsahuje kolekci ``Replacements``, kde je definováno co čím nahradit, a metodu ``UpgradeFindReplace``, která prochází soubor a provádí definovaná nahrazení. 
 
@@ -60,6 +62,7 @@ Provádí svou činnost voláním metod následujících tříd:
 1. [WhileListEach](Mona/UpgradeExtensions/WhileListEach.cs): Funkce [``each``](https://www.php.net/manual/en/function.each) je zastaralá (v PHP 8 je navíc odstraněna). Kód ``reset(...);...while(list(...)=each(...))`` je nahrazen za ``foreach(...)``.
 1. [CreateFunction](Mona/UpgradeExtensions/CreateFunction.cs): Funkce [``create_function``](https://www.php.net/manual/en/function.create-function.php) je zastaralá (v PHP 8 také odstraněna). Je možné nahradit za [anonymní funkce](https://www.php.net/manual/en/functions.anonymous.php), kdy je kód ``create_function('args', 'code')`` nahrazen za **``function (args) { code }``**. Jelikož je kód uložen ve stringu, může vzniknout chyba, proto je při nahrazení *create_function* během výpisu zobrazeno varování do konzole.
 
+---
 # [Rubicon](Rubicon/RubiconUpgrader.cs)
 Třída **``RubiconUpgrader``** rozšiřuje funkcionalitu ``MonaUpgrader`` přetížením metody ``UpgradeProcedure``. Kdy po dokončení volání bázové metody (*UpgradeProcedure* pro RS Mona, která díky tomu, že je volána pro Rubicon, má v některých metodách jiné chování již dříve) volá další rozšiřující metody statických tříd specifické pouze pro systém Rubicon:
 
