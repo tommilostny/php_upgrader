@@ -23,7 +23,7 @@ public static class CreateFunction
                                     @"@?create_function\s?\(\s*'(?<args>.*)'\s?,\s*(?<quote>'|"")(?<code>(.|\n)*?(;|\}|\s))\k<quote>\s*\)",
                                     evaluator,
                                     RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                                    TimeSpan.FromSeconds(5));
+                                    TimeSpan.FromSeconds(4));
 
         return (updated, args);
     }

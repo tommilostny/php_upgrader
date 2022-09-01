@@ -17,7 +17,7 @@ public static class ClassConstructors
         for (var i = 0; i < file.Content.Length; i++)
         {
             //nalézt další třídu v souboru a přesunout se na její index.
-            var classMatch = Regex.Match(contentAhead, @"class\s.+\s*\{", RegexOptions.Multiline | RegexOptions.Compiled, TimeSpan.FromSeconds(5));
+            var classMatch = Regex.Match(contentAhead, @"class\s.+\s*\{", RegexOptions.Multiline | RegexOptions.Compiled, TimeSpan.FromSeconds(4));
             if (!classMatch.Success) //skončit, pokud kód neobsahuje další třídu.
             {
                 break;
@@ -71,7 +71,7 @@ public static class ClassConstructors
             var match = Regex.Match(content[(i + 2)..],
                                     $@"^(__construct|{className})\s?\(.*\)\s",
                                     RegexOptions.None,
-                                    TimeSpan.FromSeconds(5));
+                                    TimeSpan.FromSeconds(4));
             if (match.Success)
             {
                 var @params = LoadParameters(match.Value);
@@ -186,7 +186,7 @@ public static class ClassConstructors
         var lowerHalf = contentStr.AsSpan(0, index + 2);
         var higherHalf = contentStr[(index + 2)..];
         //jedná se o funkci {className}, aka starý konstruktor?
-        var match = Regex.Match(higherHalf, $@"^{className}\s?\(.*\)\s", RegexOptions.None, TimeSpan.FromSeconds(5));
+        var match = Regex.Match(higherHalf, $@"^{className}\s?\(.*\)\s", RegexOptions.None, TimeSpan.FromSeconds(4));
         if (match.Success)
         {
             //ano, jedná se o starý konstruktor. Pokud neexistuje jeho aktualizovaná varianta __construct, doplň.

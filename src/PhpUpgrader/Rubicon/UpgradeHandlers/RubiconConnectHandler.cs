@@ -25,7 +25,7 @@ public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
         }
         //načíst původní dotazy z konce souboru.
         StringBuilder mysqlQueries = new();
-        IEnumerable<Match> matches = Regex.Matches(file.Content.ToString(), @"mysql_query\("".+""\);", RegexOptions.Compiled, TimeSpan.FromSeconds(5));
+        IEnumerable<Match> matches = Regex.Matches(file.Content.ToString(), @"mysql_query\("".+""\);", RegexOptions.Compiled, TimeSpan.FromSeconds(4));
         foreach (var match in matches)
         {
             var queryStartIndex = match.ValueSpan.IndexOf('"');
@@ -63,7 +63,7 @@ public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
         var content = file.Content.ToString();
         var evaluator = new MatchEvaluator(_NewCredentialAndComment);
 
-        var updated = Regex.Replace(content, @"\$setup_connect.*= ?"".*"";", evaluator, RegexOptions.Compiled, TimeSpan.FromSeconds(5));
+        var updated = Regex.Replace(content, @"\$setup_connect.*= ?"".*"";", evaluator, RegexOptions.Compiled, TimeSpan.FromSeconds(4));
 
         file.Content.Replace(content, updated)
                     .Replace("////", "//");
@@ -158,7 +158,7 @@ public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
                                         @$"( |\t)*Database::connect\('{oldHost}'.+\);",
                                         evaluator,
                                         RegexOptions.None,
-                                        TimeSpan.FromSeconds(5));
+                                        TimeSpan.FromSeconds(4));
 
             file.Content.Replace(content, updated);
         }

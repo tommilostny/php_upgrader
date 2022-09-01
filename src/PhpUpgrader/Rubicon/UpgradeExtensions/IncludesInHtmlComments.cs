@@ -8,7 +8,7 @@ public static class IncludesInHtmlComments
         if (Regex.IsMatch(file.Path,
                            @"(\\|/)templates(\\|/).+(\\|/)product_detail\.php",
                            RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                           TimeSpan.FromSeconds(5)))
+                           TimeSpan.FromSeconds(4)))
         {
             var lines = file.Content.Split();
             var insideHtmlComment = false;

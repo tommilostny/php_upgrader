@@ -11,7 +11,7 @@ public static class DuplicateArrayKeys
                                     @"\$(cz_)?osetreni(_url)?\s?=\s?array\((""([^""]|\\""){0,9}""\s?=>\s?""([^""]|\\""){0,9}"",? ?)+\)",
                                     evaluator,
                                     RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                                    TimeSpan.FromSeconds(5));
+                                    TimeSpan.FromSeconds(4));
 
         file.Content.Replace(content, updated);
         return file;
@@ -24,7 +24,7 @@ public static class DuplicateArrayKeys
         var matches = Regex.Matches(match.Value,
                                     @"""([^""]|\\""){0,9}""\s?=>\s?""([^""]|\\""){0,9}""",
                                     RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                                    TimeSpan.FromSeconds(5));
+                                    TimeSpan.FromSeconds(4));
 
         foreach (var kv in matches.Reverse())
         {

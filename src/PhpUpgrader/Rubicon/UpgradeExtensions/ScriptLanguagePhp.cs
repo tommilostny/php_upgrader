@@ -25,7 +25,7 @@ public static class ScriptLanguagePhp
                                             oldScriptTagStart,
                                             "<?php ",
                                             RegexOptions.IgnoreCase,
-                                            TimeSpan.FromSeconds(5));
+                                            TimeSpan.FromSeconds(4));
 
                 line.Replace(lineStr, updated);
                 insidePhpScriptTag = true;

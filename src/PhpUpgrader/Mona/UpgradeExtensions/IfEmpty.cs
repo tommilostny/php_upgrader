@@ -12,7 +12,7 @@ public static class IfEmpty
                                     @"if\s?\(\$\w+\s?!=\s?""""\s?\|\|\s?\$\w+\s?!=\s?null\)",
                                     evaluator,
                                     RegexOptions.IgnoreCase | RegexOptions.Compiled,
-                                    TimeSpan.FromSeconds(5));
+                                    TimeSpan.FromSeconds(4));
         file.Content.Replace(content, updated);
         return file;
     }

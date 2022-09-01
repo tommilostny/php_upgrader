@@ -13,7 +13,7 @@ public static class AegisxDetail
         var updated = Regex.Replace(content, @"if\s?\(\$presmeruj == ""NO""\)\s*\{\s*break;",
                                               "if ($presmeruj == \"NO\") {\n\t\t\treturn;",
                                               RegexOptions.None,
-                                              TimeSpan.FromSeconds(5));
+                                              TimeSpan.FromSeconds(4));
         file.Content.Replace(content, updated);
         return file;
     }

@@ -7,7 +7,7 @@ public static class XmlFeeds
     /// </summary>
     public static FileWrapper UpgradeXmlFeeds(this FileWrapper file)
     {
-        if (Regex.IsMatch(file.Path, "xml_feeds_[^edit]", RegexOptions.Compiled, TimeSpan.FromSeconds(5)))
+        if (Regex.IsMatch(file.Path, "xml_feeds_[^edit]", RegexOptions.Compiled, TimeSpan.FromSeconds(4)))
         {
             file.Content.Replace("if($query_podmenu_all[\"casovani\"] == 1)", "if($data_podmenu_all[\"casovani\"] == 1)");
         }

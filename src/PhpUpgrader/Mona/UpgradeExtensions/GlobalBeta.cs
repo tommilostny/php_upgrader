@@ -12,7 +12,7 @@ public static class GlobalBeta
             || !Regex.IsMatch(file.Content.ToString(),
                               "(?s)^(?=.*?function )(?=.*?mysqli_)",
                               RegexOptions.Compiled,
-                              TimeSpan.FromSeconds(5)))
+                              TimeSpan.FromSeconds(4)))
         {
             return file;
         }
@@ -27,7 +27,7 @@ public static class GlobalBeta
             if (line.Contains("</script")) javascript = false;
 
             if (!javascript
-                && Regex.IsMatch(line.ToString(), @"function\s", RegexOptions.Compiled, TimeSpan.FromSeconds(5))
+                && Regex.IsMatch(line.ToString(), @"function\s", RegexOptions.Compiled, TimeSpan.FromSeconds(4))
                 && MysqliAndBetaInFunction(i, lines))
             {
                 if ((line = lines[++i]).Contains('{'))

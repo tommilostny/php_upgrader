@@ -31,7 +31,7 @@ public static class WhileListEach
         return Regex.Match(content,
             @"(?<reset>reset\s?\((?<array1>\$[^)]+)\);(?<in_between>((.|\n)(?!reset\s?\())*?))?while\s?\(list\((((?<key>\$[^),]+)\s?,\s?(?<val>\$[^),]+))|(?<keyval>\$[^)]+))\)\s?=\s?each\s?\((?<array2>\$[^)]+)\){2}:?",
             RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-            TimeSpan.FromSeconds(5));
+            TimeSpan.FromSeconds(4));
     }
 
     private static string WhileListEachToForeach(Match match, out bool lookForEndWhile)
@@ -73,7 +73,7 @@ public static class WhileListEach
 
             var content = builder.ToString()[matchIndex..];
 
-            var whileMatch = Regex.Match(content, @"while\s?\(.+\)\s*:", RegexOptions.None, TimeSpan.FromSeconds(5));
+            var whileMatch = Regex.Match(content, @"while\s?\(.+\)\s*:", RegexOptions.None, TimeSpan.FromSeconds(4));
             var nextWhileIndex = whileMatch.Index;
             var endWhileIndex = content.IndexOf(endWhile, StringComparison.Ordinal);
 

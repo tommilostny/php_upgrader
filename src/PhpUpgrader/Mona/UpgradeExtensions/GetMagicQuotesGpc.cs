@@ -28,7 +28,7 @@ public static class GetMagicQuotesGpc
                                     @"\(?!?get_magic_quotes_gpc\(\)\)?\s{0,5}\?\s{0,5}(/\*.*\*/)?\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s{0,5}:\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))",
                                     evaluator,
                                     RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                                    TimeSpan.FromSeconds(5));
+                                    TimeSpan.FromSeconds(4));
         //Pokud výraz s get_magic_quotes_gpc nebyl aktualizován, jedná se pravděpodobně o variantu s if else.
         if (!Is_GMQG_Commented(updated))
         {
@@ -37,7 +37,7 @@ public static class GetMagicQuotesGpc
                                     @"if\s?\(\s?get_magic_quotes_gpc\(\)\s?\)(\n|.){0,236}else(\n|.){0,236};",
                                     evaluator,
                                     RegexOptions.ExplicitCapture,
-                                    TimeSpan.FromSeconds(5));
+                                    TimeSpan.FromSeconds(4));
 
             if (!Is_GMQG_Commented(updated))
             {
@@ -54,7 +54,7 @@ public static class GetMagicQuotesGpc
         return Regex.IsMatch(str,
                              @"/\*.{0,6}get_magic_quotes_gpc\(\)(\n|.){0,236}\*/",
                              RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                             TimeSpan.FromSeconds(5));
+                             TimeSpan.FromSeconds(4));
     }
 
     private static string GetMagicQuotesGpcTernaryEvaluator(Match match)

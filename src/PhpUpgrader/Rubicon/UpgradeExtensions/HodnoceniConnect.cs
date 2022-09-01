@@ -21,7 +21,7 @@ public static class HodnoceniConnect
 
             var evaluator = new MatchEvaluator(_MysqliQueryEvaluator);
             var content = file.Content.ToString();
-            var updated = Regex.Replace(content, @"mysqli_query\(\$beta,.+;", evaluator, RegexOptions.None, TimeSpan.FromSeconds(5));
+            var updated = Regex.Replace(content, @"mysqli_query\(\$beta,.+;", evaluator, RegexOptions.None, TimeSpan.FromSeconds(4));
             file.Content.Replace(content, updated);
 
             string _MysqliQueryEvaluator(Match match)

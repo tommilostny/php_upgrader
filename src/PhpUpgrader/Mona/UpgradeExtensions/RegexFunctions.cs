@@ -3,7 +3,7 @@
 public static class RegexFunctions
 {
     private static readonly RegexOptions _options = RegexOptions.Compiled | RegexOptions.ExplicitCapture;
-    private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(4);
 
     /// <summary>
     /// - funkci ereg nebo ereg_replace doplnit do prvního parametru delimetr na začátek a nakonec (if(ereg('.+@.+..+', $retezec))

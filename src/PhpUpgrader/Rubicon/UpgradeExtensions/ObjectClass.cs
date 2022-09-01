@@ -20,7 +20,7 @@ public static class ObjectClass
                                         @"function\s+Object\s*\(",
                                         "function ObjectBase(",
                                         RegexOptions.None,
-                                        TimeSpan.FromSeconds(5));
+                                        TimeSpan.FromSeconds(4));
             
             file.Content.Replace(content, updated);
             file.MoveOnSavePath = file.Path.Replace(Path.Join("classes", "Object.php"),

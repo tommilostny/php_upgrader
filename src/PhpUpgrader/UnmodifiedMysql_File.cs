@@ -22,7 +22,7 @@ public sealed record UnmodifiedMysql_File
         var matches = Regex.Matches(file.Content.ToString(),
                                     @"(?<!(//.*)|(/\*((.|\n)(?!\*/))*)|\$|->|_|PDO::)mysql_[^( )]+",
                                     RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                                    TimeSpan.FromSeconds(5));
+                                    TimeSpan.FromSeconds(4));
         
         return matches.Count == 0 ? null : new(file, matches);
     }
