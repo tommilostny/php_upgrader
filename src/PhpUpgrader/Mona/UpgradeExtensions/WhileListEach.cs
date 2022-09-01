@@ -29,31 +29,39 @@ public static class WhileListEach
     private static Match NextMatch(string content)
     {
         return Regex.Match(content,
-            @"reset\s?\((?<array1>\$[^)]+)\);(?<in_between>((.|\n)(?!reset\s?\())*?)while\s?\(list\((((?<key>\$[^),]+)\s?,\s?(?<val>\$[^),]+))|(?<keyval>\$[^)]+))\)\s?=\s?each\s?\((?<array2>\$[^)]+)\){2}:?",
+            @"(?<reset>reset\s?\((?<array1>\$[^)]+)\);(?<in_between>((.|\n)(?!reset\s?\())*?))?while\s?\(list\((((?<key>\$[^),]+)\s?,\s?(?<val>\$[^),]+))|(?<keyval>\$[^)]+))\)\s?=\s?each\s?\((?<array2>\$[^)]+)\){2}:?",
             RegexOptions.Compiled | RegexOptions.ExplicitCapture,
             TimeSpan.FromSeconds(5));
     }
 
     private static string WhileListEachToForeach(Match match, out bool lookForEndWhile)
     {
+        //match končí dvojtečkou => hledat endwhile a nahradit jej za endforeach.
+        //jinak jsou použity složené závorky, které není třeba upravovat.
         char? colon = (lookForEndWhile = match.Value.EndsWith(':')) ? ':' : null;
 
-        var inBetween = match.Groups["in_between"].Value;
-        var arrayInReset = match.Groups["array1"].Value;
-        var arrayInEach = match.Groups["array2"].Value;
+        var array = match.Groups["array2"].Value;
+        string? inBetween = null;
 
-        inBetween = string.Equals(arrayInReset, arrayInEach, StringComparison.Ordinal)
-            ? inBetween.TrimStart()
-            : $"reset({arrayInReset});{inBetween}";
-
-        var keyval = match.Groups["keyval"].Value;        
-        if (string.IsNullOrWhiteSpace(keyval))
+        if (match.Groups["reset"].Success) //match obsahuje část s funckí reset, načíst obsah mezi tím a cyklem while.
         {
-            var key = match.Groups["key"].Value;
-            var value = match.Groups["val"].Value;
-            return $"{inBetween}foreach ({arrayInEach} as {key} => {value}){colon}";
+            inBetween = match.Groups["in_between"].Value;
+            var arrayInReset = match.Groups["array1"].Value;
+
+            inBetween = string.Equals(arrayInReset, array, StringComparison.Ordinal)
+                ? inBetween.TrimStart()
+                : $"reset({arrayInReset});{inBetween}";
         }
-        return $"{inBetween}foreach ({arrayInEach} as {keyval}){colon}";
+        var keyval = match.Groups["keyval"];
+        if (keyval.Success)
+        {
+            //volání funkce list má jeden parametr, převést pouze na "as $keyvalue".
+            return $"{inBetween}foreach ({array} as {keyval}){colon}";
+        }
+        //volání funkce list má dva parametry, převést na "as $key => $value".
+        var key = match.Groups["key"];
+        var value = match.Groups["val"];
+        return $"{inBetween}foreach ({array} as {key} => {value}){colon}";
     }
 
     private static void EndWhileToEndForeach(StringBuilder builder, bool lookForEndWhile, int matchIndex)
@@ -74,7 +82,7 @@ public static class WhileListEach
                 builder.Replace(endWhile, endForeach, matchIndex + endWhileIndex, endWhile.Length);
                 return;
             }
-            EndWhileToEndForeach(builder, lookForEndWhile, matchIndex + endWhileIndex + endWhile.Length);
+            EndWhileToEndForeach(builder, true, matchIndex + endWhileIndex + endWhile.Length);
         }
     }
 }

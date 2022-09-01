@@ -17,6 +17,7 @@ public static class RequiredParameterFollowsOptional
         return file;
     }
 
+    //TODO: zobecnit, moc případů
     private static IEnumerable<(string filename, string find, string replace)> UpgradableFiles()
     {
         yield return (filename: Path.Join("classes", "McBalikovna.class.php"),
