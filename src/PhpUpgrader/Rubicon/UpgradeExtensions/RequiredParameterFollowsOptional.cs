@@ -12,7 +12,7 @@ public static class RequiredParameterFollowsOptional
             var evaluator = new MatchEvaluator(StartOptionalParamsToRequired);
             var content = file.Content.ToString();
             var updated = Regex.Replace(content,
-                                        @"function(?!_).*?\((?!\))((.|\n)(?!{|;))*?\$\w+\s?=\s?(.|\n)*?\)(?!.*?\))",
+                                        @"function(?!_)\s+?\w+\s*?\((?!\))((.|\n)(?!{|;))*?\$\w+\s?=\s?(.|\n)*?\)(?!,)(?!.*?\))",
                                         evaluator,
                                         RegexOptions.Compiled | RegexOptions.ExplicitCapture,
                                         TimeSpan.FromSeconds(4));
@@ -24,7 +24,7 @@ public static class RequiredParameterFollowsOptional
     private static string StartOptionalParamsToRequired(Match match)
     {
         IEnumerable<Match> parameters = Regex.Matches(match.Value,
-                                                      @"&?\$\w+\s*?(?<defval>=\s*?((""|').*?(""|')|.*?\)?))?\s*?(,|\))",
+                                                      @"&?\$\w+\s*?(?<defval>=\s*?(((?<strq>""|').*?\k<strq>)|(array\s?\(.*?\))|([^,'""(]*?)))?\s*?(,|\))",
                                                       RegexOptions.Compiled | RegexOptions.ExplicitCapture,
                                                       TimeSpan.FromSeconds(2));
         var updatedParameters = new Stack<string>();

@@ -183,7 +183,7 @@ public static class ClassConstructors
 
     private static void AddCompatibilityConstructor(ref string contentStr, string className, int index, IReadOnlyDictionary<string, bool> constructors)
     {
-        var lowerHalf = contentStr.AsSpan(0, index + 2);
+        var lowerHalf = contentStr[..(index + 2)];
         var higherHalf = contentStr[(index + 2)..];
         //jedná se o funkci {className}, aka starý konstruktor?
         var match = Regex.Match(higherHalf, $@"^{className}\s?\(.*\)\s", RegexOptions.None, TimeSpan.FromSeconds(4));
@@ -196,12 +196,25 @@ public static class ClassConstructors
                 var oldConstructor = $"{className}({@params})";
                 higherHalf = $"__construct{higherHalf.AsSpan(className.Length)}";
 
+                var whitespace = Regex
+                    .Match(lowerHalf,
+                           @"(?<spaces>[ \t]*)(public\s?)?function\s$",
+                           RegexOptions.Multiline | RegexOptions.ExplicitCapture | RegexOptions.Compiled,
+                           TimeSpan.FromSeconds(2))
+                    .Groups["spaces"]
+                    .Value;
+
                 var compatibilityConstructorBuilder = new StringBuilder(oldConstructor)
                     .AppendLine()
-                    .AppendLine("    {")
-                    .Append("        ")
+                    .Append(whitespace)
+                    .Append('{')
+                    .AppendLine()
+                    .Append(whitespace)
+                    .Append(whitespace)
                     .AppendLine(new ParametersWithoutDefaultValuesFormat(), $"self::__construct({@params});")
-                    .AppendLine("    }")
+                    .Append(whitespace)
+                    .Append('}')
+                    .AppendLine()
                     .AppendLine();
 
                 contentStr = $"{lowerHalf}{compatibilityConstructorBuilder}    public function {higherHalf}";

@@ -21,6 +21,7 @@ public class RequiredParameterFollowsOptionalTests : UnitTestWithOutputBase
     [InlineData("var $dbTable;\r\n\t\r\n    function __construct($y=\"abc(def)ghijklmnopqrstuvwxyz\", $m, $settings = array(), $a, $b=1)\r\n      {\r\n        $this->todayYear = Date('Y');\r\n\t$this->todayMonth = Date(")]
     [InlineData("     */\r\n    public static function sendHttpRequestBy(\r\n        $method = 'socket',\r\n        $aUrl,\r\n        $timeout,\r\n        $userAgent = null,\r\n        $destinationPath = null,\r\n        $file = null,\r\n        $followDepth = 0,\r\n        $acceptLanguage = false,\r\n        $acceptInvalidSslCertificate = false,\r\n        $byteRange = false,\r\n        $getExtendedInfo = false,\r\n        $httpMethod = 'GET'\r\n    )\r\n    {\r\n        if ($followDepth > 5) {")]
     [InlineData("    public function createAttachment($body,\r\n                                     $mimeType    = Zend_Mime::TYPE_OCTETSTREAM,\r\n                                     $disposition = Zend_Mime::DISPOSITION_ATTACHMENT,\r\n                                     $encoding    = Zend_Mime::ENCODING_BASE64,\r\n                                     $filename    = null)\r\n    {\r\n\r\n        $mp = new Zend_Mime_Part($body);\r\n        $mp->encoding = $encoding;\r\n        $mp->type = $mimeType;\r\n        $mp->disposition = $disposition;\r\n        $mp->filename = $filename;\r\n\r\n        $this->addAttachment($mp);\r\n\r\n        return $mp;\r\n    }")]
+    [InlineData("    /**\r\n     * Utility function that creates and prepares a ViewDataTable for this plugin.\r\n     */\r\n    private function getDataTableView($function, $viewType = 'table', $orderDir = 'asc', $addPercentColumn = false,\r\n                                      $labelKey = 'DBStats_Table', $sizeColumns = array('data_size', 'index_size'),\r\n                                      $limit = 25)\r\n    {\r\n        $columnTranslations = array(")]
     public void UpgradesValidFile(string content)
     {
         //Arrange
@@ -38,11 +39,14 @@ public class RequiredParameterFollowsOptionalTests : UnitTestWithOutputBase
         Assert.NotEqual(content, updated);
     }
 
-    [Fact]
-    public void DoesNotUpgradeInvalidFile()
+    [Theory]
+    [InlineData("    public function __construct($domain, $hostname, $username, $password, $database='dbname', $connport = 80)\r\n    {\r\n        $this->domain = $domain;\r\n\r\n        $this->hostname = $hostname;\r\n        $this->username = $username;\r\n        $this->password = $password;\r\n        $this->database = $database;\r\n        $this->connport = $connport;\r\n    }")]
+    [InlineData("\t */\r\n\tpublic function SetProtection($permissions=array('print', 'modify', 'copy', 'annot-forms', 'fill-forms', 'extract', 'assemble', 'print-high'), $user_pass='', $owner_pass=null, $mode=0, $pubkeys=null) {\r\n\t\t$this->encryptdata['protection'] = $this->getUserPermissionCode($permissions, $mode);\r\n\t\tif (($pubkeys !== null) AND (is_array($pubkeys))) {\r\n\t\t\t// public-key mode")]
+    [InlineData(" * @uses smarty_make_timestamp()\r\n */\r\nfunction smarty_modifier_date_format($string, $format = '%b %e, %Y', $default_date = '')\r\n{\r\n")]
+    [InlineData("\r\n\tfunction Moxiecode_ClientResources($settings = array())\r\n\t{\r\n\t\tself::__construct($settings);\r\n\t}\r\n")]
+    public void DoesNotUpgradeInvalidFile(string content)
     {
         //Arrange
-        var content = "    public function __construct($domain, $hostname, $username, $password, $database='dbname', $connport = 80)\r\n    {\r\n        $this->domain = $domain;\r\n\r\n        $this->hostname = $hostname;\r\n        $this->username = $username;\r\n        $this->password = $password;\r\n        $this->database = $database;\r\n        $this->connport = $connport;\r\n    }";
         var file = new FileWrapper("file.php", content);
 
         //Act
