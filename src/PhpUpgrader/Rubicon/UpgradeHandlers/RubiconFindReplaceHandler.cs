@@ -111,6 +111,13 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
          "mysqli_stat($link)"
         ),
         ("= &func_get_args();",
-         "= func_get_args();"),
+         "= func_get_args();"
+        ),
+        ("@get_magic_quotes_runtime();",
+         "/*@get_magic_quotes_runtime()*/ false;"
+        ),
+        ("get_magic_quotes_runtime();",
+         "/*get_magic_quotes_runtime()*/ false;"
+        ),
     };
 }
