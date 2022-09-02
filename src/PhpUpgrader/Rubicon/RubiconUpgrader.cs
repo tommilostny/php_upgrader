@@ -39,6 +39,7 @@ public sealed class RubiconUpgrader : MonaUpgrader
                             .UpgradeArrayMissingKeyValue()
                             .UpgradePiwikaLibsPearRaiseError()
                             .UpgradeRequiredParameterFollowsOptional()
+                            .UpgradeNullByteInRegex()
         };
     }
 }
