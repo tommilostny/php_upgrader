@@ -25,7 +25,7 @@ public static class RequiredParameterFollowsOptional
     {
         IEnumerable<Match> parameters = Regex.Matches(match.Value,
                                                       @"&?\$\w+\s*?(?<defval>=\s*?(((?<strq>""|').*?\k<strq>)|(array\s?\(.*?\))|([^,'""(]*?)))?\s*?(,|\))",
-                                                      RegexOptions.Compiled | RegexOptions.ExplicitCapture,
+                                                      RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase,
                                                       TimeSpan.FromSeconds(2));
         var updatedParameters = new Stack<string>();
         var state = false;
