@@ -87,7 +87,8 @@ public class MonaUpgrader : PhpUpgraderBase
             .UpgradeIfEmpty()
             .UpgradeGetMagicQuotesGpc()
             .UpgradeWhileListEach()
-            .UpgradeCreateFunction();
+            .UpgradeCreateFunction()
+            .UpgradeImplode();
 
         //Zahlásit IP adresu serveru mcrai1, pokud není zakomentovaná.
         if (file.Content.Contains("93.185.102.228")
