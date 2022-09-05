@@ -39,9 +39,10 @@ public static class RegexFunctions
 
     private static void UpgradeSplit(FileWrapper file, MatchEvaluator evaluator)
     {
-        if (!file.Content.Contains("split") || file.Content.Contains("preg_split"))
+        if (!file.Content.Contains("split"))
+        {
             return;
-
+        }
         var javascript = false;
         var lines = file.Content.Split();
 
