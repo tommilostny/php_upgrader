@@ -41,17 +41,19 @@ public class EregUnitTest : UnitTestWithOutputBase
         Assert.Equal("mysqli_query($beta, $query);", file.Content.ToString());
     }
 
-    [Fact]
-    public void ReplacesSplitFunction()
+    [Theory]
+    [InlineData("$var = split('pattern', $query);")]
+    [InlineData("           $Fields      = split(IMAGE_MAP_DELIMITER,str_replace(array(chr(10),chr(13)),\"\",$Buffer));\r\n           $TempArray[] = array($Fields[0],$Fields[1],$Fields[2],$Fields[3],$Fields[4]);")]
+    public void ReplacesSplitFunction(string content)
     {
-        var file = new FileWrapper(string.Empty, "$var = split('pattern', $query);");
+        var file = new FileWrapper(string.Empty, content);
 
         file.UpgradeRegexFunctions();
 
         var contentStr = file.Content.ToString();
         _output.WriteLine(contentStr);
         Assert.True(file.IsModified);
-        Assert.Equal("$var = preg_split('~pattern~', $query);", contentStr);
+        Assert.Empty(file.Warnings);
     }
 
     [Fact]

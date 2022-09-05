@@ -24,11 +24,11 @@ public static class RegexFunctions
 
         var content = file.Content.ToString();
 
-        var updated = Regex.Replace(content, @"ereg(_replace|i)? ?\('(\\'|[^'])*'", evaluator, _options, _timeout);
-        updated = Regex.Replace(updated, @"ereg(_replace|i)? ?\(""(\\""|[^""])*""", evaluator, _options, _timeout);
+        var updated = Regex.Replace(content, @"ereg(_replace|i)?\s?\('(\\'|[^'])*'", evaluator, _options, _timeout);
+        updated = Regex.Replace(updated, @"ereg(_replace|i)?\s?\(""(\\""|[^""])*""", evaluator, _options, _timeout);
 
-        updated = Regex.Replace(updated, @"eregi? ?\( ?\$", "preg_match($", _options, _timeout);
-        updated = Regex.Replace(updated, @"ereg_replace ?\( ?\$", "preg_replace($", _options, _timeout);
+        updated = Regex.Replace(updated, @"eregi?\s?\( ?\$", "preg_match($", _options, _timeout);
+        updated = Regex.Replace(updated, @"ereg_replace\s?\(\s?\$", "preg_replace($", _options, _timeout);
 
         if (Regex.IsMatch(updated, @"\n[^//]{0,236}ereg[^(;"",]*\(", _options, _timeout))
         {
@@ -54,8 +54,13 @@ public static class RegexFunctions
             if (!javascript && !line.Contains(".split") && line.Length > 7)
             {
                 var lineStr = line.ToString();
-                var updated = Regex.Replace(lineStr, @"\bsplit ?\('(\\'|[^'])*'", evaluator, _options, _timeout);
-                updated = Regex.Replace(updated, @"\bsplit ?\(""(\\""|[^""])*""", evaluator, _options, _timeout);
+                var updated = Regex.Replace(lineStr, @"\bsplit\s?\('(\\'|[^'])*'", evaluator, _options, _timeout);
+                updated = Regex.Replace(updated, @"\bsplit\s?\(""(\\""|[^""])*""", evaluator, _options, _timeout);
+                updated = Regex.Replace(updated,
+                                        @"\bsplit\s?\(\s?(?<del>[^""'].*?),",
+                                        new MatchEvaluator(SplitWithVarDelimiter),
+                                        _options,
+                                        _timeout);
 
                 line.Replace(lineStr, updated);
             }
@@ -65,7 +70,7 @@ public static class RegexFunctions
         if (!file.Path.EndsWith(Path.Join("facebook", "src", "Facebook", "SignedRequest.php"), StringComparison.Ordinal)
             && !file.Path.EndsWith(Path.Join("funkce", "qrkod", "qrsplit.php"), StringComparison.Ordinal)
             && !file.Path.EndsWith(Path.Join("funkce", "qrkod", "phpqrcode.php"), StringComparison.Ordinal)
-            && Regex.IsMatch(file.Content.ToString(), @"[^_\.]split ?\(", _options, _timeout))
+            && Regex.IsMatch(file.Content.ToString(), @"(?<!(_|\.))split\s?\(", _options, _timeout))
         {
             file.Warnings.Add("Nemodifikovaná funkce split!");
         }
@@ -101,5 +106,11 @@ public static class RegexFunctions
     {
         var index = match.Value.StartsWith(_delimiter) ? 0 : 1;
         return match.Value.Insert(index, @"\");
+    }
+
+    private static string SplitWithVarDelimiter(Match match)
+    {
+        var delimiterVar = match.Groups["del"];
+        return $"preg_split('{_delimiter}'.{delimiterVar}.'{_delimiter}',";
     }
 }
