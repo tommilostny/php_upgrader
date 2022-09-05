@@ -11,7 +11,7 @@ public static class CurlyBraceIndexing
         var evaluator = new MatchEvaluator(CurlyToSquareBracketsIndex);
         var content = file.Content.ToString();
         var updated = Regex.Replace(content,
-                                    @"(?<array>\$[^;\n=.,(})]+?)\s?{(?<index>.*?)(?<!.*;.*)}",
+                                    @"(?<array>\$[^;\n=.,(})]+?)\s?{(?<index>[^;\n]*?)}",
                                     evaluator,
                                     RegexOptions.ExplicitCapture | RegexOptions.Compiled,
                                     TimeSpan.FromSeconds(4));
@@ -22,12 +22,13 @@ public static class CurlyBraceIndexing
 
     private static string CurlyToSquareBracketsIndex(Match match)
     {
-        var index = match.Groups["index"];
-        var array = match.Groups["array"];
-        if (!index.Success || !array.Success
-            || string.IsNullOrWhiteSpace(index.Value)
-            || array.Value.TrimEnd().EndsWith("->", StringComparison.Ordinal)
-            || array.Value.TrimEnd().EndsWith("FROM", StringComparison.OrdinalIgnoreCase))
+        var index = match.Groups["index"].Value;
+        var array = match.Groups["array"].Value.TrimEnd();
+        
+        //Ošetření pro speciální případy, kdy nechceme upravovat.
+        if (string.IsNullOrWhiteSpace(index)
+            || array.EndsWith("->", StringComparison.Ordinal)
+            || array.EndsWith("FROM", StringComparison.OrdinalIgnoreCase))
         {
             return match.Value;
         }
