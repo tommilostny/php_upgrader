@@ -15,8 +15,12 @@ public static class WhileListEach
         while ((m = NextMatch(content)).Success)
         {
             //nahradit while(list(...)=each(...)) >> foreach(...)
-            var updatedLine = WhileListEachToForeach(m, out var lookForEndWhile);
+            var updatedLine = WhileListEachToForeach(m, out var lookForEndWhile, out var arrayKeyvalAsIndexReplace);
             var updatedSB = new StringBuilder(content).Replace(m.Value, updatedLine, m.Index, m.Value.Length);
+
+            //pokud není null (jednalo se o variantu foreach($array as $keyval),
+            //nahradit přístup k poli přes $keyval jako index za $keyval.
+            arrayKeyvalAsIndexReplace?.Upgrade(updatedSB);
 
             //byl while ve formátu "while(...):"? hledat příslušný endwhile; a nahradit endforeach;.
             EndWhileToEndForeach(updatedSB, lookForEndWhile, m.Index);
@@ -34,7 +38,7 @@ public static class WhileListEach
             TimeSpan.FromSeconds(4));
     }
 
-    private static string WhileListEachToForeach(Match match, out bool lookForEndWhile)
+    private static string WhileListEachToForeach(Match match, out bool lookForEndWhile, out ArrayKeyvalAsIndexReplace? arrayKeyval)
     {
         //match končí dvojtečkou => hledat endwhile a nahradit jej za endforeach.
         //jinak jsou použity složené závorky, které není třeba upravovat.
@@ -56,11 +60,15 @@ public static class WhileListEach
         if (keyval.Success)
         {
             //volání funkce list má jeden parametr, převést pouze na "as $keyvalue".
+            arrayKeyval = new ArrayKeyvalAsIndexReplace(array, keyval.Value);
+
             return $"{inBetween}foreach ({array} as {keyval}){colon}";
         }
         //volání funkce list má dva parametry, převést na "as $key => $value".
+        arrayKeyval = null;
         var key = match.Groups["key"];
         var value = match.Groups["val"];
+
         return $"{inBetween}foreach ({array} as {key} => {value}){colon}";
     }
 
@@ -82,7 +90,23 @@ public static class WhileListEach
                 builder.Replace(endWhile, endForeach, matchIndex + endWhileIndex, endWhile.Length);
                 return;
             }
-            EndWhileToEndForeach(builder, true, matchIndex + endWhileIndex + endWhile.Length);
+            EndWhileToEndForeach(builder, lookForEndWhile: true, matchIndex + endWhileIndex + endWhile.Length);
+        }
+    }
+
+    /// <summary>
+    /// Nalezeno v /templates/.../product/top9.php:<br />
+    /// Přístup k poli ve foreach jako $PRODUCT_TOP9["$idp"] nahradit za $idp.
+    /// </summary>
+    /// <remarks>
+    /// Předchozí verze s while(list...each) měla $idp jako index do pole, nyní je to samotný záznam.
+    /// </remarks>
+    private record ArrayKeyvalAsIndexReplace(string Array, string KeyVal)
+    {
+        public void Upgrade(StringBuilder builder)
+        {
+            builder.Replace($"{Array}[\"{KeyVal}\"]", KeyVal);
+            builder.Replace($"reset({KeyVal});", string.Empty);
         }
     }
 }
