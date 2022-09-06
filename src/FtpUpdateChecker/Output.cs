@@ -16,7 +16,7 @@ internal static class Output
     internal static void WriteCompleted(string phpLogFilePath, uint phpFoundCount)
     {
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine("\n\n\r✅ Proces dokončen.");
+        Console.WriteLine("\n\n\r✅ Proces kontroly FTP dokončen.");
         Console.ResetColor();
         if (phpFoundCount > 0)
         {

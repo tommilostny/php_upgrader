@@ -3,7 +3,7 @@
 namespace FtpUpdateChecker;
 
 /// <summary> Třída nad knihovnou WinSCP kontrolující soubory na FTP po určitém datu. </summary>
-public class FtpChecker : IDisposable
+internal class FtpChecker : IDisposable
 {
     private const string _phpLogsDir = ".phplogs";
 
@@ -40,7 +40,7 @@ public class FtpChecker : IDisposable
     }
 
     /// <summary> Spustit procházení všech souborů na FTP serveru v zadané cestě. </summary>
-    public void Run(string path)
+    public void Run(string path, string baseFolder, string webName)
     {
         if (!_session.Opened)
         {
@@ -89,7 +89,24 @@ public class FtpChecker : IDisposable
                     bool isPhp;
                     if (isPhp = fileInfo.FullName.EndsWith(".php"))
                     {
+                        //Na serveru je nový nebo upravený PHP soubor.
                         PhpFoundCount++;
+                        //Cesta tohoto souboru jako lokální cesta na disku.
+                        var localPath = fileInfo.FullName.Replace($"/{path}/", string.Empty);
+                        localPath = Path.Join(baseFolder, "weby", webName, localPath);
+                        var localFileInfo = new FileInfo(localPath);
+
+                        //Stažení souboru
+                        var transferResult = _session.GetFileToDirectory(fileInfo.FullName, localFileInfo.Directory.FullName);
+                        if (transferResult.Error is null)
+                        {
+                            //Pokud nenastala při stažení chyba, smazat zálohu souboru, pokud existuje
+                            //(byla stažena novější verze, také neupravená (odpovídá stavu na serveru mcrai1)).
+                            var backupFilePath = localPath.Replace(Path.Join(baseFolder, "weby", webName),
+                                                                   Path.Join(baseFolder, "weby", "_backup", webName));
+                            if (File.Exists(backupFilePath))
+                                File.Delete(backupFilePath);
+                        }
                     }
                     Output.WriteFoundFile(this, fileInfo, messageLength, isPhp, phpLogFilePath);
                 }

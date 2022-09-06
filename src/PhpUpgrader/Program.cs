@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader;
+﻿using FtpUpdateChecker;
+
+namespace PhpUpgrader;
 
 public static class Program
 {
@@ -20,16 +22,20 @@ public static class Program
     /// <param name="ignoreConnect">Ignore DB connection arguments (--host, --db, --user, --password).</param>
     /// <param name="useBackup"> Neptat se a vždy načítat soubory ze zálohy. </param>
     /// <param name="ignoreBackup"> Neptat se a vždy ignorovat zálohu. </param>
+    /// <param name="checkFtp"> Neptat se a vždy kontrolovat aktualitu se soubory na mcrai1. </param>
+    /// <param name="ignoreFtp"> Neptat se a vždy ignorovat aktualitu souborů s FTP. </param>
     public static void Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
                             string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
                             string host = "localhost", string? beta = null, string connectionFile = "connection.php",
-                            bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false)
+                            bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false,
+                            bool checkFtp = false, bool ignoreFtp = false)
     {
         var upgrader = LoadPhpUpgrader(baseFolder, webName, rubicon, adminFolders, rootFolders, beta,
                                        connectionFile, ignoreConnect, db, user, password, host,
                                        out var workDir);
         if (upgrader is not null)
         {
+            CheckFtp(checkFtp, ignoreFtp, webName, baseFolder);
             RunUpgrade(upgrader, webName, baseFolder, useBackup, ignoreBackup, workDir);
             PrintUpgradeResults(upgrader);
         }
@@ -113,6 +119,26 @@ public static class Program
                 Console.WriteLine(function);
             }
             Console.ResetColor();
+        }
+    }
+
+    private static void CheckFtp(bool checkFtp, bool ignoreFtp, string webName, string baseFolder)
+    {
+        if (ignoreFtp)
+        {
+            return;
+        }
+        if (!checkFtp)
+        {
+            Console.WriteLine("Zkontrolovat a případně stáhnout aktuální verze souborů z mcrai.vshosting.cz? (y/n)");
+            if (Console.Read() == 'y')
+            {
+                checkFtp = true;
+            }
+        }
+        if (checkFtp)
+        {
+            FtpCheckRunner.Run(webName, baseFolder);
         }
     }
 }

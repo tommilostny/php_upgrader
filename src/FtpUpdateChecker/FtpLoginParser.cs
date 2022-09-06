@@ -1,7 +1,7 @@
 ﻿namespace FtpUpdateChecker;
 
 /// <summary> Třída obsahující informace o přihlašovacích údajích k FTP. </summary>
-public class FtpLoginParser
+internal class FtpLoginParser
 {
     /// <summary> Uživatelské jméno. </summary>
     public string? Username { get; private set; }
