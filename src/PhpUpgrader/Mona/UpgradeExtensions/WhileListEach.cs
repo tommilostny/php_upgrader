@@ -18,12 +18,14 @@ public static class WhileListEach
             var updatedLine = WhileListEachToForeach(m, out var lookForEndWhile, out var arrayKeyvalAsIndexReplace);
             var updatedSB = new StringBuilder(content).Replace(m.Value, updatedLine, m.Index, m.Value.Length);
 
+            //byl while ve formátu "while(...):"? hledat příslušný endwhile; a nahradit endforeach;.
+            EndWhileToEndForeach(updatedSB, lookForEndWhile, m.Index);
+
             //pokud není null (jednalo se o variantu foreach($array as $keyval),
             //nahradit přístup k poli přes $keyval jako index za $keyval.
             arrayKeyvalAsIndexReplace?.Upgrade(updatedSB);
-
-            //byl while ve formátu "while(...):"? hledat příslušný endwhile; a nahradit endforeach;.
-            EndWhileToEndForeach(updatedSB, lookForEndWhile, m.Index);
+            
+            //před další iterací uložit aktuálně upravený obsah.
             content = updatedSB.ToString();
         }
         file.Content.Replace(initialContent, content);
