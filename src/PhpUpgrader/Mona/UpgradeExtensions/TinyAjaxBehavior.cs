@@ -20,7 +20,7 @@ public static class TinyAjaxBehavior
                 return true;
             }
             File.Copy(tabPath, file.Path, overwrite: true);
-            upgrader.ModifiedFilesCount++;
+            upgrader.ModifiedFiles.Add(file.Path);
             file.WriteStatus(modified: true);
         }
         return isTinyAjaxBehavior;

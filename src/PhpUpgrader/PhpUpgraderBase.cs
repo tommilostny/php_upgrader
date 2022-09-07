@@ -5,6 +5,9 @@ public abstract class PhpUpgraderBase
     /// <summary> Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce. </summary>
     public ICollection<UnmodifiedMysql_File> FilesContainingMysql { get; } = new List<UnmodifiedMysql_File>();
 
+    /// <summary> Seznam souborů modifikovaných během procesu aktualizace. </summary>
+    public ISet<string> ModifiedFiles { get; } = new HashSet<string>(StringComparer.Ordinal);
+
     /// <summary> Handler zajišťující část aktualizace najít >> nahradit. </summary>
     public IFindReplaceHandler FindReplaceHandler { get; }
 
@@ -31,9 +34,6 @@ public abstract class PhpUpgraderBase
 
     /// <summary> Název souboru ve složce 'connect'. </summary>
     public string ConnectionFile { get; set; }
-
-    /// <summary> Počet modifikovaných souborů během procesu aktualizace. </summary>
-    public uint ModifiedFilesCount { get; internal set; } = 0;
 
     /// <summary> Celkový počet zpracovaných souborů. </summary>
     public uint TotalFilesCount { get; private set; } = 0;
@@ -75,7 +75,7 @@ public abstract class PhpUpgraderBase
             file.Save(WebName, BaseFolder);
             if (file.IsModified)
             {
-                ModifiedFilesCount++;
+                ModifiedFiles.Add(file.MoveOnSavePath is null ? file.Path : file.MoveOnSavePath);
             }
             //po dodelani nahrazeni nize projit na retezec - mysql_
             var mysql_FileRecord = UnmodifiedMysql_File.Create(file);

@@ -37,7 +37,7 @@ public static class BackupManager
         var dir = new DirectoryInfo(Path.Join(baseFolder, backupDirPath));
         if (dir.Exists && (useBackup || AskIfLoadBackup(dir.FullName)))
         {
-            Console.Write("\nKopíruji soubory ze zálohy ");
+            Console.Write("\nProbíhá kopírování souborů ze zálohy ");
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.Write(dir.FullName);
             Console.ResetColor();

@@ -3,13 +3,8 @@
 namespace FtpUpdateChecker;
 
 /// <summary> Třída nad knihovnou WinSCP kontrolující soubory na FTP po určitém datu. </summary>
-internal class FtpChecker : IDisposable
+internal class FtpChecker : FtpOperation
 {
-    private const string _phpLogsDir = ".phplogs";
-
-    private readonly SessionOptions _sessionOptions;
-    private readonly Session _session = new();
-
     /// <summary> Datum, od kterého hlásit změnu. </summary>
     public DateTime FromDate { get; }
 
@@ -27,43 +22,26 @@ internal class FtpChecker : IDisposable
 
     /// <summary> Inicializace sezení spojení WinSCP, nastavení data. </summary>
     public FtpChecker(string username, string password, string hostname, DateTime fromDate)
+        : base(username, password, hostname)
     {
-        _sessionOptions = new SessionOptions
-        {
-            Protocol = Protocol.Ftp,
-            HostName = hostname,
-            UserName = username,
-            Password = password,
-            FtpSecure = FtpSecure.Explicit
-        };
         FromDate = fromDate;
     }
 
     /// <summary> Spustit procházení všech souborů na FTP serveru v zadané cestě. </summary>
-    public void Run(string path, string baseFolder, string webName)
+    public override void Run(string path, string baseFolder, string webName)
     {
-        if (!_session.Opened)
+        if (!TryOpenSession())
         {
-            Console.WriteLine($"Připojování k FTP {_sessionOptions.UserName}@{_sessionOptions.HostName} ...");
-            try //Connect
-            {
-                _session.Open(_sessionOptions);
-                Console.WriteLine("Připojení proběhlo úspěšně!\n");
-            }
-            catch (SessionRemoteException)
-            {
-                Output.WriteError("Připojení k FTP serveru selhalo pro zadané uživatelské jméno a heslo.");
-                return;
-            }
+            return;
         }
-        var phpLogFilePath = $"{_phpLogsDir}/{_sessionOptions.UserName}-{path}.txt";
+        var phpLogFilePath = $"{PhpLogsDir}/{_sessionOptions.UserName}-{path}.txt";
         if (File.Exists(phpLogFilePath))
         {
             File.Delete(phpLogFilePath);
         }
         else
         {
-            Directory.CreateDirectory(_phpLogsDir);
+            Directory.CreateDirectory(PhpLogsDir);
         }
         Console.WriteLine($"Probíhá kontrola '{path}'...");
         var enumerationOptions = EO.EnumerateDirectories | EO.AllDirectories;
@@ -119,15 +97,5 @@ internal class FtpChecker : IDisposable
             Output.WriteError($"Zadaná cesta '{path}' na serveru neexistuje.");
         }
         Output.WriteCompleted(phpLogFilePath, PhpFoundCount);
-    }
-
-    /// <summary> Uzavřít spojení k FTP serveru. </summary>
-    public void Dispose()
-    {
-        if (_session.Opened)
-        {
-            _session.Close();
-        }
-        GC.SuppressFinalize(this);
     }
 }

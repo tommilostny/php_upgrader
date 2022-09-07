@@ -14,10 +14,10 @@ class Program
     /// <param name="day">Soubory nad tímto dnem se zobrazí jako aktualizované.</param>
     /// <param name="baseFolder">Kde je soubor ftp_logins.txt?</param>
     /// <param name="webName">Název složky v '{baseFolder}\weby'. Získá datum vytvoření, přepisuje argumenty --year, --month a --day.</param>
-    static void Main(string? username = null, string? password = null, string host = FtpCheckRunner.DefaultHostname,
-        string? path = null, int year = FtpCheckRunner.DefaultYear, int month = FtpCheckRunner.DefaultMonth, int day = FtpCheckRunner.DefaultDay,
-        string baseFolder = FtpCheckRunner.DefaultBaseFolder, string? webName = null)
+    static void Main(string? username = null, string? password = null, string host = McraiFtp.DefaultHostname1,
+        string? path = null, int year = McraiFtp.DefaultYear, int month = McraiFtp.DefaultMonth, int day = McraiFtp.DefaultDay,
+        string baseFolder = McraiFtp.DefaultBaseFolder, string? webName = null)
     {
-        FtpCheckRunner.Run(username, password, path, webName, baseFolder, host, day, month, year);
+        new McraiFtp(username, password, path, webName, baseFolder, host, day, month, year).CheckForUpdates();
     }
 }

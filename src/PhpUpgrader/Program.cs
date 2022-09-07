@@ -4,6 +4,11 @@ namespace PhpUpgrader;
 
 public static class Program
 {
+    private static string _webName;
+    private static string _baseFolder;
+
+    private static readonly Lazy<McraiFtp> _ftp = new(() => new McraiFtp(_webName, _baseFolder));
+
     /// <summary>
     /// RS Mona a Rubicon PHP upgrader z verze 5 na verzi 7 (vytvořeno pro McRAI).
     /// Autor: Tomáš Milostný
@@ -24,28 +29,41 @@ public static class Program
     /// <param name="ignoreBackup"> Neptat se a vždy ignorovat zálohu. </param>
     /// <param name="checkFtp"> Neptat se a vždy kontrolovat aktualitu se soubory na mcrai1. </param>
     /// <param name="ignoreFtp"> Neptat se a vždy ignorovat aktualitu souborů s FTP. </param>
+    /// <param name="upload"> Neptat se a vždy po dokončení lokální aktualizace nahrát tyto soubory na FTP nového serveru. </param>
+    /// <param name="dontUpload"> Neptat se a po aktualizaci soubory nenahrávat. </param>
     public static void Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
                             string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
                             string host = "localhost", string? beta = null, string connectionFile = "connection.php",
                             bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false,
-                            bool checkFtp = false, bool ignoreFtp = false)
+                            bool checkFtp = false, bool ignoreFtp = false, bool upload = false, bool dontUpload = false)
     {
-        var upgrader = LoadPhpUpgrader(baseFolder, webName, rubicon, adminFolders, rootFolders, beta,
+        _webName = webName;
+        _baseFolder = baseFolder;
+        var upgrader = LoadPhpUpgrader(rubicon, adminFolders, rootFolders, beta,
                                        connectionFile, ignoreConnect, db, user, password, host,
                                        out var workDir);
-        if (upgrader is not null)
+        if (upgrader is not null) //PHP upgrader se povedlo inicializovat.
         {
-            CheckFtp(checkFtp, ignoreFtp, webName, baseFolder);
-            RunUpgrade(upgrader, webName, baseFolder, useBackup, ignoreBackup, workDir);
+            //1. fáze: (pokud je vyžadováno)
+            // Kontrola nově upravených souborů na původním serveru (mcrai1) a jejich případné stažení.
+            CheckForUpdatesAndDownloadFromFtp(checkFtp, ignoreFtp);
+
+            //2. fáze: Aktualizace celé složky webu
+            // (případně i načtení souborů ze zálohy, pokud toto není spuštěno poprvé).
+            RunUpgrade(upgrader, useBackup, ignoreBackup, workDir);
             PrintUpgradeResults(upgrader);
+
+            //3. fáze: (pokud je vyžadováno)
+            // Nahrání veškerých aktualizovaných souborů na nový server.
+            UploadtToFtp(upgrader, upload, dontUpload);
         }
     }
 
-    private static PhpUpgraderBase? LoadPhpUpgrader(string baseFolder, string webName, bool rubicon, string[] adminFolders, string[] rootFolders, string beta, string connectionFile, bool ignoreConnect, string db, string user, string password, string host, out string workDir)
+    private static PhpUpgraderBase? LoadPhpUpgrader(bool rubicon, string[] adminFolders, string[] rootFolders, string beta, string connectionFile, bool ignoreConnect, string db, string user, string password, string host, out string workDir)
     {
-        workDir = Path.Join(baseFolder, "weby", webName);
+        workDir = Path.Join(_baseFolder, "weby", _webName);
 
-        if (webName == string.Empty)
+        if (_webName == string.Empty)
         {
             Console.Error.WriteLine($"Složka {workDir} není validní, protože parametr '--web-name' není zadán.");
             return null;
@@ -56,13 +74,13 @@ public static class Program
             return null;
         }
 
-        var upgrader = !rubicon ? new MonaUpgrader(baseFolder, webName)
+        var upgrader = !rubicon ? new MonaUpgrader(_baseFolder, _webName)
         {
             AdminFolders = adminFolders,
             RenameBetaWith = beta,
             ConnectionFile = connectionFile,
         }
-        : new RubiconUpgrader(baseFolder, webName);
+        : new RubiconUpgrader(_baseFolder, _webName);
 
         if (!ignoreConnect)
         {
@@ -75,9 +93,9 @@ public static class Program
         return upgrader;
     }
 
-    private static void RunUpgrade(PhpUpgraderBase upgrader, string webName, string baseFolder, bool useBackup, bool ignoreBackup, string workDir)
+    private static void RunUpgrade(PhpUpgraderBase upgrader, bool useBackup, bool ignoreBackup, string workDir)
     {
-        Console.Write($"Spuštěn PHP upgrade pro '{webName}' použitím ");
+        Console.Write($"Spuštěn PHP upgrade pro '{_webName}' použitím ");
         Console.Write(upgrader switch
         {
             RubiconUpgrader => "Rubicon",
@@ -93,19 +111,19 @@ public static class Program
 
         if (!ignoreBackup)
         {
-            BackupManager.LoadBackupFiles(useBackup, baseFolder, webName);
+            BackupManager.LoadBackupFiles(useBackup, _baseFolder, _webName);
         }
         Console.WriteLine("\nZpracované soubory:");
         upgrader.UpgradeAllFilesRecursively(workDir);
 
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"\nAutomatický upgrade PHP webu {webName} je dokončen!");
+        Console.WriteLine($"\nAutomatický upgrade PHP webu {_webName} je dokončen!");
         Console.ResetColor();
     }
 
     private static void PrintUpgradeResults(PhpUpgraderBase upgrader)
     {
-        Console.WriteLine($"Celkem upravených souborů: {upgrader.ModifiedFilesCount}/{upgrader.TotalFilesCount}");
+        Console.WriteLine($"Celkem upravených souborů: {upgrader.ModifiedFiles.Count}/{upgrader.TotalFilesCount}");
 
         Console.WriteLine($"Soubory obsahující mysql_: {upgrader.FilesContainingMysql.Count}\n");
         foreach (var (fileName, matches) in upgrader.FilesContainingMysql)
@@ -122,7 +140,7 @@ public static class Program
         }
     }
 
-    private static void CheckFtp(bool checkFtp, bool ignoreFtp, string webName, string baseFolder)
+    private static void CheckForUpdatesAndDownloadFromFtp(bool checkFtp, bool ignoreFtp)
     {
         if (ignoreFtp)
         {
@@ -130,15 +148,29 @@ public static class Program
         }
         if (!checkFtp)
         {
-            Console.WriteLine("Zkontrolovat a případně stáhnout aktuální verze souborů z mcrai.vshosting.cz? (y/n)");
-            if (Console.Read() == 'y')
-            {
-                checkFtp = true;
-            }
+            Console.WriteLine($"Zkontrolovat a případně stáhnout aktuální verze souborů z FTP {McraiFtp.DefaultHostname1}? (y/n)");
+            checkFtp = Console.Read() == 'y';
         }
         if (checkFtp)
         {
-            FtpCheckRunner.Run(webName, baseFolder);
+            _ftp.Value.CheckForUpdates();
+        }
+    }
+
+    private static void UploadtToFtp(PhpUpgraderBase upgrader, bool upload, bool dontUpload)
+    {
+        if (dontUpload || upgrader.ModifiedFiles.Count == 0 || upgrader.FilesContainingMysql.Count > 0)
+        {
+            return;
+        }
+        if (!upload)
+        {
+            Console.WriteLine($"Nahrát modifikované soubory na FTP {McraiFtp.DefaultHostnameUpgrade}? (y/n)");
+            upload = Console.Read() == 'y';
+        }
+        if (upload)
+        {
+            _ftp.Value.UploadFiles(upgrader.ModifiedFiles);
         }
     }
 }
