@@ -6,7 +6,7 @@ Podrobný popis činnosti programu, viz **[src/PhpUpgrader/README.md](src/PhpUpg
 
 ### Prerekvizity:
 
-1. Ke spuštění je potřeba nainstalovat [.NET 6.0 SDK](https://dotnet.microsoft.com/download). 
+1. Ke spuštění je potřeba nainstalovat [.NET 6.0 SDK](https://dotnet.microsoft.com/download) (pouze pro možnost spuštění přes ``dotnet run``). 
 2. Program se spouští přes příkazovou řádku (viz **příklady spuštění**). Nápovědu ke všem argumentům lze zobrazit spuštěním programu s argumentem ``--help``).
 
 Název webu odpovídá složce v adresáři *"C:\McRAI\weby\"*, kde **C:\McRAI\\** je výchozím nastavením parametru *--base-folder* a **weby** je podadresářem *C:\McRAI\\*.
