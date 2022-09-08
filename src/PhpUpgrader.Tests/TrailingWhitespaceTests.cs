@@ -41,6 +41,6 @@ public class TrailingWhitespaceTests : UnitTestWithOutputBase
         var updatedContent = file.Content.ToString();
         _output.WriteLine("'" + updatedContent + "'");
         Assert.False(file.IsModified);
-        Assert.Equal(updatedContent, content);
+        Assert.Equal(content, updatedContent);
     }
 }

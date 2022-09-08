@@ -30,7 +30,7 @@ public class UpgradePListinaRSSHodnoceniTests : UnitTestWithOutputBase
         _output.WriteLine(updatedContent1);
 
         Assert.True(file.IsModified);
-        Assert.NotEqual(updatedContent1, _content);
+        Assert.NotEqual(_content, updatedContent1);
         Assert.Contains(_updatedMysqli, updatedContent1);
     }
 
@@ -49,7 +49,7 @@ public class UpgradePListinaRSSHodnoceniTests : UnitTestWithOutputBase
         _output.WriteLine(updatedContent1);
 
         Assert.False(file.IsModified);
-        Assert.Equal(updatedContent1, _content);
+        Assert.Equal(_content, updatedContent1);
         Assert.DoesNotContain(_updatedMysqli, updatedContent1);
     }
 }
