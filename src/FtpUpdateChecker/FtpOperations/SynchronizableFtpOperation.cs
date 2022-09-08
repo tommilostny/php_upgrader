@@ -12,10 +12,8 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
 
     public void Synchronize(string path, string baseFolder, string webName, SynchronizationMode synchronizationMode, string startMessage)
     {
-        if (!TryOpenSession())
-        {
-            return;
-        }
+        TryOpenSession();
+
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine(startMessage);
         Console.ResetColor();

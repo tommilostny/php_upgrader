@@ -30,10 +30,8 @@ internal sealed class FtpChecker : FtpOperation
     /// <summary> Spustit procházení všech souborů na FTP serveru v zadané cestě. </summary>
     public override void Run(string path, string baseFolder, string webName)
     {
-        if (!TryOpenSession())
-        {
-            return;
-        }
+        TryOpenSession();
+
         var phpLogFilePath = $"{PhpLogsDir}/{_sessionOptions.UserName}-{path}.txt";
         if (File.Exists(phpLogFilePath))
         {

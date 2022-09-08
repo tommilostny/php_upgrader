@@ -70,9 +70,15 @@ class Program
             Console.Error.WriteLine($"Složka {workDir} není validní, protože parametr '--web-name' není zadán.");
             return null;
         }
+        //Složka existuje, ale je prázdná, smazat.
+        if (Directory.Exists(workDir) && !Directory.EnumerateFileSystemEntries(workDir).GetEnumerator().MoveNext())
+        {
+            Directory.Delete(workDir);
+        }
+        //Pokusit se stáhnout soubory, pokud složka neexistuje (aka děláme nový web poprvé).
         if (!Directory.Exists(workDir))
         {
-            Console.WriteLine($"Složka {workDir} neexistuje. Pokusit se načíst údaje z ftp_logins.txt a stáhnout z FTP {host}?");
+            Console.WriteLine($"Složka {workDir} neexistuje. Pokusit se načíst údaje z ftp_logins.txt a stáhnout z FTP {McraiFtp.DefaultHostname1}?");
             if (Console.Read() != 'y')
             {
                 return null;
@@ -88,6 +94,7 @@ class Program
                 return null;
             }
         }
+        //Složka webu k aktualizaci existuje, vytvořit PHP upgrader.
         var upgrader = !rubicon ? new MonaUpgrader(_baseFolder, _webName)
         {
             AdminFolders = adminFolders,

@@ -33,7 +33,7 @@ internal abstract class FtpOperation : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    protected bool TryOpenSession()
+    protected void TryOpenSession()
     {
         if (!_session.Opened)
         {
@@ -46,9 +46,8 @@ internal abstract class FtpOperation : IDisposable
             catch (SessionRemoteException)
             {
                 Output.WriteError("Připojení k FTP serveru selhalo pro zadané uživatelské jméno a heslo.");
-                return false;
+                throw;
             }
         }
-        return true;
     }
 }
