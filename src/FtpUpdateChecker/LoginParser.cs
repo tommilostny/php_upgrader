@@ -1,7 +1,7 @@
 ﻿namespace FtpUpdateChecker;
 
 /// <summary> Třída obsahující informace o přihlašovacích údajích k FTP. </summary>
-internal class FtpLoginParser
+internal sealed class LoginParser
 {
     /// <summary> Uživatelské jméno. </summary>
     public string? Username { get; private set; }
@@ -13,7 +13,7 @@ internal class FtpLoginParser
     public string Path { get; private set; }
 
     /// <summary> Inicializace uživatelského jména a hesla. </summary>
-    public FtpLoginParser(string username, string password)
+    public LoginParser(string username, string password)
     {
         Username = username;
         Password = password;
@@ -21,7 +21,7 @@ internal class FtpLoginParser
 
     /// <summary> Zkusit načíst uživatelské jméno z názvu webu. </summary>
     /// <remarks> Použit výchozí parametr userName místo webName, pokud není prázdné/null. </remarks>
-    public FtpLoginParser(string? webName, string? password, string? overrideUsername, string baseFolder)
+    public LoginParser(string? webName, string? password, string? overrideUsername, string baseFolder)
         : this(overrideUsername, password)
     {
         LoadCredentialsFromWebName(baseFolder, webName);
@@ -47,7 +47,7 @@ internal class FtpLoginParser
                     return;
                 }
             }
-            throw new InvalidOperationException($"Nelze načíst heslo ze souboru {loginsFilePath} pro uživatele {Username}.");
+            throw new InvalidOperationException($"Nelze načíst heslo ze souboru {loginsFilePath} pro web {webName}.");
         }
     }
 }

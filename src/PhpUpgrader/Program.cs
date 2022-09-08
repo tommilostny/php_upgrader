@@ -2,7 +2,7 @@
 
 namespace PhpUpgrader;
 
-public static class Program
+class Program
 {
     private static string _webName;
     private static string _baseFolder;
@@ -31,17 +31,20 @@ public static class Program
     /// <param name="ignoreFtp"> Neptat se a vždy ignorovat aktualitu souborů s FTP. </param>
     /// <param name="upload"> Neptat se a vždy po dokončení lokální aktualizace nahrát tyto soubory na FTP nového serveru. </param>
     /// <param name="dontUpload"> Neptat se a po aktualizaci soubory nenahrávat. </param>
-    public static void Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
-                            string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
-                            string host = "localhost", string? beta = null, string connectionFile = "connection.php",
-                            bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false,
-                            bool checkFtp = false, bool ignoreFtp = false, bool upload = false, bool dontUpload = false)
+    static void Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
+                     string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
+                     string host = "localhost", string? beta = null, string connectionFile = "connection.php",
+                     bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false,
+                     bool checkFtp = false, bool ignoreFtp = false, bool upload = false, bool dontUpload = false)
     {
         _webName = webName;
         _baseFolder = baseFolder;
+
+        //0. fáze: příprava PHP upgraderu (kontrola zadaných parametrů)
+        // Může nastat případ, kdy složka webu neexistuje. Uživatel je tázán, zda se pokusit stáhnout z FTP mcrai1.
         var upgrader = LoadPhpUpgrader(rubicon, adminFolders, rootFolders, beta,
                                        connectionFile, ignoreConnect, db, user, password, host,
-                                       out var workDir);
+                                       ref ignoreFtp, out var workDir);
         if (upgrader is not null) //PHP upgrader se povedlo inicializovat.
         {
             //1. fáze: (pokud je vyžadováno)
@@ -59,10 +62,9 @@ public static class Program
         }
     }
 
-    private static PhpUpgraderBase? LoadPhpUpgrader(bool rubicon, string[] adminFolders, string[] rootFolders, string beta, string connectionFile, bool ignoreConnect, string db, string user, string password, string host, out string workDir)
+    static PhpUpgraderBase? LoadPhpUpgrader(bool rubicon, string[] adminFolders, string[] rootFolders, string beta, string connectionFile, bool ignoreConnect, string db, string user, string password, string host, ref bool ignoreFtp, out string workDir)
     {
         workDir = Path.Join(_baseFolder, "weby", _webName);
-
         if (_webName == string.Empty)
         {
             Console.Error.WriteLine($"Složka {workDir} není validní, protože parametr '--web-name' není zadán.");
@@ -70,10 +72,22 @@ public static class Program
         }
         if (!Directory.Exists(workDir))
         {
-            Console.Error.WriteLine($"Složka {workDir} neexistuje.");
-            return null;
+            Console.WriteLine($"Složka {workDir} neexistuje. Pokusit se načíst údaje z ftp_logins.txt a stáhnout z FTP {host}?");
+            if (Console.Read() != 'y')
+            {
+                return null;
+            }
+            try
+            {
+                Directory.CreateDirectory(workDir);
+                _ftp.Value.DownloadFromServer();
+                ignoreFtp = true;
+            }
+            catch
+            {
+                return null;
+            }
         }
-
         var upgrader = !rubicon ? new MonaUpgrader(_baseFolder, _webName)
         {
             AdminFolders = adminFolders,
@@ -93,7 +107,7 @@ public static class Program
         return upgrader;
     }
 
-    private static void RunUpgrade(PhpUpgraderBase upgrader, bool useBackup, bool ignoreBackup, string workDir)
+    static void RunUpgrade(PhpUpgraderBase upgrader, bool useBackup, bool ignoreBackup, string workDir)
     {
         Console.Write($"Spuštěn PHP upgrade pro '{_webName}' použitím ");
         Console.Write(upgrader switch
@@ -121,7 +135,7 @@ public static class Program
         Console.ResetColor();
     }
 
-    private static void PrintUpgradeResults(PhpUpgraderBase upgrader)
+    static void PrintUpgradeResults(PhpUpgraderBase upgrader)
     {
         Console.WriteLine($"Celkem upravených souborů: {upgrader.ModifiedFiles.Count}/{upgrader.TotalFilesCount}");
 
@@ -140,7 +154,7 @@ public static class Program
         }
     }
 
-    private static void CheckForUpdatesAndDownloadFromFtp(bool checkFtp, bool ignoreFtp)
+    static void CheckForUpdatesAndDownloadFromFtp(bool checkFtp, bool ignoreFtp)
     {
         if (ignoreFtp)
         {
@@ -153,11 +167,11 @@ public static class Program
         }
         if (checkFtp)
         {
-            _ftp.Value.CheckForUpdates();
+            _ftp.Value.GetUpdatesFromServer();
         }
     }
 
-    private static void UploadtToFtp(PhpUpgraderBase upgrader, bool upload, bool dontUpload)
+    static void UploadtToFtp(PhpUpgraderBase upgrader, bool upload, bool dontUpload)
     {
         if (dontUpload || upgrader.ModifiedFiles.Count == 0 || upgrader.FilesContainingMysql.Count > 0)
         {
@@ -170,7 +184,7 @@ public static class Program
         }
         if (upload)
         {
-            _ftp.Value.UploadFiles(upgrader.ModifiedFiles);
+            _ftp.Value.UploadToServer();
         }
     }
 }

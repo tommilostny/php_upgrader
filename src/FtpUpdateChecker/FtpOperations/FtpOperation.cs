@@ -1,4 +1,4 @@
-﻿namespace FtpUpdateChecker;
+﻿namespace FtpUpdateChecker.FtpOperations;
 
 internal abstract class FtpOperation : IDisposable
 {
@@ -20,9 +20,20 @@ internal abstract class FtpOperation : IDisposable
         };
     }
 
+    /// <summary> Spustit FTP operaci. </summary>
     public abstract void Run(string path, string baseFolder, string webName);
 
-    public bool TryOpenSession()
+    /// <summary> Uzavřít spojení k FTP serveru. </summary>
+    public void Dispose()
+    {
+        if (_session.Opened)
+        {
+            _session.Close();
+        }
+        GC.SuppressFinalize(this);
+    }
+
+    protected bool TryOpenSession()
     {
         if (!_session.Opened)
         {
@@ -39,15 +50,5 @@ internal abstract class FtpOperation : IDisposable
             }
         }
         return true;
-    }
-
-    /// <summary> Uzavřít spojení k FTP serveru. </summary>
-    public void Dispose()
-    {
-        if (_session.Opened)
-        {
-            _session.Close();
-        }
-        GC.SuppressFinalize(this);
     }
 }

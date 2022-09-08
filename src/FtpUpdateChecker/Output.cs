@@ -1,4 +1,6 @@
-﻿namespace FtpUpdateChecker;
+﻿using FtpUpdateChecker.FtpOperations;
+
+namespace FtpUpdateChecker;
 
 /// <summary> Internal console write methods and <seealso cref="FtpChecker"/> extensions. </summary>
 internal static class Output
@@ -9,7 +11,9 @@ internal static class Output
         Console.ForegroundColor = ConsoleColor.Red;
         Console.Error.WriteLine($"❌ {message}");
         Console.ResetColor();
-        Console.Error.WriteLine("Spusťte s parametrem --help k zobrazení nápovědy.\n");
+        Console.Error.WriteLine("Tip: Spusťte s parametrem --help k zobrazení nápovědy.");
+        Console.Error.WriteLine("     Nebo více informací na https://github.com/tommilostny/php_upgrader/blob/master/README.md");
+        Console.Error.WriteLine();
     }
 
     /// <summary> Outputs process completition message to stdout. </summary>

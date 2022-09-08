@@ -1,9 +1,9 @@
 ﻿using EO = WinSCP.EnumerationOptions;
 
-namespace FtpUpdateChecker;
+namespace FtpUpdateChecker.FtpOperations;
 
 /// <summary> Třída nad knihovnou WinSCP kontrolující soubory na FTP po určitém datu. </summary>
-internal class FtpChecker : FtpOperation
+internal sealed class FtpChecker : FtpOperation
 {
     /// <summary> Datum, od kterého hlásit změnu. </summary>
     public DateTime FromDate { get; }
@@ -21,10 +21,10 @@ internal class FtpChecker : FtpOperation
     public uint PhpFoundCount { get; private set; }
 
     /// <summary> Inicializace sezení spojení WinSCP, nastavení data. </summary>
-    public FtpChecker(string username, string password, string hostname, DateTime fromDate)
+    public FtpChecker(string username, string password, string hostname, string webName, string baseFolder, int day, int month, int year)
         : base(username, password, hostname)
     {
-        FromDate = fromDate;
+        FromDate = LoadFromDateTime(webName, baseFolder, day, month, year);
     }
 
     /// <summary> Spustit procházení všech souborů na FTP serveru v zadané cestě. </summary>
@@ -97,5 +97,37 @@ internal class FtpChecker : FtpOperation
             Output.WriteError($"Zadaná cesta '{path}' na serveru neexistuje.");
         }
         Output.WriteCompleted(phpLogFilePath, PhpFoundCount);
+    }
+
+    /// <summary>
+    /// Načte datum, po kterém hlásit soubory jako aktualizované.
+    /// </summary>
+    /// <remarks>
+    /// Pokud se parametry <paramref name="day"/>, <paramref name="month"/> a <paramref name="year"/>
+    /// neliší od výchozích hodnot (<see cref="McraiFtp.DefaultDay"/>, <see cref="McraiFtp.DefaultMonth"/> a <see cref="McraiFtp.DefaultYear"/>),
+    /// pokusí se toto datum načíst ze souboru ".phplogs/date-<paramref name="webName"/>.txt",
+    /// který existuje pokud již byly tyto kontroly dříve provedeny (soubor obsahuje datum, kdy se naposledy kontrolovala aktualita).
+    /// Pokud tento soubor neexistuje, pokusí se datum načíst z <paramref name="webName"/> složky,
+    /// (to odpovídá datu, kdy byly soubory webu poprvé staženy z FTP) jinak používá výchozí hodnoty.
+    /// </remarks>
+    private static DateTime LoadFromDateTime(string webName, string baseFolder, int day, int month, int year)
+    {
+        var modifiedDate = year != McraiFtp.DefaultYear || month != McraiFtp.DefaultMonth || day != McraiFtp.DefaultDay;
+        var webPath = Path.Join(baseFolder, "weby", webName);
+
+        var dateFile = Path.Join(FtpOperation.PhpLogsDir, $"date-{webName}.txt");
+        var date = File.Exists(dateFile)
+
+            ? DateTime.Parse(File.ReadAllText(dateFile))
+
+            : webName switch
+            {
+                not null and _ when !modifiedDate && Directory.Exists(webPath)
+                    => Directory.GetCreationTime(webPath),
+                _ => new(year, month, day)
+            };
+
+        File.WriteAllText(dateFile, DateTime.Now.ToString());
+        return date;
     }
 }
