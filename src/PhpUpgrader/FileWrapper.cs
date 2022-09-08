@@ -55,12 +55,14 @@ public sealed class FileWrapper
     /// <remarks> Přesune soubor na cestu <see cref="MoveOnSavePath"/>, pokud není null. </remarks>
     public void Save(string webName, string baseFolder)
     {
-        if (!IsModified) //Nezapisovat, pokud neproběhly žádné změny.
+        var modified = IsModified;
+        //Vytvořit backup soubor.
+        BackupManager.CreateBackupFile(Path, baseFolder, webName, modified);
+
+        if (!modified) //Nezapisovat, pokud neproběhly žádné změny.
         {
             return;
         }
-        //Vytvořit backup soubor.
-        BackupManager.CreateBackupFile(Path, baseFolder, webName);
         //Zapsat změny.
         File.WriteAllText(Path, Content.ToString());
         

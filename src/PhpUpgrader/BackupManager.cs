@@ -10,16 +10,26 @@ public static class BackupManager
     /// <param name="filePath"> Cesta k souboru, který má být zálohován. </param>
     /// <param name="baseFolder"> Root složka. </param>
     /// <param name="webName"> Název webu. </param>
-    public static void CreateBackupFile(string filePath, string baseFolder, string webName)
+    /// <param name="modified">
+    /// Příznak modifikace. Soubor se zálohuje pouze, pokud je modifikován.<br />
+    /// Pokud soubor zálohy již existuje, ale soubor nebyl modifikován, zálohovaný soubor se může smazat
+    /// (je totiž v původní nemodifikované podobě).
+    /// </param>
+    public static void CreateBackupFile(string filePath, string baseFolder, string webName, bool modified)
     {
         var s = Path.DirectorySeparatorChar;
         var backupFile = new FileInfo(filePath.Replace($"{baseFolder}{s}weby{s}{webName}{s}",
                                                        $"{baseFolder}{s}weby{s}{_backupFolder}{s}{webName}{s}",
                                                        StringComparison.Ordinal));
-        backupFile.Directory.Create();
-        if (!backupFile.Exists)
+        if (!backupFile.Exists && modified)
         {
+            backupFile.Directory.Create();
             File.Copy(filePath, backupFile.FullName);
+            return;
+        }
+        if (backupFile.Exists && !modified)
+        {
+            backupFile.Delete();
         }
     }
 
@@ -69,7 +79,6 @@ public static class BackupManager
             var destinationFile = backupFile.FullName.Replace(backupPathPart,
                                                               destinationPathPart,
                                                               StringComparison.Ordinal);
-
             backupFile.CopyTo(destinationFile, overwrite: true);
         }
     }
