@@ -20,7 +20,7 @@ public sealed record UnmodifiedMysql_File
     public static UnmodifiedMysql_File? Create(FileWrapper file)
     {
         var matches = Regex.Matches(file.Content.ToString(),
-                                    @"(?<!(//.*)|(/\*((.|\n)(?!\*/))*)|\$|->|_|PDO::)mysql_[^( )]+",
+                                    @"(?<!(//.*)|(/\*((.|\n)(?!\*/))*)|\$|->|_|PDO::|'|"")mysql_[^( )]+",
                                     RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.ExplicitCapture,
                                     TimeSpan.FromSeconds(4));
         

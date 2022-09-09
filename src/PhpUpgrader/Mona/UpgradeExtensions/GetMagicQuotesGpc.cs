@@ -20,14 +20,15 @@ public static class GetMagicQuotesGpc
                 file.Content.Replace("&& get_magic_quotes_gpc()", "&& /*get_magic_quotes_gpc()*/ false");
                 break;
         }
-        if (!file.Content.Contains("get_magic_quotes_gpc()") || Is_GMQG_Commented(contentStr.Value))
+        if ((!file.Content.Contains("get_magic_quotes_gpc()") && !file.Content.Contains("get_magic_quotes_runtime"))
+            || Is_GMQG_Commented(contentStr.Value))
         {
             return file;
         }
         //Zpracování výrazu s ternárním operátorem.
         var evaluator = new MatchEvaluator(GetMagicQuotesGpcTernaryEvaluator);
         var updated = Regex.Replace(contentStr.Value,
-                                    @"\(?!?get_magic_quotes_gpc\(\)\)?\s{0,5}\?\s{0,5}(/\*.*\*/)?\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s{0,5}:\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))",
+                                    @"\(?!?get_magic_quotes_(gpc|runtime)\(\)\)?\s{0,5}\?\s{0,5}(/\*.*\*/)?\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s{0,5}:\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))",
                                     evaluator,
                                     RegexOptions.Compiled | RegexOptions.ExplicitCapture,
                                     TimeSpan.FromSeconds(4));
@@ -37,14 +38,14 @@ public static class GetMagicQuotesGpc
             //nahradit podmínku v if za if (false) nebo if (true), podle pravdivostní hodnoty volání get_magic_quotes_gpc.
             evaluator = new MatchEvaluator(GetMagicQuotesGpcIfElseEvaluator);
             updated = Regex.Replace(updated,
-                                    @"if\s?\(\s?(?<neg>!)?\s?get_magic_quotes_gpc\(\)\s?\)",
+                                    @"if\s?\(\s?(?<neg>!)?\s?(?<fn>get_magic_quotes_(gpc|runtime))\(\)\s?\)",
                                     evaluator,
                                     RegexOptions.ExplicitCapture,
                                     TimeSpan.FromSeconds(3));
 
             if (!Is_GMQG_Commented(updated))
             {
-                file.Warnings.Add("Nezakomentovaná funkce get_magic_quotes_gpc().");
+                file.Warnings.Add("Nezakomentovaná funkce get_magic_quotes_...");
                 return file;
             }
         }
@@ -54,7 +55,7 @@ public static class GetMagicQuotesGpc
 
     private static bool Is_GMQG_Commented(string str)
     {
-        return Regex.IsMatch(str, @"/\*.{0,6}get_magic_quotes_gpc\(\)(\n|.){0,236}\*/",
+        return Regex.IsMatch(str, @"/\*.{0,6}get_magic_quotes_(gpc|runtime)\(\)(\n|.){0,236}\*/",
                              RegexOptions.Compiled | RegexOptions.ExplicitCapture,
                              TimeSpan.FromSeconds(4));
     }
@@ -86,6 +87,6 @@ public static class GetMagicQuotesGpc
         var negation = match.Groups["neg"];
         var booleanValue = negation.Success.ToString().ToLower(CultureInfo.InvariantCulture);
 
-        return $"if ({booleanValue} /*{negation}get_magic_quotes_gpc()*/)";
+        return $"if ({booleanValue} /*{negation}{match.Groups["fn"]}()*/)";
     }
 }
