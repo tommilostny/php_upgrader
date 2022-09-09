@@ -31,6 +31,7 @@ public class CurlyBraceIndexingTests : UnitTestWithOutputBase
     [InlineData("// otherwise, create data table & cache it\r\n                $sql = \"SELECT name as 'label', COUNT(*) as 'row_count'$extraCols FROM {$status['Name']} GROUP BY name\";\r\n\r\n                $ta")]
     [InlineData("if (method_exists($this, $this->endpoint))\r\n                return $this->_response($this->{$this->endpoint}($this->parameters));")]
     [InlineData("<?php \r\necho \"<hr />\";\r\n\tif ($last_skupina<>$row_data['skupina']) {  }\r\n\t$last_skupina = $row_data['skupina'];\r\n\t'start' => date('Y-m-d', $row['predpokladana_expedice']),\r\n\t\t\t'title' => \"{$row['doklad_n']} {$row['user_name']} {$row['user_surname']}\",\r\n\t\t\t'url' => \"a_load.php?menu=objednavky&order_id={$row['order_id']}\",")]
+    [InlineData("function repeat_pattern($Xf, $re)\r\n{\r\n    return\r\n    str_repeat(\"$Xf{0,65535}\", $re/65535).\"$Xf{0,\".($re%65535).\"}\";\r\n}")]
     public void DoesNotUpgradeInvalidFile(string content)
     {
         //Arrange

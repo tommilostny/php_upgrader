@@ -21,7 +21,7 @@ public sealed class FileWrapper
     public const string UnmodifiedSymbol = "⚫";
 
     /// <summary> Symbol značící modifikovaný soubor (modrá). </summary>
-    public const string ModifiedSymbol = "🔵";
+    public const string ModifiedSymbol = "🟢";
 
     /// <summary> Symbol varování o možné chybě. </summary>
     public const string WarningSymbol = "⚠️";
@@ -74,16 +74,10 @@ public sealed class FileWrapper
 
     /// <summary> Vypíše název souboru a stav modifikace. </summary>
     /// <param name="modified">Který symbol modifikace vybrat?</param>
-    public void WriteStatus(bool modified)
+    public void PrintStatus(bool modified)
     {
-        var s = SystemPath.DirectorySeparatorChar;
-        var webyIndex = Path.IndexOf($"{s}weby{s}", StringComparison.Ordinal);
-
-        var displayName = webyIndex != -1 ? Path.AsSpan(webyIndex + 6) : Path;
-
-        var symbol = modified ? ModifiedSymbol : UnmodifiedSymbol;
-
-        Console.WriteLine($"{symbol} {displayName}");
+        PrintFile(Path, modified ? ModifiedSymbol : UnmodifiedSymbol);
+        Console.WriteLine();
 
         if (!modified) //Výpis varování k souboru, pouze pokud je soubor nějak upraven.
         {
@@ -99,5 +93,15 @@ public sealed class FileWrapper
 
     /// <summary> Vypíše název souboru a stav modifikace. </summary>
     /// <remarks> Pro zjištění modifikace použije <see cref="IsModified"/>. </remarks>
-    public void WriteStatus() => WriteStatus(IsModified);
+    public void PrintStatus() => PrintStatus(IsModified);
+
+    public static void PrintFile(string filePath, string symbol)
+    {
+        var s = SystemPath.DirectorySeparatorChar;
+        var webyIndex = filePath.IndexOf($"{s}weby{s}", StringComparison.Ordinal);
+
+        var displayName = webyIndex != -1 ? filePath.AsSpan(webyIndex + 6) : filePath;
+
+        Console.Write($"{symbol} {displayName}");
+    }
 }

@@ -45,12 +45,6 @@ public class MonaUpgrader : PhpUpgraderBase
 
     protected override FileWrapper? UpgradeProcedure(string filePath)
     {
-#if DEBUG
-        Console.ForegroundColor = ConsoleColor.DarkGray;
-        Console.Write("   ");
-        Console.WriteLine(filePath);
-        Console.ResetColor();
-#endif
         FileWrapper? file = this.UpgradeTinyAjaxBehavior(filePath) ? null : new(filePath);
         switch (file)
         {

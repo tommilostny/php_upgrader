@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Mona.UpgradeExtensions;
+﻿using System.Globalization;
+
+namespace PhpUpgrader.Mona.UpgradeExtensions;
 
 public static class GetMagicQuotesGpc
 {
@@ -29,15 +31,16 @@ public static class GetMagicQuotesGpc
                                     evaluator,
                                     RegexOptions.Compiled | RegexOptions.ExplicitCapture,
                                     TimeSpan.FromSeconds(4));
-        //Pokud výraz s get_magic_quotes_gpc nebyl aktualizován, jedná se pravděpodobně o variantu s if else.
+        //Pokud výraz s get_magic_quotes_gpc nebyl aktualizován, jedná se pravděpodobně o variantu v if.
         if (!Is_GMQG_Commented(updated))
         {
+            //nahradit podmínku v if za if (false) nebo if (true), podle pravdivostní hodnoty volání get_magic_quotes_gpc.
             evaluator = new MatchEvaluator(GetMagicQuotesGpcIfElseEvaluator);
-            updated = Regex.Replace(contentStr.Value,
-                                    @"if\s?\(\s?get_magic_quotes_gpc\(\)\s?\)(\n|.){0,236}else(\n|.){0,236};",
+            updated = Regex.Replace(updated,
+                                    @"if\s?\(\s?(?<neg>!)?\s?get_magic_quotes_gpc\(\)\s?\)",
                                     evaluator,
                                     RegexOptions.ExplicitCapture,
-                                    TimeSpan.FromSeconds(4));
+                                    TimeSpan.FromSeconds(3));
 
             if (!Is_GMQG_Commented(updated))
             {
@@ -51,8 +54,7 @@ public static class GetMagicQuotesGpc
 
     private static bool Is_GMQG_Commented(string str)
     {
-        return Regex.IsMatch(str,
-                             @"/\*.{0,6}get_magic_quotes_gpc\(\)(\n|.){0,236}\*/",
+        return Regex.IsMatch(str, @"/\*.{0,6}get_magic_quotes_gpc\(\)(\n|.){0,236}\*/",
                              RegexOptions.Compiled | RegexOptions.ExplicitCapture,
                              TimeSpan.FromSeconds(4));
     }
@@ -81,11 +83,9 @@ public static class GetMagicQuotesGpc
 
     private static string GetMagicQuotesGpcIfElseEvaluator(Match match)
     {
-        //zakomentovat if else s get_magic_quotes_gpc a ponechat pouze else část.
-        var elseIndex = match.ValueSpan.IndexOf("else", StringComparison.Ordinal) + 4;
-        var beforeElse = match.ValueSpan[..elseIndex];
-        var afterElse = match.ValueSpan[elseIndex..];
+        var negation = match.Groups["neg"];
+        var booleanValue = negation.Success.ToString().ToLower(CultureInfo.InvariantCulture);
 
-        return $"/*{beforeElse}*/{afterElse}";
+        return $"if ({booleanValue} /*{negation}get_magic_quotes_gpc()*/)";
     }
 }

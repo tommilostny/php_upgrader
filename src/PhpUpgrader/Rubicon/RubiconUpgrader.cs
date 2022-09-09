@@ -19,6 +19,8 @@ public sealed class RubiconUpgrader : MonaUpgrader
     /// <returns> Upravený soubor. </returns>
     protected override FileWrapper? UpgradeProcedure(string filePath)
     {
+        this.UpgradeAdminerUglyCode(filePath);
+
         return base.UpgradeProcedure(filePath) switch
         {
             //MonaUpgrader končí s null, také hned skončit.

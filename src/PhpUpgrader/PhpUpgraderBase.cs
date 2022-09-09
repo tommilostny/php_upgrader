@@ -65,13 +65,16 @@ public abstract class PhpUpgraderBase
         foreach (var filePath in Directory.GetFiles(directoryPath, "*.php"))
         {
             TotalFilesCount++;
+            FileWrapper.PrintFile(filePath, "🔃");
+            Console.Write('\r');
+
             FileWrapper? file;
             if ((file = UpgradeProcedure(filePath)) is null)
             {
                 continue;
             }
             //upraveno, zapsat do souboru
-            file.WriteStatus();
+            file.PrintStatus();
             file.Save(WebName, BaseFolder);
             if (file.IsModified)
             {

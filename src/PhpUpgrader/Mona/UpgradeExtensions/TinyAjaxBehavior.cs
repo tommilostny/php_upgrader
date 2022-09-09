@@ -16,12 +16,12 @@ public static class TinyAjaxBehavior
 
             if (File.GetLastWriteTime(tabPath) == File.GetLastWriteTime(file.Path))
             {
-                file.WriteStatus(modified: false);
+                file.PrintStatus(modified: false);
                 return true;
             }
             File.Copy(tabPath, file.Path, overwrite: true);
             upgrader.ModifiedFiles.Add(file.Path);
-            file.WriteStatus(modified: true);
+            file.PrintStatus(modified: true);
         }
         return isTinyAjaxBehavior;
     }
