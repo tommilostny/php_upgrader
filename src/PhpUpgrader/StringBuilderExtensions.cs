@@ -81,8 +81,15 @@ internal static class StringBuilderExtensions
     /// <param name="separator">Oddělovač prvků kolekce.</param>
     internal static void JoinInto<T>(this IEnumerable<T> source, StringBuilder destination, char separator = '\n')
     {
+        var appendSeparator = destination.Length > 0 && destination[^1] == separator;
+
         destination.Clear();
         destination.AppendJoin(separator, source);
+    
+        if (appendSeparator)
+        {
+            destination.Append(separator);
+        }
     }
 
     /// <summary>

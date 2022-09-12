@@ -52,6 +52,9 @@ public abstract class PhpUpgraderBase
     /// <returns> Upravený soubor, null v případě TinyAjaxBehavior nebo prázdného souboru. </returns>
     protected abstract FileWrapper? UpgradeProcedure(string filePath);
 
+    /// <summary> Kód, který se spustí po úspěšné <see cref="UpgradeProcedure(string)"/>. </summary>
+    protected abstract void AfterUpgradeProcedure(FileWrapper file);
+
     /// <summary> Rekurzivní upgrade .php souborů ve všech podadresářích. </summary>
     /// <param name="directoryPath">Cesta k adresáři, kde hledat .php soubory.</param>
     public void UpgradeAllFilesRecursively(string directoryPath)
@@ -73,6 +76,7 @@ public abstract class PhpUpgraderBase
             {
                 continue;
             }
+            AfterUpgradeProcedure(file);
             //upraveno, zapsat do souboru
             file.PrintStatus();
             file.Save(WebName, BaseFolder);

@@ -65,17 +65,16 @@ public sealed class FileWrapper
         //Vytvořit backup soubor.
         BackupManager.CreateBackupFile(Path, baseFolder, webName, modified);
 
-        if (!modified) //Nezapisovat, pokud neproběhly žádné změny.
+        if (modified) //Nezapisovat, pokud neproběhly žádné změny.
         {
-            return;
-        }
-        //Zapsat změny.
-        Content.Insert(0, _modifiedFileStartMessage.Value);
-        File.WriteAllText(Path, Content.ToString());
-        
-        if (MoveOnSavePath is not null) //Přesunout soubor, pokud je potřeba změnit jméno.
-        {
-            File.Move(Path, MoveOnSavePath, overwrite: true);
+            //Zapsat změny.
+            //Content.Insert(0, _modifiedFileStartMessage.Value);
+            File.WriteAllText(Path, Content.ToString());
+
+            if (MoveOnSavePath is not null) //Přesunout soubor, pokud je potřeba změnit jméno.
+            {
+                File.Move(Path, MoveOnSavePath, overwrite: true);
+            }
         }
     }
 

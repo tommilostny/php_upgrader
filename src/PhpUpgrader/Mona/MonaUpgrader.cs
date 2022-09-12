@@ -77,7 +77,6 @@ public class MonaUpgrader : PhpUpgraderBase
         }
         file.UpgradeUnlink()
             .UpgradeRegexFunctions()
-            .RemoveTrailingWhitespaces()
             .UpgradeIfEmpty()
             .UpgradeGetMagicQuotesGpc()
             .UpgradeWhileListEach()
@@ -92,5 +91,13 @@ public class MonaUpgrader : PhpUpgraderBase
             file.Warnings.Add("Soubor obsahuje IP adresu mcrai1 (93.185.102.228).");
         }
         return file;
+    }
+
+    protected override void AfterUpgradeProcedure(FileWrapper file)
+    {
+        if (file.IsModified)
+        {
+            file.RemoveTrailingWhitespaces();
+        }
     }
 }
