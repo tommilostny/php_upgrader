@@ -1,4 +1,4 @@
-# PHP upgrader tool (RS Mona, Rubicon)
+# McRAI PHP upgrader tool (RS Mona, Rubicon)
 
 Vytvořeno pro *McRAI* Tomášem Milostným jako nástroj aktualizace webových prezentací z PHP verze 5 na verzi 7.
 
