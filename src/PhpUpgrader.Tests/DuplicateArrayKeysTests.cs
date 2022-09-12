@@ -1,6 +1,4 @@
-﻿using PhpUpgrader.Rubicon.UpgradeExtensions;
-
-namespace PhpUpgrader.Tests;
+﻿namespace PhpUpgrader.Tests;
 
 public class DuplicateArrayKeysTests : UnitTestWithOutputBase
 {

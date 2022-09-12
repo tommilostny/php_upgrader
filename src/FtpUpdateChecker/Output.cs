@@ -1,6 +1,4 @@
-﻿using FtpUpdateChecker.FtpOperations;
-
-namespace FtpUpdateChecker;
+﻿namespace FtpUpdateChecker;
 
 /// <summary> Internal console write methods and <seealso cref="FtpChecker"/> extensions. </summary>
 internal static class Output

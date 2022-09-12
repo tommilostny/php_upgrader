@@ -1,6 +1,4 @@
-﻿using PhpUpgrader.Mona.UpgradeExtensions;
-
-namespace PhpUpgrader.Tests;
+﻿namespace PhpUpgrader.Tests;
 
 public class ImplodeTests : UnitTestWithOutputBase
 {

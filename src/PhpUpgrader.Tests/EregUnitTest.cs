@@ -1,5 +1,3 @@
-using PhpUpgrader.Mona.UpgradeExtensions;
-
 namespace PhpUpgrader.Tests;
 
 public class EregUnitTest : UnitTestWithOutputBase

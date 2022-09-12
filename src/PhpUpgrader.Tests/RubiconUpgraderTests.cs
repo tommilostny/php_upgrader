@@ -1,8 +1,4 @@
-﻿using PhpUpgrader.Mona.UpgradeHandlers;
-using PhpUpgrader.Rubicon.UpgradeExtensions;
-using PhpUpgrader.Rubicon.UpgradeHandlers;
-
-namespace PhpUpgrader.Tests;
+﻿namespace PhpUpgrader.Tests;
 
 public class RubiconUpgraderTests : UnitTestWithOutputBase
 {

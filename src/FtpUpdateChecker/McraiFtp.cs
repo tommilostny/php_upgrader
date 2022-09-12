@@ -1,6 +1,4 @@
-﻿using FtpUpdateChecker.FtpOperations;
-
-namespace FtpUpdateChecker;
+﻿namespace FtpUpdateChecker;
 
 /// <summary>
 /// Třída poskytující McRAI FTP funkcionalitu pro vnější použití.
