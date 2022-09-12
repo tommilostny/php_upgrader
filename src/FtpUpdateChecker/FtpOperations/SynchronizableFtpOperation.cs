@@ -42,16 +42,19 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
 
     private void FileTransfered(object sender, TransferEventArgs e)
     {
-        if (e.Error is null)
+        switch (e)
         {
-            Console.Write("\r✅ ");
-            Console.WriteLine(e.FileName);
-            return;
-        }
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.Write("\r❌ ");
-        Console.WriteLine(e.FileName);
-        Console.ResetColor();
+            case { Error: not null }:
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write("\r❌ ");
+                Console.WriteLine(e.FileName);
+                Console.ResetColor();
+                break;
+            default:
+                Console.Write("\r✅ ");
+                Console.WriteLine(e.FileName);
+                break;
+        }       
     }
 
     private static void PrintSyncSuccess(SynchronizationMode synchronizationMode, SynchronizationResult result)
