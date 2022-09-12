@@ -6,8 +6,9 @@ Podrobný popis činnosti programu, viz **[src/PhpUpgrader/README.md](src/PhpUpg
 
 ### Prerekvizity:
 
-1. Ke spuštění je potřeba nainstalovat [.NET 6.0 SDK](https://dotnet.microsoft.com/download) (pouze pro možnost spuštění přes ``dotnet run``). 
-2. Program se spouští přes příkazovou řádku (viz **příklady spuštění**). Nápovědu ke všem argumentům lze zobrazit spuštěním programu s argumentem ``--help``).
+1. Pro možnost spuštění ze zdrojového kódu přes ``dotnet run`` je potřeba nainstalovat [runtime .NET 6.0](https://dotnet.microsoft.com/download).
+1. Pro weby, které obsahují minifikovaný soubor **adminer.php** je potřeba nainstalovat [PHP 7.4](https://windows.php.net/download#php-7.4) a [composer](https://getcomposer.org/download/) (ověřit instalaci, je možné spustit příkaz **``composer -v``** v příkazové řádce). Vedle hlavního programu je spuštěn externí skript [PHP-CS-Fixer](https://github.com/FriendsOfPHP/PHP-CS-Fixer), který formátuje kód PHP do lépe upravitelné podoby.
+1. Program se spouští přes příkazovou řádku (viz **příklady spuštění**). Nápovědu ke všem argumentům lze zobrazit spuštěním programu s argumentem ``--help``).
 
 Název webu odpovídá složce v adresáři *"C:\McRAI\weby\"*, kde **C:\McRAI\\** je výchozím nastavením parametru *--base-folder* a **weby** je podadresářem *C:\McRAI\\*.
 
