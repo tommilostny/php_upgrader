@@ -11,7 +11,9 @@ public sealed class ObjectClassHandler
 
     public ObjectClassHandler(RubiconUpgrader upgrader)
     {
-        _containsObjectClass = LookForObjectPhpFile(upgrader);
+        _containsObjectClass = !string.IsNullOrWhiteSpace(upgrader.BaseFolder)
+                            && !string.IsNullOrWhiteSpace(upgrader.WebName) 
+                            && LookForObjectPhpFile(upgrader);
     }
 
     /// <summary>
