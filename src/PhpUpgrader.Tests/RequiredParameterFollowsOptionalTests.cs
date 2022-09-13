@@ -43,6 +43,7 @@ public class RequiredParameterFollowsOptionalTests : UnitTestWithOutputBase
     [InlineData(" * @uses smarty_make_timestamp()\r\n */\r\nfunction smarty_modifier_date_format($string, $format = '%b %e, %Y', $default_date = '')\r\n{\r\n")]
     [InlineData("\r\n\tfunction Moxiecode_ClientResources($settings = array())\r\n\t{\r\n\t\tself::__construct($settings);\r\n\t}\r\n")]
     [InlineData("     */\r\n    public static function validateCaFile($filename, LoggerInterface $logger = null)\r\n    {\r\n        static $warned = false;\r\n\r\n        if (isset(self::$caFileValidity[$filename])) {\r\n            return self::$caFileValidity[$filename];\r\n        }")]
+    [InlineData("    /**\r\n     * Construct an instance of this class.\r\n     *\r\n     * @param array  $headers   Specify the headers as injection. Should be PHP _SERVER flavored.\r\n     *                          If left empty, will use the global _SERVER['HTTP_*'] vars instead.\r\n     * @param string $userAgent Inject the User-Agent header. If null, will use HTTP_USER_AGENT\r\n     *                          from the $headers array instead.\r\n     */\r\n    public function __construct(\r\n        array $headers = null,\r\n        $userAgent = null\r\n    ) {\r\n        $this->setHttpHeaders($headers);\r\n        $this->setUserAgent($userAgent);\r\n    }")]
     public void DoesNotUpgradeInvalidFile(string content)
     {
         //Arrange

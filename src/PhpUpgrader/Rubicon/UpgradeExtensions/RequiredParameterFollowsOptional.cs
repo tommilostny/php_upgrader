@@ -57,7 +57,7 @@ public static class RequiredParameterFollowsOptional
             updatedParameters.Push(paramValue);
         }
         //Vrátit původní hodnotu, pokud se nedošlo do stavu 2 (nebyl vlastně nalezen žádný "volitelný" parametr).
-        if (state == 1 || updatedParameters.Count == 0)
+        if (state != 2 || updatedParameters.Count == 0)
         {
             return match.Value;
         }

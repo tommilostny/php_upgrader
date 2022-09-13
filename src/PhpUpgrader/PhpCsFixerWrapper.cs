@@ -7,22 +7,40 @@ namespace PhpUpgrader;
 /// </summary>
 internal static class PhpCsFixerWrapper
 {
-    private static bool _installed = false;
+    private static bool? _installed = null;
 
     public static void FormatPhp(string filePath, string rules = "@PSR2")
     {
-        if (!_installed)
+        if (_installed is null && (_installed = RunPhpCsFixer(filePath, rules)) is true)
+        {
+            return;
+        }
+        if (_installed is false)
         {
             RunComposer();
+            _installed = true;
         }
-        var phpCsFixer = new ProcessStartInfo
+        RunPhpCsFixer(filePath, rules);
+    }
+
+    private static bool RunPhpCsFixer(string filePath, string rules)
+    {
+        try
         {
-            FileName = "php-cs-fixer",
-            Arguments = $"--verbose fix {filePath} --rules={rules}",
-            UseShellExecute = true,
-        };
-        using var phpCsFixerProcess = Process.Start(phpCsFixer);
-        phpCsFixerProcess.WaitForExit();
+            var phpCsFixer = new ProcessStartInfo
+            {
+                FileName = "php-cs-fixer",
+                Arguments = $"--verbose fix {filePath} --rules={rules}",
+                UseShellExecute = true,
+            };
+            using var phpCsFixerProcess = Process.Start(phpCsFixer);
+            phpCsFixerProcess.WaitForExit();
+        }
+        catch
+        {
+            return false;
+        }
+        return true;
     }
 
     private static void RunComposer()
@@ -35,6 +53,5 @@ internal static class PhpCsFixerWrapper
         };
         using var composerProcess = Process.Start(composer);
         composerProcess.WaitForExit();
-        _installed = true;
     }
 }

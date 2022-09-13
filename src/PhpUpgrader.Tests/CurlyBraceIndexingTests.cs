@@ -30,6 +30,7 @@ public class CurlyBraceIndexingTests : UnitTestWithOutputBase
     [InlineData("if (method_exists($this, $this->endpoint))\r\n                return $this->_response($this->{$this->endpoint}($this->parameters));")]
     [InlineData("<?php \r\necho \"<hr />\";\r\n\tif ($last_skupina<>$row_data['skupina']) {  }\r\n\t$last_skupina = $row_data['skupina'];\r\n\t'start' => date('Y-m-d', $row['predpokladana_expedice']),\r\n\t\t\t'title' => \"{$row['doklad_n']} {$row['user_name']} {$row['user_surname']}\",\r\n\t\t\t'url' => \"a_load.php?menu=objednavky&order_id={$row['order_id']}\",")]
     [InlineData("function repeat_pattern($Xf, $re)\r\n{\r\n    return\r\n    str_repeat(\"$Xf{0,65535}\", $re/65535).\"$Xf{0,\".($re%65535).\"}\";\r\n}")]
+    [InlineData("                else\r\n                {\r\n                    $guestTalk = false;\r\n\r\n                    $talkId = TalkModel::repo()->getTalkIdForUsers($from, $to);\r\n\r\n                    // Sort ids\r\n\r\n                    $user1 = $from;\r\n                    $user2 = $to;\r\n\r\n                    if($user1 > $user2)\r\n                    {\r\n                        $user1 = $user2;\r\n                        $user2 = $from;\r\n                    }\r\n\r\n                    $userTalkMapping[\"{$user1}_$user2\"] = $talkId;\r\n                }\r\n\r\n                // Make the other user watch the new talk\r\n\r\n                UserModel::repo()->addWatchedTalks($to, array($talkId));\r\n            }")]
     public void DoesNotUpgradeInvalidFile(string content)
     {
         //Arrange

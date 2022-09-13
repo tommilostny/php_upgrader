@@ -114,10 +114,10 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
          "= func_get_args();"
         ),
         ("@get_magic_quotes_runtime();",
-         "/*@get_magic_quotes_runtime()*/ false;"
+         "false /*@get_magic_quotes_runtime()*/;"
         ),
         ("get_magic_quotes_runtime();",
-         "/*get_magic_quotes_runtime()*/ false;"
+         "false /*get_magic_quotes_runtime()*/;"
         ),
     };
 }

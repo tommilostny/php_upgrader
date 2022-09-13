@@ -1,4 +1,5 @@
-﻿using SystemPath = System.IO.Path;
+﻿using System.Globalization;
+using SystemPath = System.IO.Path;
 
 namespace PhpUpgrader;
 
@@ -35,7 +36,11 @@ public sealed class FileWrapper
     private static readonly Lazy<string> _modifiedFileStartMessage = new(() =>
     {
         var version = typeof(FileWrapper).Assembly.GetName().Version;
-        return $"<?php /* Processed by McRAI PHP upgrader tool {version} by Tomáš Milostný (https://github.com/tommilostny/php_upgrader). */ ?>\n";
+        return $@"<?php
+/* Processed by McRAI PHP upgrader tool {version} (https://github.com/tommilostny/php_upgrader)
+ * (c) {DateTime.Now.Year.ToString(CultureInfo.InvariantCulture)} Tomáš Milostný
+ */ ?>
+";
     });
 
     /// <summary> Obsah souboru je zadán parametrem. </summary>
@@ -68,7 +73,7 @@ public sealed class FileWrapper
         if (modified) //Nezapisovat, pokud neproběhly žádné změny.
         {
             //Zapsat změny.
-            //Content.Insert(0, _modifiedFileStartMessage.Value);
+            Content.Insert(0, _modifiedFileStartMessage.Value);
             File.WriteAllText(Path, Content.ToString());
 
             if (MoveOnSavePath is not null) //Přesunout soubor, pokud je potřeba změnit jméno.

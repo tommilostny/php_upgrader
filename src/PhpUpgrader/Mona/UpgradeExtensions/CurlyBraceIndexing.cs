@@ -12,7 +12,7 @@ public static class CurlyBraceIndexing
         var evaluator = new MatchEvaluator(m => CurlyToSquareBracketsIndex(m, content));
 
         var updated = Regex.Replace(content,
-                                    @"(?<array>\$[^;\n=.,(})/+*]+?)\s?{(?<index>[^;\n]*?)}",
+                                    @"(?<array>\$[^;\n=.,(})/+*\s""'[]+?)\s?{(?<index>[^;\n]*?)}",
                                     evaluator,
                                     RegexOptions.ExplicitCapture | RegexOptions.Compiled,
                                     TimeSpan.FromSeconds(4));

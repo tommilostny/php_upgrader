@@ -5,24 +5,26 @@ public static class CloseIndex
     /// <summary> Přidá mysqli_close nebo pg_close na konec soubor index.php. </summary>
     public static FileWrapper UpgradeCloseIndex(this FileWrapper file, MonaUpgrader upgrader)
     {
-        if (!IsRootIndexFile(file.Path, upgrader))
+        if (IsRootIndexFile(file.Path, upgrader))
         {
-            return file;
-        }
-        var closeArg = upgrader is RubiconUpgrader ? "pg_close" : "mysqli_close";
-
-        if (!file.Content.Contains(closeArg))
-        {
-            file.Content.Append(new CloseFunctionFormat(), $"\n<?php {closeArg}($beta); ?>");
+            var closeArg = upgrader is RubiconUpgrader ? "pg_close" : "mysqli_close";
+            if (!file.Content.Contains(closeArg))
+            {
+                file.Content.Append(new CloseFunctionFormat(), $"\n<?php {closeArg}($beta); ?>");
+            }
         }
         return file;
     }
 
     private static bool IsRootIndexFile(string path, MonaUpgrader upgrader)
     {
-        const string indexFile = "index.php";
-        return path.EndsWith(Path.Join(upgrader.WebName, indexFile), StringComparison.Ordinal)
-            || upgrader.OtherRootFolders?.Any(rf => path.EndsWith(Path.Join(upgrader.WebName, rf, indexFile), StringComparison.Ordinal)) == true;
+        return path.EndsWith(Path.Join(upgrader.WebName, "index.php"), StringComparison.Ordinal)
+            || upgrader.OtherRootFolders?.Any(rf =>
+            {
+                return path.EndsWith(Path.Join(upgrader.WebName, rf, "index.php"), StringComparison.Ordinal)
+                    || path.EndsWith(Path.Join(upgrader.WebName, rf, "index_new.php"), StringComparison.Ordinal);
+            })
+            == true;
     }
 
     private class CloseFunctionFormat : IFormatProvider, ICustomFormatter

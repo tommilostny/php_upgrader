@@ -18,7 +18,7 @@ public static class Implode
             var evaluator = new MatchEvaluator(ImplodeParamSwitch);
             var content = file.Content.ToString();
             var updated = Regex.Replace(content,
-                                        @"implode\s?\(\s*?(?<array>\$\w+)\s*?,\s*?(?<sep>(?<quote>(""|')).*\k<quote>)\s*?\)",
+                                        @"implode\s?\(\s*?(?<array>\$\w+)\s*?,\s*?(?<sep>(?<quote>(""|')).*?(?<!\\)\k<quote>)\s*?\)",
                                         evaluator,
                                         RegexOptions.Compiled | RegexOptions.ExplicitCapture,
                                         TimeSpan.FromSeconds(4));

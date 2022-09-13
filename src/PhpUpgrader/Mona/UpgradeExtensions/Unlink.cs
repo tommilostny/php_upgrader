@@ -9,7 +9,7 @@ public static class Unlink
     /// </summary>
     public static FileWrapper UpgradeUnlink(this FileWrapper file)
     {
-        if (InvalidPathParts().All(ipp => !file.Path.Contains(ipp, StringComparison.Ordinal)))
+        if (ExternalAppPathParts().All(eapp => !file.Path.Contains(eapp, StringComparison.Ordinal)))
         {
             file.Content.Replace("unlink", "@unlink")
                         .Replace("@@unlink", "@unlink");
@@ -17,11 +17,14 @@ public static class Unlink
         return file;
     }
 
-    private static IEnumerable<string> InvalidPathParts()
+    private static IEnumerable<string> ExternalAppPathParts()
     {
         yield return "tiny_mce";
         yield return "swiper";
         yield return "fancybox";
         yield return "piwika";
+        yield return "_foxydesk";
+        yield return "_foxydesk_zaloha";
+        yield return "foxydesk";
     }
 }
