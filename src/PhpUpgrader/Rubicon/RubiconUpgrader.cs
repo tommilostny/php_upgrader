@@ -6,12 +6,15 @@ namespace PhpUpgrader.Rubicon;
 /// <summary> PHP upgrader pro systém Rubicon, založený na upgraderu pro systém Mona. </summary>
 public sealed class RubiconUpgrader : MonaUpgrader
 {
+    private readonly ObjectClassHandler _objectClassHandler;
+
     /// <summary> Konstruktor Rubicon > Mona upgraderu. </summary>
     public RubiconUpgrader(string baseFolder, string webName)
         : base(baseFolder, webName,
                new RubiconFindReplaceHandler(),
                new RubiconConnectHandler())
     {
+        _objectClassHandler = new(this);
     }
 
     /// <summary> Procedura aktualizace Rubicon souborů. </summary>
@@ -21,29 +24,32 @@ public sealed class RubiconUpgrader : MonaUpgrader
     {
         this.UpgradeAdminerUglyCode(filePath);
 
-        return base.UpgradeProcedure(filePath) switch
+        switch (base.UpgradeProcedure(filePath))
         {
             //MonaUpgrader končí s null, také hned skončit.
-            null => null,
+            case null: return null;
+
             //jinak máme soubor k aktualizaci dalšími metodami specifickými pro Rubicon.
-            var file => file.UpgradeObjectClass(this)
-                            .UpgradeConstructors()
-                            .UpgradeScriptLanguagePhp()
-                            .UpgradeIncludesInHtmlComments()
-                            .UpgradeAegisxDetail()
-                            .UpgradeLoadData()
-                            .UpgradeHomeTopProducts()
-                            .UpgradeUrlPromenne()
-                            .UpgradeDuplicateArrayKeys()
-                            .UpgradeOldUnparsableAlmostEmptyFile()
-                            .UpgradeHodnoceniDBCalls()
-                            .UpgradeLibDbMysql()
-                            .UpgradeArrayMissingKeyValue()
-                            .UpgradePiwikaLibsPearRaiseError()
-                            .UpgradeRequiredParameterFollowsOptional()
-                            .UpgradeNullByteInRegex()
-                            .UpgradePclZipLib()
-                            .UpgradeAdminerMysql()
-        };
+            case var file:
+                _objectClassHandler.UpgradeObjectClass(file);
+                file.UpgradeConstructors()
+                    .UpgradeScriptLanguagePhp()
+                    .UpgradeIncludesInHtmlComments()
+                    .UpgradeAegisxDetail()
+                    .UpgradeLoadData()
+                    .UpgradeHomeTopProducts()
+                    .UpgradeUrlPromenne()
+                    .UpgradeDuplicateArrayKeys()
+                    .UpgradeOldUnparsableAlmostEmptyFile()
+                    .UpgradeHodnoceniDBCalls()
+                    .UpgradeLibDbMysql()
+                    .UpgradeArrayMissingKeyValue()
+                    .UpgradePiwikaLibsPearRaiseError()
+                    .UpgradeRequiredParameterFollowsOptional()
+                    .UpgradeNullByteInRegex()
+                    .UpgradePclZipLib()
+                    .UpgradeAdminerMysql();
+                return file;
+        }
     }
 }
