@@ -8,10 +8,7 @@ public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
     /// <summary> Aktualizace souborů připojení systému Rubicon. </summary>
     public override void UpgradeConnect(FileWrapper file, PhpUpgraderBase upgrader)
     {
-        UpgradeMonaLikeConnect(file, upgrader, "rubicon_import.php", "sportmall_import");
-        UpgradeMonaLikeConnect(file, upgrader, "hodnoceni.php", "hodnoceni_conn");
-        UpgradeMonaLikeConnect(file, upgrader, "iviki_import.php", "sportmall_import");
-        UpgradeMonaLikeConnect(file, upgrader, "iviki_mysql.php", "iviki_mysql");
+        UpgradeMonaLikeConnect(file, upgrader);
         UpgradeSetup(file, upgrader);
         UpgradeHostname(file, upgrader);
         UpgradeOldDbConnect(file, upgrader);
@@ -19,35 +16,75 @@ public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
     }
 
     /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php. </summary>
-    public void UpgradeMonaLikeConnect(FileWrapper file, PhpUpgraderBase upgrader, string fileName, string varName)
+    public void UpgradeMonaLikeConnect(FileWrapper file, PhpUpgraderBase upgrader)
     {
-        if (!file.Path.EndsWith(Path.Join("Connections", fileName), StringComparison.Ordinal))
+        if (file.Path.Contains(Path.Join(upgrader.WebName, "Connections"), StringComparison.Ordinal))
         {
-            return;
+            var content = file.Content.ToString();
+            var varName = LoadConnectionVariableName(content);
+            if (varName is null) //nemáme název proměnné? skončit.
+            {
+                return;
+            }
+            //načíst původní dotazy z konce souboru.
+            var mysqliQueries = LoadMysqlQueries(content, varName);
+
+            //uložit si původní hodnoty parametrů
+            var backup = (upgrader.ConnectionFile, upgrader.Hostname);
+            upgrader.ConnectionFile = file.Path.Split(Path.DirectorySeparatorChar)[^1];
+
+            if (string.Equals(upgrader.Hostname, "localhost", StringComparison.Ordinal))
+                upgrader.Hostname = null;
+
+            //aktualizovat stejně jako connect pro RS Mona.
+            base.UpgradeConnect(file, upgrader);
+            
+            //načíst zálohu hodnot.
+            (upgrader.ConnectionFile, upgrader.Hostname) = backup;
+            (upgrader as MonaUpgrader)?.RenameVar(file.Content, varName);
+
+            //nakonec přidat aktualizované původní dotazy.
+            file.Content.Replace($"mysqli_query(${varName}, \"SET CHARACTER SET utf8\");", mysqliQueries);
         }
-        //načíst původní dotazy z konce souboru.
+    }
+
+    private static string? LoadConnectionVariableName(string content)
+    {
+        IEnumerable<Match> variables = Regex.Matches(content,
+                                                     @"\$(hostname|database|username|password)_(?<beta>\w+)",
+                                                     RegexOptions.Compiled | RegexOptions.ExplicitCapture,
+                                                     TimeSpan.FromSeconds(4));
+        string? varName = null;
+        foreach (var match in variables)
+        {
+            var expectedVarName = match.Groups["beta"].Value;
+            if (varName is null) //první průběh, načíst očekávaný název proměnné
+            {
+                varName = expectedVarName;
+                continue;
+            }
+            //v dalších případech kontrolovat, zda se jedná o stejný název, jinak neupravovat.
+            if (!string.Equals(expectedVarName, varName, StringComparison.Ordinal))
+            {
+                return null;
+            }
+        }
+        return varName;
+    }
+
+    private static string LoadMysqlQueries(string content, string varName)
+    {
         StringBuilder mysqliQueries = new();
-        IEnumerable<Match> matches = Regex.Matches(file.Content.ToString(), @"mysql_query\("".+""\);", RegexOptions.Compiled, TimeSpan.FromSeconds(4));
-        foreach (var match in matches)
+        IEnumerable<Match> queries = Regex.Matches(content,
+                                                   @"mysql_query\("".+""\);",
+                                                   RegexOptions.Compiled,
+                                                   TimeSpan.FromSeconds(4));
+        foreach (var match in queries)
         {
             var queryStartIndex = match.ValueSpan.IndexOf('"');
             mysqliQueries.AppendLine(new MysqliQueryParamsFormat(), $"mysqli_query({varName}, {match.Value[queryStartIndex..]}");
         }
-        //uložit si původní hodnoty parametrů
-        var backup = (upgrader.ConnectionFile, upgrader.Hostname);
-        upgrader.ConnectionFile = fileName;
-        if (string.Equals(upgrader.Hostname, "localhost", StringComparison.Ordinal))
-        {
-            upgrader.Hostname = null;
-        }
-        //aktualizovat stejně jako connect pro RS Mona.
-        base.UpgradeConnect(file, upgrader);
-        //načíst zálohu hodnot.
-        (upgrader.ConnectionFile, upgrader.Hostname) = backup;
-        (upgrader as MonaUpgrader)?.RenameVar(file.Content, varName);
-
-        //nakonec přidat aktualizované původní dotazy.
-        file.Content.Replace($"mysqli_query(${varName}, \"SET CHARACTER SET utf8\");", mysqliQueries.ToString());
+        return mysqliQueries.ToString();
     }
 
     /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
