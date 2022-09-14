@@ -9,34 +9,16 @@ public sealed record UnmodifiedMysql_File
 
     public IReadOnlyCollection<(uint line, string function)> Matches { get; }
 
-    /// <summary>
-    /// Zjistí, zda soubor obsahuje funkce "mysql_".
-    /// </summary>
-    /// <param name="file"> Soubor, ve kterém hledat funkce "mysql_". </param>
-    /// <returns>
-    /// Novou instanci záznamu <see cref="UnmodifiedMysql_File"/> nebo <b>null</b>,
-    /// pokud <paramref name="file"/> neobsahuje "mysql_" funkce.
-    /// </returns>
-    public static UnmodifiedMysql_File? Create(FileWrapper file)
+    public UnmodifiedMysql_File(FileWrapper file, MatchCollection matches)
     {
-        var matches = Regex.Matches(file.Content.ToString(),
-                                    @"(?<!(//.*)|(/\*((.|\n)(?!\*/))*)|\$|->|_|PDO::|'|"")mysql_[^( )]+",
-                                    RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                                    TimeSpan.FromSeconds(4));
-        
-        return matches.Count == 0 ? null : new(file, matches);
+        FileName = file.Path;
+        Matches = LoadMatchesWithLineNumbers(file, matches);
     }
 
     public void Deconstruct(out string fileName, out IReadOnlyCollection<(uint line, string function)> matches)
     {
         fileName = FileName;
         matches = Matches;
-    }
-
-    private UnmodifiedMysql_File(FileWrapper file, MatchCollection matches)
-    {
-        FileName = file.Path;
-        Matches = LoadMatchesWithLineNumbers(file, matches);
     }
 
     private static List<(uint line, string function)> LoadMatchesWithLineNumbers(FileWrapper file, IEnumerable<Match> matches)

@@ -3,7 +3,7 @@
 public abstract class PhpUpgraderBase
 {
     /// <summary> Seznam souborů, které se nepodařilo aktualizovat a stále obsahují mysql_ funkce. </summary>
-    public ICollection<UnmodifiedMysql_File> FilesContainingMysql { get; } = new List<UnmodifiedMysql_File>();
+    public UnmodifiedMysql_FilesCollection FilesContainingMysql { get; } = new();
 
     /// <summary> Seznam souborů modifikovaných během procesu aktualizace. </summary>
     public ISet<string> ModifiedFiles { get; } = new HashSet<string>(StringComparer.Ordinal);
@@ -85,12 +85,7 @@ public abstract class PhpUpgraderBase
                 ModifiedFiles.Add(file.MoveOnSavePath is null ? file.Path : file.MoveOnSavePath);
             }
             //po dodelani nahrazeni nize projit na retezec - mysql_
-            var mysql_FileRecord = UnmodifiedMysql_File.Create(file);
-            if (mysql_FileRecord is not null)
-            {
-                //soubor se přidá do kolekce, pokud obsahuje funkce "mysql_".
-                FilesContainingMysql.Add(mysql_FileRecord);
-            }
+            FilesContainingMysql.CheckAdd(file);
         }
     }
 }
