@@ -18,6 +18,6 @@ class Program
         string? path = null, int year = McraiFtp.DefaultYear, int month = McraiFtp.DefaultMonth, int day = McraiFtp.DefaultDay,
         string baseFolder = McraiFtp.DefaultBaseFolder, string? webName = null)
     {
-        new McraiFtp(username, password, path, webName, baseFolder, host, day, month, year).GetUpdatesFromServer();
+        new McraiFtp(username, password, path, webName, baseFolder, host, day, month, year).Update();
     }
 }

@@ -8,15 +8,50 @@ public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
     /// <summary> Aktualizace souborů připojení systému Rubicon. </summary>
     public override void UpgradeConnect(FileWrapper file, PhpUpgraderBase upgrader)
     {
-        UpgradeMonaLikeConnect(file, upgrader);
+        if (!UpgradeMonaLikeConnect(file, upgrader))
+        {
+            UpgradeMysqlConnect(file);
+        }
         UpgradeSetup(file, upgrader);
         UpgradeHostname(file, upgrader);
         UpgradeOldDbConnect(file, upgrader);
         UpgradeRubiconModulesDB(file);
     }
 
+    public static void UpgradeMysqlConnect(FileWrapper file)
+    {
+        //var content = file.Content.ToString();
+        //var connectMatch = Regex.Match(content,
+        //                               @"(?<beta>\$\w+?)\s*?=\s*?mysql(i_|_p)?connect\s*?\((?<host>.+?),(?<user>.+?),(?<pass>.+?)\)",
+        //                               RegexOptions.Compiled | RegexOptions.ExplicitCapture,
+        //                               TimeSpan.FromSeconds(4));
+        //if (connectMatch.Success)
+        //{
+        //    var dbSelectMatch = Regex.Match(content,
+        //                                    @"mysql_select_db\s*?\((?<db>.+?),(?<beta>.+?)\)",
+        //                                    RegexOptions.Compiled | RegexOptions.ExplicitCapture,
+        //                                    TimeSpan.FromSeconds(4));
+        //    if (dbSelectMatch.Success)
+        //    {
+        //        var beta = connectMatch.Groups["beta"].Value;
+        //        if (string.Equals(dbSelectMatch.Groups["beta"].Value.Trim(), beta, StringComparison.Ordinal))
+        //        {
+        //            var host = connectMatch.Groups["host"].Value.Trim();
+        //            var user = connectMatch.Groups["user"].Value.Trim();
+        //            var pass = connectMatch.Groups["pass"].Value.Trim();
+        //            var db = dbSelectMatch.Groups["db"].Value.Trim();
+        //
+        //            file.Content.Replace(connectMatch.Value, $"{beta} = mysqli_connect({host}, {user}, {pass})")
+        //                        .Replace(dbSelectMatch.Value, $"mysqli_select_db({beta})");
+        //            
+        //        }
+        //    }
+        //}
+    }
+
     /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php. </summary>
-    public void UpgradeMonaLikeConnect(FileWrapper file, PhpUpgraderBase upgrader)
+    /// <returns> True, pokud se jedná o "connect soubor podobný jako v RS Mona" a bylo upraveno, jinak false. </returns>
+    public bool UpgradeMonaLikeConnect(FileWrapper file, PhpUpgraderBase upgrader)
     {
         if (file.Path.Contains(Path.Join(upgrader.WebName, "Connections"), StringComparison.Ordinal))
         {
@@ -24,7 +59,7 @@ public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
             var varName = LoadConnectionVariableName(content);
             if (varName is null) //nemáme název proměnné? skončit.
             {
-                return;
+                return false;
             }
             //načíst původní dotazy z konce souboru.
             var mysqliQueries = LoadMysqlQueries(content, varName);
@@ -45,7 +80,9 @@ public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
 
             //nakonec přidat aktualizované původní dotazy.
             file.Content.Replace($"mysqli_query(${varName}, \"SET CHARACTER SET utf8\");", mysqliQueries);
+            return true;
         }
+        return false;
     }
 
     private static string? LoadConnectionVariableName(string content)
@@ -235,7 +272,7 @@ public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
             (upgrader as MonaUpgrader).RenameVar(file.Content, "DBLink");
         }
     }
-
+    
     public static void UpgradeRubiconModulesDB(FileWrapper file)
     {
         if (file.Path.EndsWith(Path.Join("core", "modules", "core", "module.php"), StringComparison.Ordinal))

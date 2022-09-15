@@ -20,6 +20,10 @@ internal sealed class FtpChecker : FtpOperation
     /// <summary> Počet PHP souborů přidaných po datu <see cref="FromDate"/>. </summary>
     public uint PhpFoundCount { get; private set; }
 
+    public ISet<RemoteFileInfo>? NonPhpFiles { get; private set; }
+
+    public ISet<RemoteFileInfo> KnownNewNonPhpFiles { get; init; } = new HashSet<RemoteFileInfo>();
+
     /// <summary> Inicializace sezení spojení WinSCP, nastavení data. </summary>
     public FtpChecker(string username, string password, string hostname, string webName, string baseFolder, int day, int month, int year)
         : base(username, password, hostname)
@@ -28,6 +32,7 @@ internal sealed class FtpChecker : FtpOperation
     }
 
     /// <summary> Spustit procházení všech souborů na FTP serveru v zadané cestě. </summary>
+    /// <remarks> Výsledky prohledávání jsou dostupné ve veřejných atributech. </remarks>
     public override void Run(string path, string baseFolder, string webName)
     {
         TryOpenSession();
@@ -44,9 +49,11 @@ internal sealed class FtpChecker : FtpOperation
         Console.WriteLine($"Probíhá kontrola '{path}'...");
         var enumerationOptions = EO.EnumerateDirectories | EO.AllDirectories;
         var fileInfos = _session.EnumerateRemoteFiles(path, null, enumerationOptions);
-
+        
+        NonPhpFiles = new HashSet<RemoteFileInfo>();
         FileCount = FolderCount = PhpFoundCount = FoundCount = 0;
         var messageLength = Output.WriteStatus(this);
+        
         try //Enumerate files
         {
             foreach (var fileInfo in fileInfos)
@@ -59,11 +66,11 @@ internal sealed class FtpChecker : FtpOperation
                     messageLength = Output.WriteStatus(this);
                     continue;
                 }
+                var isPhp = fileInfo.FullName.EndsWith(".php");
                 if (fileInfo.LastWriteTime >= FromDate)
                 {
                     FoundCount++;
-                    bool isPhp;
-                    if (isPhp = fileInfo.FullName.EndsWith(".php"))
+                    if (isPhp)
                     {
                         //Na serveru je nový nebo upravený PHP soubor.
                         PhpFoundCount++;
@@ -72,6 +79,10 @@ internal sealed class FtpChecker : FtpOperation
                         localPath = Path.Join(baseFolder, "weby", webName, localPath);
                         var localFileInfo = new FileInfo(localPath);
 
+                        if (!localFileInfo.Directory.Exists)
+                        {
+                            localFileInfo.Directory.Create();
+                        }
                         //Stažení souboru
                         var transferResult = _session.GetFileToDirectory(fileInfo.FullName, localFileInfo.Directory.FullName);
                         if (transferResult.Error is null)
@@ -84,17 +95,75 @@ internal sealed class FtpChecker : FtpOperation
                                 File.Delete(backupFilePath);
                         }
                     }
+                    else
+                    {
+                        KnownNewNonPhpFiles.Add(fileInfo);
+                    }
                     Output.WriteFoundFile(this, fileInfo, messageLength, isPhp, phpLogFilePath);
+                }
+                else if (!isPhp)
+                {
+                    NonPhpFiles.Add(fileInfo);
                 }
                 FileCount++;
                 messageLength = Output.WriteStatus(this);
             }
         }
-        catch (SessionRemoteException)
+        catch (SessionRemoteException ex)
         {
-            Output.WriteError($"Zadaná cesta '{path}' na serveru neexistuje.");
+            Console.WriteLine();
+            Output.WriteError(ex.Message);
         }
-        Output.WriteCompleted(phpLogFilePath, PhpFoundCount);
+        Output.WriteCompleted(_sessionOptions.HostName, phpLogFilePath, PhpFoundCount);
+        _session.Close();
+    }
+
+    /// <summary> Kontrola daných souborů. </summary>
+    /// <returns> Seznam souborů v <see cref="KnownNewNonPhpFiles"/>, které na serveru nejsou, nebo existuje pouze starší verze. </returns>
+    public void Run(in ISet<RemoteFileInfo> remoteFilesToCheck, string hostname1 = McraiFtp.DefaultHostname1)
+    {
+        TryOpenSession();
+
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.Write($"Probíhá kontrola '{_sessionOptions.HostName}' vůči změnám na '{hostname1}' (namapováno ");
+        Console.ForegroundColor = ConsoleColor.Magenta;
+        Console.Write(remoteFilesToCheck.Count);
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine(" ne-PHP souborů)...");
+        Console.ResetColor();
+
+        var messageLength = Output.WriteStatusNoDate(this, remoteFilesToCheck.Count);
+        foreach (var item in remoteFilesToCheck)
+        {
+            Console.Write('\r');
+            _LoadAndCheckFileInfo(item);
+            FileCount++;
+            messageLength = Output.WriteStatusNoDate(this, remoteFilesToCheck.Count);
+        }
+        _session.Close();
+        Output.WriteCompleted(_sessionOptions.HostName);
+
+        void _LoadAndCheckFileInfo(RemoteFileInfo item)
+        {
+            try
+            {
+                var exists = _session.FileExists(item.FullName);
+                var fileInfo = exists ? _session.GetFileInfo(item.FullName) : null;
+
+                if (!exists || fileInfo.LastWriteTime < item.LastWriteTime)
+                {
+                    KnownNewNonPhpFiles.Add(item);
+                    FoundCount++;
+                    Output.WriteFilesDiff(this, hostname1, _sessionOptions.HostName, item, fileInfo, messageLength);
+                }
+            }
+            catch //Chyba při komunikaci se serverem, znovu připojit a zkusit načíst informace o souboru.
+            {
+                _session.Close();
+                TryOpenSession(verbose: false);
+                _LoadAndCheckFileInfo(item);
+            }
+        }
     }
 
     /// <summary>
@@ -113,7 +182,7 @@ internal sealed class FtpChecker : FtpOperation
         var modifiedDate = year != McraiFtp.DefaultYear || month != McraiFtp.DefaultMonth || day != McraiFtp.DefaultDay;
         var webPath = Path.Join(baseFolder, "weby", webName);
 
-        var dateFile = Path.Join(FtpOperation.PhpLogsDir, $"date-{webName}.txt");
+        var dateFile = Path.Join(PhpLogsDir, $"date-{webName}.txt");
         var date = File.Exists(dateFile)
 
             ? DateTime.Parse(File.ReadAllText(dateFile))

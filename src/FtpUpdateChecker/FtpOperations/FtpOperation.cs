@@ -26,26 +26,23 @@ internal abstract class FtpOperation : IDisposable
     /// <summary> Uzavřít spojení k FTP serveru. </summary>
     public void Dispose()
     {
-        if (_session.Opened)
-        {
-            _session.Close();
-        }
+        _session.Dispose();
         GC.SuppressFinalize(this);
     }
 
-    protected void TryOpenSession()
+    protected void TryOpenSession(bool verbose = true)
     {
         if (!_session.Opened)
         {
-            Console.WriteLine($"Připojování k FTP {_sessionOptions.UserName}@{_sessionOptions.HostName} ...");
+            if (verbose) Console.WriteLine($"Připojování k FTP {_sessionOptions.UserName}@{_sessionOptions.HostName} ...");
             try //Connect
             {
                 _session.Open(_sessionOptions);
-                Console.WriteLine("Připojení proběhlo úspěšně!\n");
+                if (verbose) Console.WriteLine("Připojení proběhlo úspěšně!\n");
             }
             catch (SessionRemoteException)
             {
-                Output.WriteError("Připojení k FTP serveru selhalo pro zadané uživatelské jméno a heslo.");
+                Output.WriteError($"Připojení k FTP {_sessionOptions.HostName} selhalo.");
                 throw;
             }
         }

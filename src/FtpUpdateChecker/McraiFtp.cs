@@ -53,19 +53,46 @@ public sealed class McraiFtp
     {
     }
 
-    public void GetUpdatesFromServer()
+    public void Update(string upgradeServerHostname = DefaultHostnameUpgrade)
     {
-        using var checker = new FtpChecker(_login.Username, _login.Password, _host, _webName, _baseFolder, _day, _month, _year);
-        checker.Run(GetRemotePath(), _baseFolder, _webName);
+        //kontrola všech souborů na serveru mcrai1 a získání seznamu ne-PHP souborů
+        using var fc1 = new FtpChecker(_login.Username, _login.Password, _host, _webName, _baseFolder, _day, _month, _year);
+        fc1.Run(GetRemotePath(), _baseFolder, _webName);
+        if (fc1.NonPhpFiles.Count == 0)
+        {
+            return;
+        }
+        //kontrola (mcrai-upgrade) a získání seznamu souborů, které je potřeba stáhnout z mcrai1
+        //(neexistují na mcrai-upgrade nebo je na mcrai1 novější verze)
+        using var fc2 = new FtpChecker(_login.Username, _login.Password, upgradeServerHostname, _webName, _baseFolder, _day, _month, _year)
+        {
+            KnownNewNonPhpFiles = fc1.KnownNewNonPhpFiles,
+        };
+        fc2.Run(fc1.NonPhpFiles);
+        if (fc2.KnownNewNonPhpFiles.Count == 0)
+        {
+            return;
+        }
+        //stažení (z mcrai1) seznamu souborů do dočasné složky
+        using var fd1 = new FtpDownloader(_login.Username, _login.Password, _host);
+        var tempDir = fd1.Run(fc2.KnownNewNonPhpFiles, _baseFolder, _webName, _login.Path);
+        if (!tempDir.Exists)
+        {
+            return;
+        }
+        //nahrání souborů z dočasné složky (synchronizace složky) na mcrai-upgrade
+        //a smazání dočasné složky a souborů v ní
+        using var fu2 = new FtpUploader(_login.Username, _login.Password, upgradeServerHostname);
+        fu2.Run(tempDir, _login.Path);
     }
 
-    public void UploadToServer(string upgradeServerHostname = DefaultHostnameUpgrade)
+    public void Upload(string upgradeServerHostname = DefaultHostnameUpgrade)
     {
         using var uploader = new FtpUploader(_login.Username, _login.Password, upgradeServerHostname);
         uploader.Run(GetRemotePath(), _baseFolder, _webName);
     }
 
-    public void DownloadFromServer()
+    public void Download()
     {
         using var downloader = new FtpDownloader(_login.Username, _login.Password, _host);
         downloader.Run(GetRemotePath(), _baseFolder, _webName);

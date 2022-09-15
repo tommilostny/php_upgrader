@@ -57,7 +57,7 @@ class Program
             // Může nastat případ, kdy složka webu neexistuje. Uživatel je tázán, zda se pokusit stáhnout z FTP mcrai1.
             var upgrader = LoadPhpUpgrader(rubicon, adminFolders, rootFolders, beta,
                                            connectionFile, ignoreConnect, db, user, password, host,
-                                           ref ignoreFtp, out var workDir);
+                                           out var workDir);
             if (upgrader is not null) //PHP upgrader se povedlo inicializovat.
             {
                 //1. fáze: (pokud je vyžadováno)
@@ -76,7 +76,7 @@ class Program
         }
     }
 
-    static PhpUpgraderBase? LoadPhpUpgrader(bool rubicon, string[] adminFolders, string[] rootFolders, string beta, string connectionFile, bool ignoreConnect, string db, string user, string password, string host, ref bool ignoreFtp, out string workDir)
+    static PhpUpgraderBase? LoadPhpUpgrader(bool rubicon, string[] adminFolders, string[] rootFolders, string beta, string connectionFile, bool ignoreConnect, string db, string user, string password, string host, out string workDir)
     {
         workDir = Path.Join(_baseFolder, "weby", _webName);
         if (_webName == string.Empty)
@@ -100,8 +100,7 @@ class Program
             try
             {
                 Directory.CreateDirectory(workDir);
-                _lazyFtp.Value.DownloadFromServer();
-                ignoreFtp = true;
+                _lazyFtp.Value.Download();
             }
             catch
             {
@@ -188,7 +187,7 @@ class Program
         }
         if (checkFtp)
         {
-            _lazyFtp.Value.GetUpdatesFromServer();
+            _lazyFtp.Value.Update();
         }
     }
 
@@ -205,7 +204,7 @@ class Program
         }
         if (upload)
         {
-            _lazyFtp.Value.UploadToServer();
+            _lazyFtp.Value.Upload();
         }
     }
 }
