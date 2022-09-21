@@ -1,4 +1,7 @@
-﻿namespace FtpUpdateChecker.FtpOperations;
+﻿using System.CommandLine.Rendering;
+using System.Text.RegularExpressions;
+
+namespace FtpUpdateChecker.FtpOperations;
 
 /// <summary>
 /// FTP operace podporující WinSCP synchronizaci.
@@ -9,7 +12,7 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
 
     protected SynchronizableFtpOperation(string username, string password, string hostname) : base(username, password, hostname)
     {
-        _session.FileTransferProgress += FileTransferProgress;
+        //_session.FileTransferProgress += FileTransferProgress;
         _session.FileTransferred += FileTransfered;
         _session.QueryReceived += QueryReceived;
     }
@@ -70,18 +73,26 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
     }
 
     /// <summary> Událost, která nastane při přenosu souboru jako součást metod stahování a nahrávání. </summary>
-    protected void FileTransfered(object sender, TransferEventArgs e)
+    private void FileTransfered(object sender, TransferEventArgs e)
     {
+        PrintName();
         switch (e)
         {
             case { Error: not null }:
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Write("\r❌\t");
-                Console.WriteLine(e.FileName);
-                Console.ResetColor();
+                PrintError(e.Error.Message);
                 break;
             default:
-                Console.Write("\r✅ 100%\t");
+                switch (SynchronizationMode)
+                {
+                    case SynchronizationMode.Local:
+                        Console.Write("⏬ Staženo z ");
+                        break;
+                    case SynchronizationMode.Remote:
+                        Console.Write("⏫ Nahráno na ");
+                        break;
+                }
+                Console.Write(_sessionOptions.HostName);
+                Console.Write(": ");
                 Console.WriteLine(e.FileName);
                 break;
         }
@@ -90,14 +101,20 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
     /// <summary> Událost, která nastane, když je potřeba rozhodnutí (tj. typicky u jakékoli nezávažné chyby). </summary>
     protected virtual void QueryReceived(object sender, QueryReceivedEventArgs e)
     {
-        if (!e.Message.StartsWith("Lost connection.") && !e.Message.StartsWith("Connection failed."))
+        if (!Regex.IsMatch(e.Message, @"^(Lost connection|Connection failed)\."))
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write("\r❌ ");
-            Console.WriteLine(e.Message.Replace("\n", "\r\n   ").TrimEnd());
-            Console.ResetColor();
+            PrintName();
+            PrintError(e.Message);
         }
         e.Continue();
+    }
+
+    private static void PrintError(string message)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.Write("❌ ");
+        Console.WriteLine(message.Replace("\n", "\r\n        ").TrimEnd());
+        Console.ResetColor();
     }
 
     protected void PrintResult(OperationResultBase result)

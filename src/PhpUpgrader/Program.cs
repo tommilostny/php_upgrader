@@ -34,11 +34,11 @@ class Program
     /// <param name="ignoreFtp"> Neptat se a vždy ignorovat aktualitu souborů s FTP. </param>
     /// <param name="upload"> Neptat se a vždy po dokončení lokální aktualizace nahrát tyto soubory na FTP nového serveru. </param>
     /// <param name="dontUpload"> Neptat se a po aktualizaci soubory nenahrávat. </param>
-    static void Main(string[] webName, string[]? adminFolders = null, string[]? rootFolders = null,
-                     string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
-                     string host = "localhost", string? beta = null, string connectionFile = "connection.php",
-                     bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false,
-                     bool checkFtp = false, bool ignoreFtp = false, bool upload = false, bool dontUpload = false)
+    static async Task Main(string[] webName, string[]? adminFolders = null, string[]? rootFolders = null,
+                           string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
+                           string host = "localhost", string? beta = null, string connectionFile = "connection.php",
+                           bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false,
+                           bool checkFtp = false, bool ignoreFtp = false, bool upload = false, bool dontUpload = false)
     {
         if (webName is null or { Length: 0 })
         {
@@ -62,7 +62,7 @@ class Program
             {
                 //1. fáze: (pokud je vyžadováno)
                 // Kontrola nově upravených souborů na původním serveru (mcrai1) a jejich případné stažení.
-                CheckForUpdatesAndDownloadFromFtp(checkFtp, ignoreFtp);
+                await CheckForUpdatesAndDownloadFromFtp(checkFtp, ignoreFtp).ConfigureAwait(false);
 
                 //2. fáze: Aktualizace celé složky webu
                 // (případně i načtení souborů ze zálohy, pokud toto není spuštěno poprvé).
@@ -174,7 +174,7 @@ class Program
         }
     }
 
-    static void CheckForUpdatesAndDownloadFromFtp(bool checkFtp, bool ignoreFtp)
+    static async Task CheckForUpdatesAndDownloadFromFtp(bool checkFtp, bool ignoreFtp)
     {
         if (ignoreFtp)
         {
@@ -187,7 +187,7 @@ class Program
         }
         if (checkFtp)
         {
-            _lazyFtp.Value.Update();
+            await _lazyFtp.Value.UpdateAsync().ConfigureAwait(false);
         }
     }
 

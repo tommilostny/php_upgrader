@@ -15,13 +15,16 @@ internal static class Output
     }
 
     /// <summary> Outputs process completition message to stdout. </summary>
-    internal static void WriteCompleted(string hostname, string? phpLogFilePath = null, uint phpFoundCount = 0)
+    internal static void WriteCompleted(FtpOperation ftp, string hostname, string? phpLogFilePath = null, uint phpFoundCount = 0)
     {
+        Console.WriteLine();
+        ftp.PrintName();
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"\n\n\r✅ Proces kontroly FTP '{hostname}' dokončen.");
+        Console.WriteLine($"✅ Proces kontroly FTP '{hostname}' dokončen.");
         Console.ResetColor();
         if (phpFoundCount > 0 && phpLogFilePath is not null)
         {
+            ftp.PrintName();
             Console.WriteLine("Nalezené PHP soubory byly zaznamenány do souboru:");
             Console.WriteLine(new FileInfo(phpLogFilePath).FullName);
         }
@@ -48,20 +51,23 @@ internal static class Output
     /// </summary>
     /// <param name="fc">Running FTP checker intance.</param>
     /// <param name="fileInfo">WinSCP file info.</param>
-    /// <param name="messageLength">The lenghth of space printed message needs to overwrite with spaces.</param>
     /// <param name="isPhp">PHP files are printed to console in cyan, others in default color.</param>
     /// <param name="phpLogFilePath">If <paramref name="isPhp"/> then write line to this file.</param>
-    internal static void WriteFoundFile(FtpChecker fc, RemoteFileInfo fileInfo, int messageLength, bool isPhp, string? phpLogFilePath)
+    internal static void WriteFoundFile(FtpChecker? fc, RemoteFileInfo fileInfo, bool isPhp, string? phpLogFilePath)
     {
         StreamWriter? sw = isPhp && phpLogFilePath is not null ? new(phpLogFilePath, append: true) : null;
 
-        var numberStr = $"{fc.FoundCount}.";
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.Write(numberStr);
-        sw?.Write(numberStr);
+        if (fc is not null)
+        {
+            fc.PrintName();
 
-        OutputSpaces(numberStr.Length, 6, sw);
+            var numberStr = $"{fc.FoundCount}.";
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write(numberStr);
+            sw?.Write(numberStr);
 
+            OutputSpaces(numberStr.Length, 6, sw);
+        }
         var timeStr = fileInfo.LastWriteTime.ToString();
         Console.ForegroundColor = ConsoleColor.DarkGray;
         Console.Write(timeStr);
@@ -74,38 +80,32 @@ internal static class Output
         else
             Console.ResetColor();
 
-        Console.Write(fileInfo.FullName);
+        Console.WriteLine(fileInfo.FullName);
         sw?.WriteLine(fileInfo.FullName);
         sw?.Close();
 
         if (isPhp)
             Console.ResetColor();
-
-        OutputSpaces(fileInfo.FullName.Length + 27, messageLength, null);
-        Console.WriteLine();
     }
 
-    internal static void WriteFilesDiff(FtpChecker fc, string host1, string host2, RemoteFileInfo file1, RemoteFileInfo? file2, int messageLength)
+    internal static void WriteFilesDiff(FtpChecker fc, string host1, string host2, RemoteFileInfo file1, RemoteFileInfo? file2)
     {
-        var hostnameEndIndex = (host1.Length > host2.Length ? host1.Length : host2.Length) + 3;
+        var hostnameEndIndex = (host1.Length > host2.Length ? host1.Length : host2.Length) + 8;
 
+        fc.PrintName();
         Console.Write(host1);
-        OutputSpaces(host1.Length, hostnameEndIndex, null);
-        WriteFoundFile(fc, file1, messageLength, isPhp: false, null);
+        OutputSpaces(host1.Length + 5, hostnameEndIndex, null);
+        WriteFoundFile(null, file1, isPhp: false, null);
 
+        Console.Write("     ");
         Console.Write(host2);
-        OutputSpaces(host2.Length, hostnameEndIndex, null);
+        OutputSpaces(host2.Length + 5, hostnameEndIndex, null);
 
         if (file2 is not null)
         {
-            WriteFoundFile(fc, file2, messageLength, isPhp: false, null);
+            WriteFoundFile(null, file2, isPhp: false, null);
             return;
         }
-        var numberStr = $"{fc.FoundCount}.";
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.Write(numberStr);
-        OutputSpaces(numberStr.Length, 6, null);
-
         Console.ForegroundColor = ConsoleColor.DarkYellow;
         Console.WriteLine($"{file1.Name} neexistuje na {host2}.");
         Console.ResetColor();

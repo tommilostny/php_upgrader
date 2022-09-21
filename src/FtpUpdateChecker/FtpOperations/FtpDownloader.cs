@@ -17,35 +17,46 @@ internal sealed class FtpDownloader : SynchronizableFtpOperation
         Synchronize(path, baseFolder, webName, startMessage);
     }
 
-    public DirectoryInfo Run(ISet<RemoteFileInfo> filesToDownload, string baseFolder, string webName, string path)
+    /// <summary>
+    /// Do dočasné složky stáhne soubory specifikované frontou <paramref name="q2"/>
+    /// a do fronty <paramref name="q3"/> umístí jejich lokální cesty.
+    /// </summary>
+    /// <remarks> Task běží dokud první prvek fronty není null. </remarks>
+    public async Task<DirectoryInfo> RunAsync(Queue<RemoteFileInfo?> q2, Queue<string?> q3, string baseFolder, string webName, string path)
     {
         TryOpenSession();
         var tempDirectory = Path.Join(baseFolder, $"_temp_{webName}");
         var tempDirectoryInfo = new DirectoryInfo(tempDirectory);
 
+        PrintName();
         Console.WriteLine($"Probíhá stahování nových souborů z {_sessionOptions.HostName} do dočasné složky {tempDirectoryInfo.FullName}...");
-        foreach (var item in filesToDownload)
+        do
         {
+            while (q2.Count == 0)
+            {
+                await Task.Delay(10);
+            }
+            var item = q2.Dequeue();
+            if (item is null)
+            {
+                PrintName();
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"✅ Stahování souborů z {_sessionOptions.HostName} dokončeno.");
+                Console.WriteLine();
+                Console.ResetColor();
+                _session.Close();
+                q3.Enqueue(null);
+                return tempDirectoryInfo;
+            }
             var localDirPath = Path.Join(tempDirectory, item.FullName.Replace($"/{path}/", string.Empty)
                                                                      .Replace(item.Name, string.Empty));
             Directory.CreateDirectory(localDirPath);
-            try
+            SafeSessionAction(() =>
             {
                 _session.GetFileToDirectory(item.FullName, localDirPath);
-            }
-            catch (SessionRemoteException)
-            {
-                _session.Close();
-                TryOpenSession(verbose: false);
-                _session.GetFileToDirectory(item.FullName, localDirPath);
-            }
+                q3.Enqueue(Path.Join(localDirPath, item.Name));
+            });
         }
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine();
-        Console.WriteLine($"✅ Stahování {filesToDownload.Count} souborů z {_sessionOptions.HostName} dokončeno.");
-        Console.WriteLine();
-        Console.ResetColor();
-        _session.Close();
-        return tempDirectoryInfo;
+        while (true);
     }
 }

@@ -14,10 +14,10 @@ class Program
     /// <param name="day">Soubory nad tímto dnem se zobrazí jako aktualizované.</param>
     /// <param name="baseFolder">Kde je soubor ftp_logins.txt?</param>
     /// <param name="webName">Název složky v '{baseFolder}\weby'. Získá datum vytvoření, přepisuje argumenty --year, --month a --day.</param>
-    static void Main(string? username = null, string? password = null, string host = McraiFtp.DefaultHostname1,
+    static async Task Main(string? username = null, string? password = null, string host = McraiFtp.DefaultHostname1,
         string? path = null, int year = McraiFtp.DefaultYear, int month = McraiFtp.DefaultMonth, int day = McraiFtp.DefaultDay,
         string baseFolder = McraiFtp.DefaultBaseFolder, string? webName = null)
     {
-        new McraiFtp(username, password, path, webName, baseFolder, host, day, month, year).Update();
+        await new McraiFtp(username, password, path, webName, baseFolder, host, day, month, year).UpdateAsync();
     }
 }

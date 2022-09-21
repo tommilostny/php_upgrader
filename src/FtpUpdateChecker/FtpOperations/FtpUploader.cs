@@ -40,12 +40,64 @@ internal sealed class FtpUploader : SynchronizableFtpOperation
         temporaryDirectory.Delete(recursive: true);
     }
 
+    //protected override void QueryReceived(object sender, QueryReceivedEventArgs e)
+    //{
+    //    //TODO: (ukládat si chybové soubory, po dokončení přenosu ověřit, že na serveru existují? se správným datumem? zkusit znovu.)
+    //    //Error transferring file 'C:\McRAI\_temp_olejemaziva\images_11-9-2022.backup\755132759.jpg'.
+    //    //Copying files to remote side failed.
+    //    //755132759.jpg: Append / Restart not permitted, try again
+    //    base.QueryReceived(sender, e);
+    //}
+
+    /// <summary>
+    /// Nahraje lokální soubory specifikované ve frontě <paramref name="q3"/>.
+    /// </summary>
+    /// <remarks> Task běží dokud první prvek fronty není null. </remarks>
+    public async Task RunAsync(Queue<string?> q3, string baseFolder, string webName, string path)
+    {
+        TryOpenSession();
+        var tempDirectory = Path.Join(baseFolder, $"_temp_{webName}");
+        PrintName();
+        Console.WriteLine($"Probíhá nahrávání nových souborů z dočasné složky {tempDirectory} na server {_sessionOptions.HostName}...");
+        do
+        {
+            while (q3.Count == 0)
+            {
+                await Task.Delay(10);
+            }
+            var item = q3.Dequeue();
+            if (item is null)
+            {
+                PrintName();
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"✅ Nahrávání souborů na {_sessionOptions.HostName} dokončeno.");
+                Console.WriteLine();
+                Console.ResetColor();
+                _session.Close();
+                return;
+            }
+            var s = Path.DirectorySeparatorChar;
+            var remoteDirPath = Path.Join(path, item.Replace($"{tempDirectory}{s}", string.Empty));
+            if (s != '/')
+            {
+                remoteDirPath = remoteDirPath.Replace('\\', '/');
+            }
+            remoteDirPath = string.Join('/', remoteDirPath.Split('/')[..^1]);
+            SafeSessionAction(() =>
+            {
+                _session.PutFileToDirectory(item, remoteDirPath);
+            });
+        }
+        while (true);
+    }
+
     protected override void QueryReceived(object sender, QueryReceivedEventArgs e)
     {
-        //TODO: (ukládat si chybové soubory, po dokončení přenosu ověřit, že na serveru existují? se správným datumem? zkusit znovu.)
-        //Error transferring file 'C:\McRAI\_temp_olejemaziva\images_11-9-2022.backup\755132759.jpg'.
-        //Copying files to remote side failed.
-        //755132759.jpg: Append / Restart not permitted, try again
         base.QueryReceived(sender, e);
+
+        if (e.Message.Contains("Permission denied"))
+        {
+            e.Abort();
+        }
     }
 }

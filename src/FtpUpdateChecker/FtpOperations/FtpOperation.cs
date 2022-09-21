@@ -7,6 +7,10 @@ internal abstract class FtpOperation : IDisposable
     protected readonly SessionOptions _sessionOptions;
     protected readonly Session _session = new();
 
+    public string Name { private get; init; }
+
+    public ConsoleColor Color { private get; init; }
+
     /// <summary> Inicializace sezení spojení WinSCP. </summary>
     public FtpOperation(string username, string password, string hostname)
     {
@@ -30,20 +34,68 @@ internal abstract class FtpOperation : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    public override string ToString() => Name;
+
+    public void PrintName()
+    {
+        if (!string.IsNullOrEmpty(Name))
+        {
+            Console.ForegroundColor = Color;
+            Console.Write(Name);
+            Console.ResetColor();
+            Console.Write(": ");
+        }
+    }
+
     protected void TryOpenSession(bool verbose = true)
     {
         if (!_session.Opened)
         {
-            if (verbose) Console.WriteLine($"Připojování k FTP {_sessionOptions.UserName}@{_sessionOptions.HostName} ...");
-            try //Connect
+            if (verbose)
             {
-                _session.Open(_sessionOptions);
-                if (verbose) Console.WriteLine("Připojení proběhlo úspěšně!\n");
+                PrintName();
+                Console.WriteLine($"Připojování k FTP {_sessionOptions.UserName}@{_sessionOptions.HostName}...");
             }
-            catch (SessionRemoteException)
+            int retries = 4;
+            do
             {
-                Output.WriteError($"Připojení k FTP {_sessionOptions.HostName} selhalo.");
-                throw;
+                try //Connect
+                {
+                    _session.Open(_sessionOptions);
+                    if (verbose)
+                    {
+                        PrintName();
+                        Console.WriteLine("Připojení proběhlo úspěšně!");
+                    }
+                    retries = 0;
+                }
+                catch (SessionRemoteException err)
+                {
+                    if (--retries == 0)
+                    {
+                        Output.WriteError($"{Name}: Připojení k FTP {_sessionOptions.HostName} selhalo.");
+                        Output.WriteError(err.Message);
+                        throw;
+                    }
+                }
+            }
+            while (retries > 0);
+        }
+    }
+
+    protected void SafeSessionAction(Action action, int retries = 3)
+    {
+        try
+        {
+            action();
+        }
+        catch //Chyba při komunikaci se serverem, znovu připojit a zkusit načíst informace o souboru.
+        {
+            _session.Close();
+            TryOpenSession(verbose: false);
+            if (--retries > 0)
+            {
+                SafeSessionAction(action, retries);
             }
         }
     }

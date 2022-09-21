@@ -53,37 +53,63 @@ public sealed class McraiFtp
     {
     }
 
-    public void Update(string upgradeServerHostname = DefaultHostnameUpgrade)
+    public async Task UpdateAsync(string upgradeServerHostname = DefaultHostnameUpgrade)
     {
+        var q1 = new Queue<RemoteFileInfo?>();
+        var q2 = new Queue<RemoteFileInfo?>();
+        var q3 = new Queue<string?>();
+
         //kontrola všech souborů na serveru mcrai1 a získání seznamu ne-PHP souborů
-        using var fc1 = new FtpChecker(_login.Username, _login.Password, _host, _webName, _baseFolder, _day, _month, _year);
-        fc1.Run(GetRemotePath(), _baseFolder, _webName);
-        if (fc1.NonPhpFiles.Count == 0)
+        using var fc1 = new FtpChecker(_login.Username, _login.Password, _host, _webName, _baseFolder, _day, _month, _year)
         {
-            return;
-        }
+            Name = "FC1",
+            Color = ConsoleColor.Blue,
+        };
         //kontrola (mcrai-upgrade) a získání seznamu souborů, které je potřeba stáhnout z mcrai1
         //(neexistují na mcrai-upgrade nebo je na mcrai1 novější verze)
         using var fc2 = new FtpChecker(_login.Username, _login.Password, upgradeServerHostname, _webName, _baseFolder, _day, _month, _year)
         {
-            KnownNewNonPhpFiles = fc1.KnownNewNonPhpFiles,
+            Name = "FC2",
+            Color = ConsoleColor.DarkCyan,
         };
-        fc2.Run(fc1.NonPhpFiles);
-        if (fc2.KnownNewNonPhpFiles.Count == 0)
-        {
-            return;
-        }
         //stažení (z mcrai1) seznamu souborů do dočasné složky
-        using var fd1 = new FtpDownloader(_login.Username, _login.Password, _host);
-        var tempDir = fd1.Run(fc2.KnownNewNonPhpFiles, _baseFolder, _webName, _login.Path);
-        if (!tempDir.Exists)
+        using var fd1 = new FtpDownloader(_login.Username, _login.Password, _host)
         {
-            return;
-        }
+            Name = "FD1",
+            Color = ConsoleColor.DarkGreen,
+        };
         //nahrání souborů z dočasné složky (synchronizace složky) na mcrai-upgrade
         //a smazání dočasné složky a souborů v ní
-        using var fu2 = new FtpUploader(_login.Username, _login.Password, upgradeServerHostname);
-        fu2.Run(tempDir, _login.Path);
+        using var fu2 = new FtpUploader(_login.Username, _login.Password, upgradeServerHostname)
+        {
+            Name = "FU2",
+            Color = ConsoleColor.Magenta,
+        };
+        fc1.PrintName();
+        Console.WriteLine($"{_host} FTP checker.");
+
+        fc2.PrintName();
+        Console.WriteLine($"{upgradeServerHostname} FTP checker: ");
+
+        fd1.PrintName();
+        Console.WriteLine($"{_host} FTP downloader: ");
+
+        fu2.PrintName();
+        Console.WriteLine($"{upgradeServerHostname} FTP uploader: ");
+        Console.WriteLine();
+
+        //spuštění ve více vláknech
+        var uploadTask = fu2.RunAsync(q3, _baseFolder, _webName, GetRemotePath());
+        var downloadTask = fd1.RunAsync(q2, q3, _baseFolder, _webName, GetRemotePath());
+        var checkTask2 = fc2.RunAsync(q1, q2);
+        var checkTask1 = fc1.RunAsync(q1, q2, GetRemotePath(), _baseFolder, _webName);
+
+        await Task.WhenAll(checkTask1, checkTask2, uploadTask);
+        var tempDir = await downloadTask;
+        if (tempDir.Exists)
+        {
+            tempDir.Delete(recursive: true);
+        }
     }
 
     public void Upload(string upgradeServerHostname = DefaultHostnameUpgrade)
