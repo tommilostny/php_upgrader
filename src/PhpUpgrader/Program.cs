@@ -62,7 +62,7 @@ class Program
             {
                 //1. fáze: (pokud je vyžadováno)
                 // Kontrola nově upravených souborů na původním serveru (mcrai1) a jejich případné stažení.
-                await CheckForUpdatesAndDownloadFromFtp(checkFtp, ignoreFtp).ConfigureAwait(false);
+                await CheckForUpdatesAndDownloadFromFtpAsync(checkFtp, ignoreFtp).ConfigureAwait(false);
 
                 //2. fáze: Aktualizace celé složky webu
                 // (případně i načtení souborů ze zálohy, pokud toto není spuštěno poprvé).
@@ -174,7 +174,7 @@ class Program
         }
     }
 
-    static async Task CheckForUpdatesAndDownloadFromFtp(bool checkFtp, bool ignoreFtp)
+    static async Task CheckForUpdatesAndDownloadFromFtpAsync(bool checkFtp, bool ignoreFtp)
     {
         if (ignoreFtp)
         {

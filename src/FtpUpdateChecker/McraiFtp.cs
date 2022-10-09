@@ -3,7 +3,7 @@
 /// <summary>
 /// Třída poskytující McRAI FTP funkcionalitu pro vnější použití.
 /// </summary>
-public sealed class McraiFtp
+public sealed class McraiFtp : IDisposable
 {
     public const int DefaultYear = 2021;
     public const int DefaultMonth = 9;
@@ -13,7 +13,8 @@ public sealed class McraiFtp
     public const string DefaultHostname2 = "mcrai2.vshosting.cz";
     public const string DefaultHostnameUpgrade = "mcrai-upgrade.vshosting.cz";
     public const string DefaultBaseFolder = "/McRAI";
-    
+    public const string PhpLogsDir = ".phplogs";
+
     private readonly string? _path;
     private readonly string? _webName;
     private readonly string _baseFolder;
@@ -22,6 +23,7 @@ public sealed class McraiFtp
     private readonly int _month;
     private readonly int _year;
     private readonly LoginParser _login;
+    private readonly Output _output;
 
     public McraiFtp(string? username, string? password,
                     string? path, string? webName,
@@ -29,16 +31,25 @@ public sealed class McraiFtp
                     string host = DefaultHostname1,
                     int day = DefaultDay, int month = DefaultMonth, int year = DefaultYear)
     {
-        //Načíst přihlašovací údaje k FTP. Uložené v souboru ftp_logins.txt nebo zadané.
-        try
+        try //Načíst přihlašovací údaje k FTP. Uložené v souboru ftp_logins.txt nebo zadané.
         {
             _login = new LoginParser(webName, password, username, baseFolder);
         }
         catch (Exception exception)
         {
-            Output.WriteError(exception.Message);
+            _output.WriteErrorAsync(null, exception.Message).RunSynchronously();
             throw;
         }
+        var phpLogFilePath = $"{PhpLogsDir}/{webName}-{DateTime.UtcNow.Ticks}.txt";
+        if (File.Exists(phpLogFilePath))
+        {
+            File.Delete(phpLogFilePath);
+        }
+        else
+        {
+            Directory.CreateDirectory(PhpLogsDir);
+        }
+        _output = new Output(phpLogFilePath);
         _path = path;
         _webName = webName;
         _baseFolder = baseFolder;
@@ -53,6 +64,11 @@ public sealed class McraiFtp
     {
     }
 
+    public void Dispose()
+    {
+        _output.Dispose();
+    }
+
     public async Task UpdateAsync(string upgradeServerHostname = DefaultHostnameUpgrade)
     {
         var q1 = new Queue<RemoteFileInfo?>();
@@ -60,42 +76,50 @@ public sealed class McraiFtp
         var q3 = new Queue<string?>();
 
         //kontrola všech souborů na serveru mcrai1 a získání seznamu ne-PHP souborů
-        using var fc1 = new FtpChecker(_login.Username, _login.Password, _host, _webName, _baseFolder, _day, _month, _year)
+        using var fc1 = new FtpChecker(_output, _login.Username, _login.Password, _host, _webName, _baseFolder, _day, _month, _year)
         {
             Name = "FC1",
             Color = ConsoleColor.Blue,
         };
         //kontrola (mcrai-upgrade) a získání seznamu souborů, které je potřeba stáhnout z mcrai1
         //(neexistují na mcrai-upgrade nebo je na mcrai1 novější verze)
-        using var fc2 = new FtpChecker(_login.Username, _login.Password, upgradeServerHostname, _webName, _baseFolder, _day, _month, _year)
+        using var fc2 = new FtpChecker(_output, _login.Username, _login.Password, upgradeServerHostname, _webName, _baseFolder, _day, _month, _year)
         {
             Name = "FC2",
             Color = ConsoleColor.DarkCyan,
         };
         //stažení (z mcrai1) seznamu souborů do dočasné složky
-        using var fd1 = new FtpDownloader(_login.Username, _login.Password, _host)
+        using var fd1 = new FtpDownloader(_output, _login.Username, _login.Password, _host)
         {
             Name = "FD1",
             Color = ConsoleColor.DarkGreen,
         };
         //nahrání souborů z dočasné složky (synchronizace složky) na mcrai-upgrade
         //a smazání dočasné složky a souborů v ní
-        using var fu2 = new FtpUploader(_login.Username, _login.Password, upgradeServerHostname)
+        using var fu2 = new FtpUploader(_output, _login.Username, _login.Password, upgradeServerHostname)
         {
             Name = "FU2",
             Color = ConsoleColor.Magenta,
         };
-        fc1.PrintName();
-        Console.WriteLine($"{_host} FTP checker.");
+        await fc1.PrintNameAsync(_output);
+        var fc1Message = $"{_host} FTP checker.";
+        Console.WriteLine(fc1Message);
+        await _output.WriteLineToFileAsync(fc1Message);
 
-        fc2.PrintName();
-        Console.WriteLine($"{upgradeServerHostname} FTP checker: ");
+        await fc2.PrintNameAsync(_output);
+        var fc2Message = $"{upgradeServerHostname} FTP checker.";
+        Console.WriteLine(fc2Message);
+        await _output.WriteLineToFileAsync(fc2Message);
 
-        fd1.PrintName();
-        Console.WriteLine($"{_host} FTP downloader: ");
+        await fd1.PrintNameAsync(_output);
+        var fd1Message = $"{_host} FTP downloader.";
+        Console.WriteLine(fd1Message);
+        await _output.WriteLineToFileAsync(fd1Message);
 
-        fu2.PrintName();
-        Console.WriteLine($"{upgradeServerHostname} FTP uploader: ");
+        await fu2.PrintNameAsync(_output);
+        var fu2Message = $"{upgradeServerHostname} FTP uploader.";
+        Console.WriteLine(fu2Message);
+        await _output.WriteLineToFileAsync(fu2Message);
         Console.WriteLine();
 
         //spuštění ve více vláknech
@@ -114,13 +138,13 @@ public sealed class McraiFtp
 
     public void Upload(string upgradeServerHostname = DefaultHostnameUpgrade)
     {
-        using var uploader = new FtpUploader(_login.Username, _login.Password, upgradeServerHostname);
+        using var uploader = new FtpUploader(_output, _login.Username, _login.Password, upgradeServerHostname);
         uploader.Run(GetRemotePath(), _baseFolder, _webName);
     }
 
     public void Download()
     {
-        using var downloader = new FtpDownloader(_login.Username, _login.Password, _host);
+        using var downloader = new FtpDownloader(_output, _login.Username, _login.Password, _host);
         downloader.Run(GetRemotePath(), _baseFolder, _webName);
     }
 

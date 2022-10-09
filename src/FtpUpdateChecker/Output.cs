@@ -1,34 +1,74 @@
 ﻿namespace FtpUpdateChecker;
 
 /// <summary> Internal console write methods and <seealso cref="FtpChecker"/> extensions. </summary>
-internal static class Output
+internal class Output : IDisposable
 {
-    /// <summary> Outputs formatted message to stderr. </summary>
-    internal static void WriteError(string message)
+    public StreamWriter? Writer { get; }
+
+    public Output(string? writePath)
     {
+        Writer = writePath is not null ? new StreamWriter(writePath) : null;
+    }
+
+    public void Dispose()
+    {
+        Writer?.Dispose();
+    }
+
+    internal async Task WriteLineToFileAsync(string message)
+    {
+        try
+        {
+            await Writer?.WriteLineAsync(message);
+        }
+        catch (InvalidOperationException)
+        {
+            await Task.Delay(1);
+            await WriteLineToFileAsync(message);
+        }
+    }
+
+    internal async Task WriteToFileAsync(string message)
+    {
+        try
+        {
+            await Writer?.WriteAsync(message);
+        }
+        catch (InvalidOperationException)
+        {
+            await Task.Delay(1);
+            await WriteToFileAsync(message);
+        }
+    }
+
+    /// <summary> Outputs formatted message to stderr. </summary>
+    internal async Task WriteErrorAsync(FtpOperation? ftp, string message)
+    {
+        await ftp?.PrintNameAsync(this);
+
+        var errMessage = $"❌ {message}";
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.Error.WriteLine($"❌ {message}");
+        Console.Error.WriteLine(errMessage);
         Console.ResetColor();
+
         Console.Error.WriteLine("Tip: Spusťte s parametrem --help k zobrazení nápovědy.");
         Console.Error.WriteLine("     Nebo více informací na https://github.com/tommilostny/php_upgrader/blob/master/README.md");
         Console.Error.WriteLine();
+
+        await WriteLineToFileAsync(message);
     }
 
     /// <summary> Outputs process completition message to stdout. </summary>
-    internal static void WriteCompleted(FtpOperation ftp, string hostname, string? phpLogFilePath = null, uint phpFoundCount = 0)
+    internal async Task WriteCompletedAsync(FtpOperation ftp, string hostname)
     {
-        Console.WriteLine();
-        ftp.PrintName();
+        await ftp.PrintNameAsync(this);
+        
+        var message = $"✅ Proces kontroly FTP '{hostname}' dokončen.";
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"✅ Proces kontroly FTP '{hostname}' dokončen.");
+        Console.WriteLine(message);
         Console.ResetColor();
-        if (phpFoundCount > 0 && phpLogFilePath is not null)
-        {
-            ftp.PrintName();
-            Console.WriteLine("Nalezené PHP soubory byly zaznamenány do souboru:");
-            Console.WriteLine(new FileInfo(phpLogFilePath).FullName);
-        }
-        Console.WriteLine();
+
+        await WriteLineToFileAsync(message);
     }
 
     /// <summary>
@@ -52,28 +92,23 @@ internal static class Output
     /// <param name="fc">Running FTP checker intance.</param>
     /// <param name="fileInfo">WinSCP file info.</param>
     /// <param name="isPhp">PHP files are printed to console in cyan, others in default color.</param>
-    /// <param name="phpLogFilePath">If <paramref name="isPhp"/> then write line to this file.</param>
-    internal static void WriteFoundFile(FtpChecker? fc, RemoteFileInfo fileInfo, bool isPhp, string? phpLogFilePath)
+    internal async Task WriteFoundFileAsync(FtpChecker? fc, RemoteFileInfo fileInfo, bool isPhp)
     {
-        StreamWriter? sw = isPhp && phpLogFilePath is not null ? new(phpLogFilePath, append: true) : null;
-
         if (fc is not null)
         {
-            fc.PrintName();
+            await fc.PrintNameAsync(this);
 
             var numberStr = $"{fc.FoundCount}.";
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write(numberStr);
-            sw?.Write(numberStr);
-
-            OutputSpaces(numberStr.Length, 6, sw);
+            await WriteToFileAsync(numberStr);
+            await OutputSpacesAsync(numberStr.Length, 6);
         }
         var timeStr = fileInfo.LastWriteTime.ToString();
         Console.ForegroundColor = ConsoleColor.DarkGray;
         Console.Write(timeStr);
-        sw?.Write(timeStr);
-
-        OutputSpaces(timeStr.Length + 6, 29, sw);
+        await WriteToFileAsync(timeStr);
+        await OutputSpacesAsync(timeStr.Length + 6, 29);
 
         if (isPhp)
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -81,34 +116,39 @@ internal static class Output
             Console.ResetColor();
 
         Console.WriteLine(fileInfo.FullName);
-        sw?.WriteLine(fileInfo.FullName);
-        sw?.Close();
+        await WriteLineToFileAsync(fileInfo.FullName);
 
         if (isPhp)
             Console.ResetColor();
     }
 
-    internal static void WriteFilesDiff(FtpChecker fc, string host1, string host2, RemoteFileInfo file1, RemoteFileInfo? file2)
+    internal async Task WriteFilesDiffAsync(FtpChecker fc, string host1, string host2, RemoteFileInfo file1, RemoteFileInfo? file2)
     {
         var hostnameEndIndex = (host1.Length > host2.Length ? host1.Length : host2.Length) + 8;
 
-        fc.PrintName();
+        await fc.PrintNameAsync(this);
         Console.Write(host1);
-        OutputSpaces(host1.Length + 5, hostnameEndIndex, null);
-        WriteFoundFile(null, file1, isPhp: false, null);
+        await WriteToFileAsync(host1);
+        await OutputSpacesAsync(host1.Length + 5, hostnameEndIndex);
+        await WriteFoundFileAsync(null, file1, isPhp: false);
 
-        Console.Write("     ");
+        const string spaces = "     ";
+        Console.Write(spaces);
         Console.Write(host2);
-        OutputSpaces(host2.Length + 5, hostnameEndIndex, null);
+        await WriteToFileAsync(spaces);
+        await WriteToFileAsync(host2);
+        await OutputSpacesAsync(host2.Length + 5, hostnameEndIndex);
 
         if (file2 is not null)
         {
-            WriteFoundFile(null, file2, isPhp: false, null);
+            await WriteFoundFileAsync(null, file2, isPhp: false);
             return;
         }
         Console.ForegroundColor = ConsoleColor.DarkYellow;
-        Console.WriteLine($"{file1.Name} neexistuje na {host2}.");
+        var doesntExistMessage = $"{file1.Name} neexistuje na {host2}.";
+        Console.WriteLine(doesntExistMessage);
         Console.ResetColor();
+        await WriteLineToFileAsync(doesntExistMessage);
     }
 
     internal static int WriteStatusNoDate(FtpChecker fc, int totalFilesCount)
@@ -118,12 +158,12 @@ internal static class Output
         return message.Length;
     }
 
-    private static void OutputSpaces(int fromIndex, int toIndex, StreamWriter? sw)
+    private async Task OutputSpacesAsync(int fromIndex, int toIndex)
     {
         for (var i = fromIndex; i < toIndex; i++)
         {
             Console.Write(' ');
-            sw?.Write(' ');
+            await WriteToFileAsync(" ");
         }
     }
 }

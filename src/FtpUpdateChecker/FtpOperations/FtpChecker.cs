@@ -21,8 +21,8 @@ internal sealed class FtpChecker : FtpOperation
     public uint PhpFoundCount { get; private set; }
 
     /// <summary> Inicializace sezení spojení WinSCP, nastavení data. </summary>
-    public FtpChecker(string username, string password, string hostname, string webName, string baseFolder, int day, int month, int year)
-        : base(username, password, hostname)
+    public FtpChecker(Output output, string username, string password, string hostname, string webName, string baseFolder, int day, int month, int year)
+        : base(output, username, password, hostname)
     {
         FromDate = LoadFromDateTime(webName, baseFolder, day, month, year);
     }
@@ -42,88 +42,79 @@ internal sealed class FtpChecker : FtpOperation
     /// </remarks>
     public async Task RunAsync(Queue<RemoteFileInfo?> q1, Queue<RemoteFileInfo?> q2, string path, string baseFolder, string webName)
     {
-        await Task.Run(() =>
+        await TryOpenSessionAsync();
+
+        await PrintNameAsync(_output);
+        var startMessage = $"Probíhá kontrola '{_sessionOptions}/{path}' na změny po {FromDate}...";
+        Console.WriteLine(startMessage);
+        await _output.WriteLineToFileAsync(startMessage);
+
+        var enumerationOptions = EO.EnumerateDirectories | EO.AllDirectories;
+        var fileInfos = _session.EnumerateRemoteFiles(path, null, enumerationOptions);
+
+        FileCount = FolderCount = PhpFoundCount = FoundCount = 0;
+        try //Enumerate files
         {
-            TryOpenSession();
-
-            var phpLogFilePath = $"{PhpLogsDir}/{_sessionOptions.UserName}-{path}.txt";
-            if (File.Exists(phpLogFilePath))
+            foreach (var fileInfo in fileInfos)
             {
-                File.Delete(phpLogFilePath);
-            }
-            else
-            {
-                Directory.CreateDirectory(PhpLogsDir);
-            }
-            PrintName();
-            Console.WriteLine($"Probíhá kontrola '{_sessionOptions}/{path}' na změny po {FromDate}...");
-            var enumerationOptions = EO.EnumerateDirectories | EO.AllDirectories;
-            var fileInfos = _session.EnumerateRemoteFiles(path, null, enumerationOptions);
-
-            FileCount = FolderCount = PhpFoundCount = FoundCount = 0;
-            try //Enumerate files
-            {
-                foreach (var fileInfo in fileInfos)
+                if (fileInfo.IsDirectory)
                 {
-                    if (fileInfo.IsDirectory)
-                    {
-                        FolderCount++;
-                        continue;
-                    }
-                    var isPhp = fileInfo.FullName.EndsWith(".php");
-                    if (fileInfo.LastWriteTime >= FromDate)
-                    {
-                        FoundCount++;
-                        if (isPhp)
-                        {
-                            //Na serveru je nový nebo upravený PHP soubor.
-                            PhpFoundCount++;
-                            //Cesta tohoto souboru jako lokální cesta na disku.
-                            var localPath = fileInfo.FullName.Replace($"/{path}/", string.Empty);
-                            localPath = Path.Join(baseFolder, "weby", webName, localPath);
-                            var localFileInfo = new FileInfo(localPath);
-
-                            if (!localFileInfo.Directory.Exists)
-                            {
-                                localFileInfo.Directory.Create();
-                            }
-                            //Stažení souboru
-                            var transferResult = _session.GetFileToDirectory(fileInfo.FullName, localFileInfo.Directory.FullName);
-                            if (transferResult.Error is null)
-                            {
-                                //Pokud nenastala při stažení chyba, smazat zálohu souboru, pokud existuje
-                                //(byla stažena novější verze, také neupravená (odpovídá stavu na serveru mcrai1)).
-                                var backupFilePath = localPath.Replace(Path.Join(baseFolder, "weby", webName),
-                                                                       Path.Join(baseFolder, "weby", "_backup", webName));
-                                if (File.Exists(backupFilePath))
-                                    File.Delete(backupFilePath);
-                            }
-                        }
-                        else
-                        {
-                            q2.Enqueue(fileInfo);
-                        }
-                        Output.WriteFoundFile(this, fileInfo, isPhp, phpLogFilePath);
-                    }
-                    else if (!isPhp)
-                    {
-                        q1.Enqueue(fileInfo);
-                    }
-                    FileCount++;
+                    FolderCount++;
+                    continue;
                 }
+                var isPhp = fileInfo.FullName.EndsWith(".php");
+                if (fileInfo.LastWriteTime >= FromDate)
+                {
+                    FoundCount++;
+                    if (isPhp)
+                    {
+                        //Na serveru je nový nebo upravený PHP soubor.
+                        PhpFoundCount++;
+                        //Cesta tohoto souboru jako lokální cesta na disku.
+                        var localPath = fileInfo.FullName.Replace($"/{path}/", string.Empty);
+                        localPath = Path.Join(baseFolder, "weby", webName, localPath);
+                        var localFileInfo = new FileInfo(localPath);
+
+                        if (!localFileInfo.Directory.Exists)
+                        {
+                            localFileInfo.Directory.Create();
+                        }
+                        //Stažení souboru
+                        var transferResult = _session.GetFileToDirectory(fileInfo.FullName, localFileInfo.Directory.FullName);
+                        if (transferResult.Error is null)
+                        {
+                            //Pokud nenastala při stažení chyba, smazat zálohu souboru, pokud existuje
+                            //(byla stažena novější verze, také neupravená (odpovídá stavu na serveru mcrai1)).
+                            var backupFilePath = localPath.Replace(Path.Join(baseFolder, "weby", webName),
+                                                                   Path.Join(baseFolder, "weby", "_backup", webName));
+                            if (File.Exists(backupFilePath))
+                                File.Delete(backupFilePath);
+                        }
+                    }
+                    else
+                    {
+                        q2.Enqueue(fileInfo);
+                    }
+                    await _output.WriteFoundFileAsync(this, fileInfo, isPhp);
+                }
+                else if (!isPhp)
+                {
+                    q1.Enqueue(fileInfo);
+                }
+                FileCount++;
             }
-            catch (SessionRemoteException ex)
-            {
-                Console.WriteLine();
-                Output.WriteError(ex.Message);
-            }
-            finally
-            {
-                q1.Enqueue(null);
-            }
-            Output.WriteCompleted(this, _sessionOptions.HostName, phpLogFilePath, PhpFoundCount);
-            _session.Close();
-        });
+        }
+        catch (SessionRemoteException ex)
+        {
+            Console.WriteLine();
+            await _output.WriteErrorAsync(this, ex.Message);
+        }
+        finally
+        {
+            q1.Enqueue(null);
+        }
+        await _output.WriteCompletedAsync(this, _sessionOptions.HostName);
+        _session.Close();
     }
 
     /// <summary>
@@ -133,9 +124,11 @@ internal sealed class FtpChecker : FtpOperation
     /// <remarks> Task běží dokud první prvek fronty není null. </remarks>
     public async Task RunAsync(Queue<RemoteFileInfo?> q1, Queue<RemoteFileInfo?> q2, string hostname1 = McraiFtp.DefaultHostname1)
     {
-        TryOpenSession();
-        PrintName();
-        Console.WriteLine($"Probíhá kontrola '{_sessionOptions.HostName}' vůči změnám na '{hostname1}'...");
+        await TryOpenSessionAsync();
+        await PrintNameAsync(_output);
+        var startMessage = $"Probíhá kontrola '{_sessionOptions.HostName}' vůči změnám na '{hostname1}'...";
+        Console.WriteLine(startMessage);
+        await _output.WriteLineToFileAsync(startMessage);
         do
         {
             while (q1.Count == 0)
@@ -146,11 +139,11 @@ internal sealed class FtpChecker : FtpOperation
             if (item is null)
             {
                 _session.Close();
-                Output.WriteCompleted(this, _sessionOptions.HostName);
+                await _output.WriteCompletedAsync(this, _sessionOptions.HostName);
                 q2.Enqueue(null);
                 return;
             }
-            SafeSessionAction(() =>
+            await SafeSessionActionAsync(() =>
             {
                 var exists = _session.FileExists(item.FullName);
                 var fileInfo = exists ? _session.GetFileInfo(item.FullName) : null;
@@ -159,7 +152,8 @@ internal sealed class FtpChecker : FtpOperation
                 {
                     q2.Enqueue(item);
                     FoundCount++;
-                    Output.WriteFilesDiff(this, hostname1, _sessionOptions.HostName, item, fileInfo);
+                    _output.WriteFilesDiffAsync(this, hostname1, _sessionOptions.HostName, item, fileInfo)
+                        .RunSynchronously();
                 }
             });
             FileCount++;
@@ -183,7 +177,7 @@ internal sealed class FtpChecker : FtpOperation
         var modifiedDate = year != McraiFtp.DefaultYear || month != McraiFtp.DefaultMonth || day != McraiFtp.DefaultDay;
         var webPath = Path.Join(baseFolder, "weby", webName);
 
-        var dateFile = Path.Join(PhpLogsDir, $"date-{webName}.txt");
+        var dateFile = Path.Join(McraiFtp.PhpLogsDir, $"date-{webName}.txt");
         var date = File.Exists(dateFile)
 
             ? DateTime.Parse(File.ReadAllText(dateFile))

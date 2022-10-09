@@ -2,17 +2,16 @@
 
 internal abstract class FtpOperation : IDisposable
 {
-    public const string PhpLogsDir = ".phplogs";
-
     protected readonly SessionOptions _sessionOptions;
     protected readonly Session _session = new();
+    protected readonly Output _output;
 
     public string Name { private get; init; }
 
     public ConsoleColor Color { private get; init; }
 
     /// <summary> Inicializace sezení spojení WinSCP. </summary>
-    public FtpOperation(string username, string password, string hostname)
+    public FtpOperation(Output output, string username, string password, string hostname)
     {
         _sessionOptions = new SessionOptions
         {
@@ -22,6 +21,7 @@ internal abstract class FtpOperation : IDisposable
             Password = password,
             FtpSecure = FtpSecure.Explicit
         };
+        _output = output;
     }
 
     /// <summary> Spustit FTP operaci. </summary>
@@ -36,7 +36,7 @@ internal abstract class FtpOperation : IDisposable
 
     public override string ToString() => Name;
 
-    public void PrintName()
+    public async Task PrintNameAsync(Output output)
     {
         if (!string.IsNullOrEmpty(Name))
         {
@@ -45,16 +45,19 @@ internal abstract class FtpOperation : IDisposable
             Console.ResetColor();
             Console.Write(": ");
         }
+        await output.WriteToFileAsync($"{Name}: ");
     }
 
-    protected void TryOpenSession(bool verbose = true)
+    protected async Task TryOpenSessionAsync(bool verbose = true)
     {
         if (!_session.Opened)
         {
             if (verbose)
             {
-                PrintName();
-                Console.WriteLine($"Připojování k FTP {_sessionOptions.UserName}@{_sessionOptions.HostName}...");
+                await PrintNameAsync(_output);
+                var connectingMessage = $"Připojování k FTP {_sessionOptions.UserName}@{_sessionOptions.HostName}...";
+                Console.WriteLine(connectingMessage);
+                await _output.WriteLineToFileAsync(connectingMessage);
             }
             int retries = 4;
             do
@@ -64,8 +67,10 @@ internal abstract class FtpOperation : IDisposable
                     _session.Open(_sessionOptions);
                     if (verbose)
                     {
-                        PrintName();
-                        Console.WriteLine("Připojení proběhlo úspěšně!");
+                        await PrintNameAsync(_output);
+                        const string connectionSuccess = "Připojení proběhlo úspěšně!";
+                        Console.WriteLine(connectionSuccess);
+                        await _output.WriteLineToFileAsync(connectionSuccess);
                     }
                     retries = 0;
                 }
@@ -73,8 +78,8 @@ internal abstract class FtpOperation : IDisposable
                 {
                     if (--retries == 0)
                     {
-                        Output.WriteError($"{Name}: Připojení k FTP {_sessionOptions.HostName} selhalo.");
-                        Output.WriteError(err.Message);
+                        await _output.WriteErrorAsync(this, $"Připojení k FTP {_sessionOptions.HostName} selhalo.");
+                        await _output.WriteErrorAsync(this, err.Message);
                         throw;
                     }
                 }
@@ -83,7 +88,7 @@ internal abstract class FtpOperation : IDisposable
         }
     }
 
-    protected void SafeSessionAction(Action action, int retries = 3)
+    protected async Task SafeSessionActionAsync(Action action, int retries = 4)
     {
         try
         {
@@ -92,10 +97,10 @@ internal abstract class FtpOperation : IDisposable
         catch //Chyba při komunikaci se serverem, znovu připojit a zkusit načíst informace o souboru.
         {
             _session.Close();
-            TryOpenSession(verbose: false);
+            await TryOpenSessionAsync(verbose: false);
             if (--retries > 0)
             {
-                SafeSessionAction(action, retries);
+                await SafeSessionActionAsync(action, retries);
             }
         }
     }

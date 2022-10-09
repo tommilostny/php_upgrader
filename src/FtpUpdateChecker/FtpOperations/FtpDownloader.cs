@@ -5,7 +5,7 @@
 /// </summary>
 internal sealed class FtpDownloader : SynchronizableFtpOperation
 {
-    public FtpDownloader(string username, string password, string hostname) : base(username, password, hostname)
+    public FtpDownloader(Output output, string username, string password, string hostname) : base(output, username, password, hostname)
     {
     }
 
@@ -24,12 +24,14 @@ internal sealed class FtpDownloader : SynchronizableFtpOperation
     /// <remarks> Task běží dokud první prvek fronty není null. </remarks>
     public async Task<DirectoryInfo> RunAsync(Queue<RemoteFileInfo?> q2, Queue<string?> q3, string baseFolder, string webName, string path)
     {
-        TryOpenSession();
+        await TryOpenSessionAsync();
         var tempDirectory = Path.Join(baseFolder, $"_temp_{webName}");
         var tempDirectoryInfo = new DirectoryInfo(tempDirectory);
 
-        PrintName();
-        Console.WriteLine($"Probíhá stahování nových souborů z {_sessionOptions.HostName} do dočasné složky {tempDirectoryInfo.FullName}...");
+        await PrintNameAsync(_output);
+        var startMessage = $"Probíhá stahování nových souborů z {_sessionOptions.HostName} do dočasné složky {tempDirectoryInfo.FullName}...";
+        Console.WriteLine(startMessage);
+        await _output.WriteLineToFileAsync(startMessage);
         do
         {
             while (q2.Count == 0)
@@ -39,19 +41,22 @@ internal sealed class FtpDownloader : SynchronizableFtpOperation
             var item = q2.Dequeue();
             if (item is null)
             {
-                PrintName();
+                q3.Enqueue(null);
+                await PrintNameAsync(_output);
+                var endMessage = $"✅ Stahování souborů z {_sessionOptions.HostName} dokončeno.";
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"✅ Stahování souborů z {_sessionOptions.HostName} dokončeno.");
+                Console.WriteLine(endMessage);
                 Console.WriteLine();
                 Console.ResetColor();
                 _session.Close();
-                q3.Enqueue(null);
+                await _output.WriteLineToFileAsync(endMessage);
+                await _output.WriteLineToFileAsync(string.Empty);   
                 return tempDirectoryInfo;
             }
             var localDirPath = Path.Join(tempDirectory, item.FullName.Replace($"/{path}/", string.Empty)
                                                                      .Replace(item.Name, string.Empty));
             Directory.CreateDirectory(localDirPath);
-            SafeSessionAction(() =>
+            await SafeSessionActionAsync(() =>
             {
                 _session.GetFileToDirectory(item.FullName, localDirPath);
                 q3.Enqueue(Path.Join(localDirPath, item.Name));

@@ -1,5 +1,4 @@
-﻿using System.CommandLine.Rendering;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace FtpUpdateChecker.FtpOperations;
 
@@ -10,7 +9,8 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
 {
     protected abstract SynchronizationMode SynchronizationMode { get; }
 
-    protected SynchronizableFtpOperation(string username, string password, string hostname) : base(username, password, hostname)
+    protected SynchronizableFtpOperation(Output output, string username, string password, string hostname)
+        : base(output, username, password, hostname)
     {
         //_session.FileTransferProgress += FileTransferProgress;
         _session.FileTransferred += FileTransfered;
@@ -19,11 +19,15 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
 
     protected void Synchronize(string remotePath, string localPath, string startMessage)
     {
-        TryOpenSession();
-
+        var task = TryOpenSessionAsync();
+        if (!task.IsCompleted)
+        {
+            task.RunSynchronously();
+        }
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine(startMessage);
         Console.ResetColor();
+        _output.Writer?.WriteLine(startMessage);
         try
         {
             var transferOptions = new TransferOptions
@@ -73,68 +77,89 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
     }
 
     /// <summary> Událost, která nastane při přenosu souboru jako součást metod stahování a nahrávání. </summary>
-    private void FileTransfered(object sender, TransferEventArgs e)
+    private async void FileTransfered(object sender, TransferEventArgs e)
     {
-        PrintName();
+        await PrintNameAsync(_output);
         switch (e)
         {
             case { Error: not null }:
-                PrintError(e.Error.Message);
+                await PrintErrorAsync(e.Error.Message);
                 break;
             default:
                 switch (SynchronizationMode)
                 {
                     case SynchronizationMode.Local:
-                        Console.Write("⏬ Staženo z ");
+                        const string downloadedFrom = "⏬ Staženo z ";
+                        Console.Write(downloadedFrom);
+                        await _output.WriteToFileAsync(downloadedFrom);
                         break;
                     case SynchronizationMode.Remote:
-                        Console.Write("⏫ Nahráno na ");
+                        const string uploadedTo = "⏫ Nahráno na ";
+                        Console.Write(uploadedTo);
+                        await _output.WriteToFileAsync(uploadedTo);
                         break;
                 }
                 Console.Write(_sessionOptions.HostName);
                 Console.Write(": ");
                 Console.WriteLine(e.FileName);
+                await _output.WriteToFileAsync(_sessionOptions.HostName);
+                await _output.WriteToFileAsync(": ");
+                await _output.WriteLineToFileAsync(e.FileName);
                 break;
         }
     }
 
     /// <summary> Událost, která nastane, když je potřeba rozhodnutí (tj. typicky u jakékoli nezávažné chyby). </summary>
-    protected virtual void QueryReceived(object sender, QueryReceivedEventArgs e)
+    protected virtual async void QueryReceived(object sender, QueryReceivedEventArgs e)
     {
         if (!Regex.IsMatch(e.Message, @"^(Lost connection|Connection failed)\."))
         {
-            PrintName();
-            PrintError(e.Message);
+            await PrintNameAsync(_output);
+            await PrintErrorAsync(e.Message);
         }
         e.Continue();
     }
 
-    private static void PrintError(string message)
+    private async Task PrintErrorAsync(string message)
     {
+        const string errorSymbol = "❌ ";
+        var formattedMessage = message.Replace("\n", "\r\n        ").TrimEnd();
+
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.Write("❌ ");
-        Console.WriteLine(message.Replace("\n", "\r\n        ").TrimEnd());
+        Console.Write(errorSymbol);
+        Console.WriteLine(formattedMessage);
         Console.ResetColor();
+
+        await _output.WriteToFileAsync(errorSymbol);
+        await _output.WriteLineToFileAsync(formattedMessage);
     }
 
     protected void PrintResult(OperationResultBase result)
     {
-        Console.WriteLine("\nProces dokončen.");
+        const string completedMessage = "\nProces dokončen.";
+        Console.WriteLine(completedMessage);
+        _output.Writer?.WriteLine(completedMessage);
         switch (result)
         {
             case SynchronizationResult syncResult:
                 switch (SynchronizationMode)
                 {
                     case SynchronizationMode.Local:
-                        Console.WriteLine($"Staženo {syncResult.Downloads.Count} souborů.");
+                        var downloaded = $"Staženo {syncResult.Downloads.Count} souborů.";
+                        Console.WriteLine(downloaded);
+                        _output.Writer?.WriteLine(downloaded);
                         break;
                     case SynchronizationMode.Remote:
-                        Console.WriteLine($"Nahráno {syncResult.Uploads.Count} souborů.");
+                        var uploaded = $"Nahráno {syncResult.Uploads.Count} souborů.";
+                        Console.WriteLine(uploaded);
+                        _output.Writer?.WriteLine(uploaded);
                         break;
                 }
                 break;
             case TransferOperationResult transferResult:
-                Console.WriteLine($"Přeneseno {transferResult.Transfers.Count} souborů.");
+                var transferred = $"Přeneseno {transferResult.Transfers.Count} souborů.";
+                Console.WriteLine(transferred);
+                _output.Writer?.WriteLine(transferred);
                 break;
         }
         Console.WriteLine();

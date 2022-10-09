@@ -5,7 +5,8 @@
 /// </summary>
 internal sealed class FtpUploader : SynchronizableFtpOperation
 {
-    public FtpUploader(string username, string password, string hostname) : base(username, password, hostname)
+    public FtpUploader(Output output, string username, string password, string hostname)
+        : base(output, username, password, hostname)
     {
     }
 
@@ -19,7 +20,7 @@ internal sealed class FtpUploader : SynchronizableFtpOperation
 
     public void Run(DirectoryInfo temporaryDirectory, string path)
     {
-        TryOpenSession();
+        TryOpenSessionAsync().RunSynchronously();
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine($"Probíhá nahrávání souborů z dočasné složky {temporaryDirectory.Name} na server {_sessionOptions.HostName}...");
         Console.ResetColor();
@@ -55,10 +56,12 @@ internal sealed class FtpUploader : SynchronizableFtpOperation
     /// <remarks> Task běží dokud první prvek fronty není null. </remarks>
     public async Task RunAsync(Queue<string?> q3, string baseFolder, string webName, string path)
     {
-        TryOpenSession();
+        await TryOpenSessionAsync();
         var tempDirectory = Path.Join(baseFolder, $"_temp_{webName}");
-        PrintName();
-        Console.WriteLine($"Probíhá nahrávání nových souborů z dočasné složky {tempDirectory} na server {_sessionOptions.HostName}...");
+        await PrintNameAsync(_output);
+        var startMessage = $"Probíhá nahrávání nových souborů z dočasné složky {tempDirectory} na server {_sessionOptions.HostName}...";
+        Console.WriteLine(startMessage);
+        await _output.WriteLineToFileAsync(startMessage);
         do
         {
             while (q3.Count == 0)
@@ -68,12 +71,15 @@ internal sealed class FtpUploader : SynchronizableFtpOperation
             var item = q3.Dequeue();
             if (item is null)
             {
-                PrintName();
+                await PrintNameAsync(_output);
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"✅ Nahrávání souborů na {_sessionOptions.HostName} dokončeno.");
+                var endMessage = $"✅ Nahrávání souborů na {_sessionOptions.HostName} dokončeno.";
+                Console.WriteLine(endMessage);
                 Console.WriteLine();
                 Console.ResetColor();
                 _session.Close();
+                await _output.WriteLineToFileAsync(endMessage);
+                await _output.WriteLineToFileAsync(string.Empty);
                 return;
             }
             var s = Path.DirectorySeparatorChar;
@@ -83,18 +89,18 @@ internal sealed class FtpUploader : SynchronizableFtpOperation
                 remoteDirPath = remoteDirPath.Replace('\\', '/');
             }
             remoteDirPath = string.Join('/', remoteDirPath.Split('/')[..^1]);
-            SafeSessionAction(() =>
+            await SafeSessionActionAsync(() =>
             {
-                _session.PutFileToDirectory(item, remoteDirPath);
+                _session.PutFileToDirectory(item, remoteDirPath, remove: true);
             });
         }
         while (true);
     }
 
-    protected override void QueryReceived(object sender, QueryReceivedEventArgs e)
+    protected override async void QueryReceived(object sender, QueryReceivedEventArgs e)
     {
         base.QueryReceived(sender, e);
-
+        await Task.Delay(20);
         if (e.Message.Contains("Permission denied"))
         {
             e.Abort();
