@@ -40,7 +40,9 @@ public sealed class McraiFtp : IDisposable
             _output.WriteErrorAsync(null, exception.Message).RunSynchronously();
             throw;
         }
-        var phpLogFilePath = $"{PhpLogsDir}/{webName}-{DateTime.UtcNow.Ticks}.txt";
+        var phpLogFilePath = Path.Join(Environment.GetEnvironmentVariable("OneDriveConsumer"),
+                                       PhpLogsDir,
+                                       $"{webName}-{DateTime.UtcNow.Ticks}.txt");
         if (File.Exists(phpLogFilePath))
         {
             File.Delete(phpLogFilePath);
