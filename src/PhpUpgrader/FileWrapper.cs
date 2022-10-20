@@ -33,20 +33,6 @@ public sealed class FileWrapper
     /// <summary> Přejmenování/přesunutí souboru na tuto cestu při ukládání, pokud není null. </summary>
     public string? MoveOnSavePath { get; set; } = null;
 
-    private static readonly Lazy<string> _modifiedFileStartMessage = new(() =>
-    {
-#if DEBUG
-        var version = typeof(FileWrapper).Assembly.GetName().Version;
-        return $@"<?php
-/* Processed by McRAI PHP upgrader tool {version} (https://github.com/tommilostny/php_upgrader)
- * (c) {DateTime.Now.Year.ToString(CultureInfo.InvariantCulture)} Tomáš Milostný
- */ ?>
-";
-#else
-        return string.Empty;
-#endif
-    });
-
     /// <summary> Obsah souboru je zadán parametrem. </summary>
     /// <param name="path"> Cesta k souboru. </param>
     /// <param name="content"> Obsah souboru. </param>
@@ -77,7 +63,6 @@ public sealed class FileWrapper
         if (modified) //Nezapisovat, pokud neproběhly žádné změny.
         {
             //Zapsat změny.
-            Content.Insert(0, _modifiedFileStartMessage.Value);
             File.WriteAllText(Path, Content.ToString());
 
             if (MoveOnSavePath is not null) //Přesunout soubor, pokud je potřeba změnit jméno.
