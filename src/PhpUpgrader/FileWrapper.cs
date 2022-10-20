@@ -35,12 +35,16 @@ public sealed class FileWrapper
 
     private static readonly Lazy<string> _modifiedFileStartMessage = new(() =>
     {
+#if DEBUG
         var version = typeof(FileWrapper).Assembly.GetName().Version;
         return $@"<?php
 /* Processed by McRAI PHP upgrader tool {version} (https://github.com/tommilostny/php_upgrader)
  * (c) {DateTime.Now.Year.ToString(CultureInfo.InvariantCulture)} Tomáš Milostný
  */ ?>
 ";
+#else
+        return string.Empty;
+#endif
     });
 
     /// <summary> Obsah souboru je zadán parametrem. </summary>
