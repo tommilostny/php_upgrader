@@ -79,6 +79,7 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
     /// <summary> Událost, která nastane při přenosu souboru jako součást metod stahování a nahrávání. </summary>
     private async void FileTransfered(object sender, TransferEventArgs e)
     {
+        Thread.BeginCriticalRegion();
         await PrintNameAsync(_output);
         switch (e)
         {
@@ -107,17 +108,58 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
                 await _output.WriteLineToFileAsync(e.FileName);
                 break;
         }
+        Thread.EndCriticalRegion();
     }
 
     /// <summary> Událost, která nastane, když je potřeba rozhodnutí (tj. typicky u jakékoli nezávažné chyby). </summary>
-    protected virtual async void QueryReceived(object sender, QueryReceivedEventArgs e)
+    protected async void QueryReceived(object sender, QueryReceivedEventArgs e)
     {
         if (!Regex.IsMatch(e.Message, @"^(Lost connection|Connection failed)\."))
         {
+            if (this is FtpUploader fu && e.Message.Contains("Permission denied"))
+            {
+                e.Abort();
+                var remoteFileName = GetFileNameFromErrorMessage(e.Message);
+                if (remoteFileName is not null)
+                {
+                    try
+                    {
+                        var existing = fu.RecheckRemotes.First(x => x.Path == remoteFileName);
+                        if (++existing.Retried < 3)
+                            return;
+                    }
+                    catch
+                    {
+                        fu.RecheckRemotes.Add(new(remoteFileName));
+                        return;
+                    }
+                }
+            }
+            Thread.BeginCriticalRegion();
             await PrintNameAsync(_output);
             await PrintErrorAsync(e.Message);
+            Thread.EndCriticalRegion();
         }
         e.Continue();
+    }
+
+    private static string? GetFileNameFromErrorMessage(string message)
+    {
+        var match = Regex.Match(message, @"'(?<fn>.+?)'", RegexOptions.ExplicitCapture);
+        var localPath = match.Groups["fn"].Value;
+        var parts = localPath.Split(Path.DirectorySeparatorChar);
+        for (int i = 0; i < parts.Length - 1; i++)
+        {
+            if (parts[i].StartsWith("_temp_"))
+            {
+                var retval = string.Join('/', parts[(i + 1)..]);
+                Console.WriteLine("===========================================");
+                Console.WriteLine(retval);
+                Console.WriteLine("===========================================");
+                return retval;
+            }
+        }
+        return null;
     }
 
     private async Task PrintErrorAsync(string message)

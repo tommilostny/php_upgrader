@@ -5,6 +5,11 @@
 /// </summary>
 internal sealed class FtpUploader : SynchronizableFtpOperation
 {
+    internal record Recheck(string Path) { public byte Retried = 0; }
+    
+    internal List<Recheck> RecheckRemotes { get; } = new();
+
+
     public FtpUploader(Output output, string username, string password, string hostname)
         : base(output, username, password, hostname)
     {
@@ -58,10 +63,15 @@ internal sealed class FtpUploader : SynchronizableFtpOperation
     {
         await TryOpenSessionAsync();
         var tempDirectory = Path.Join(baseFolder, $"_temp_{webName}");
+
+        Thread.BeginCriticalRegion();
+
         await PrintNameAsync(_output);
         var startMessage = $"Probíhá nahrávání nových souborů z dočasné složky {tempDirectory} na server {_sessionOptions.HostName}...";
         Console.WriteLine(startMessage);
         await _output.WriteLineToFileAsync(startMessage);
+
+        Thread.BeginCriticalRegion();
         do
         {
             while (q3.Count == 0)
@@ -71,6 +81,8 @@ internal sealed class FtpUploader : SynchronizableFtpOperation
             var item = q3.Dequeue();
             if (item is null)
             {
+                Thread.BeginCriticalRegion();
+
                 await PrintNameAsync(_output);
                 Console.ForegroundColor = ConsoleColor.Green;
                 var endMessage = $"✅ Nahrávání souborů na {_sessionOptions.HostName} dokončeno.";
@@ -80,6 +92,8 @@ internal sealed class FtpUploader : SynchronizableFtpOperation
                 _session.Close();
                 await _output.WriteLineToFileAsync(endMessage);
                 await _output.WriteLineToFileAsync(string.Empty);
+
+                Thread.EndCriticalRegion();
                 return;
             }
             var s = Path.DirectorySeparatorChar;
@@ -89,21 +103,24 @@ internal sealed class FtpUploader : SynchronizableFtpOperation
                 remoteDirPath = remoteDirPath.Replace('\\', '/');
             }
             remoteDirPath = string.Join('/', remoteDirPath.Split('/')[..^1]);
+
+            //Try to upload file
             await SafeSessionActionAsync(() =>
             {
                 _session.PutFileToDirectory(item, remoteDirPath, remove: true);
             });
+            //If any file needs rechecking, add them back to q3 if they don't actually exist.
+            foreach (var recheck in RecheckRemotes.Where(x => x.Retried < 3))
+            {
+                await SafeSessionActionAsync(() =>
+                {
+                    if (!_session.FileExists(recheck.Path))
+                    {
+                        q3.Enqueue(recheck.Path);
+                    }
+                });
+            }
         }
         while (true);
-    }
-
-    protected override async void QueryReceived(object sender, QueryReceivedEventArgs e)
-    {
-        base.QueryReceived(sender, e);
-        await Task.Delay(20);
-        if (e.Message.Contains("Permission denied"))
-        {
-            e.Abort();
-        }
     }
 }

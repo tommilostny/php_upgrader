@@ -28,10 +28,14 @@ internal sealed class FtpDownloader : SynchronizableFtpOperation
         var tempDirectory = Path.Join(baseFolder, $"_temp_{webName}");
         var tempDirectoryInfo = new DirectoryInfo(tempDirectory);
 
+        Thread.BeginCriticalRegion();
+
         await PrintNameAsync(_output);
         var startMessage = $"Probíhá stahování nových souborů z {_sessionOptions.HostName} do dočasné složky {tempDirectoryInfo.FullName}...";
         Console.WriteLine(startMessage);
         await _output.WriteLineToFileAsync(startMessage);
+
+        Thread.EndCriticalRegion();
         do
         {
             while (q2.Count == 0)
@@ -41,16 +45,19 @@ internal sealed class FtpDownloader : SynchronizableFtpOperation
             var item = q2.Dequeue();
             if (item is null)
             {
+                Thread.BeginCriticalRegion();
+
                 q3.Enqueue(null);
                 await PrintNameAsync(_output);
                 var endMessage = $"✅ Stahování souborů z {_sessionOptions.HostName} dokončeno.";
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine(endMessage);
-                Console.WriteLine();
                 Console.ResetColor();
                 _session.Close();
                 await _output.WriteLineToFileAsync(endMessage);
-                await _output.WriteLineToFileAsync(string.Empty);   
+                await _output.WriteLineToFileAsync(string.Empty);
+                
+                Thread.EndCriticalRegion();
                 return tempDirectoryInfo;
             }
             var localDirPath = Path.Join(tempDirectory, item.FullName.Replace($"/{path}/", string.Empty)

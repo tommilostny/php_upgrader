@@ -44,10 +44,14 @@ internal sealed class FtpChecker : FtpOperation
     {
         await TryOpenSessionAsync();
 
+        Thread.BeginCriticalRegion();
+
         await PrintNameAsync(_output);
         var startMessage = $"Probíhá kontrola '{_sessionOptions}/{path}' na změny po {FromDate}...";
         Console.WriteLine(startMessage);
         await _output.WriteLineToFileAsync(startMessage);
+
+        Thread.EndCriticalRegion();
 
         var enumerationOptions = EO.EnumerateDirectories | EO.AllDirectories;
         var fileInfos = _session.EnumerateRemoteFiles(path, null, enumerationOptions);
@@ -125,10 +129,15 @@ internal sealed class FtpChecker : FtpOperation
     public async Task RunAsync(Queue<RemoteFileInfo?> q1, Queue<RemoteFileInfo?> q2, string hostname1 = McraiFtp.DefaultHostname1)
     {
         await TryOpenSessionAsync();
+
+        Thread.BeginCriticalRegion();
+
         await PrintNameAsync(_output);
         var startMessage = $"Probíhá kontrola '{_sessionOptions.HostName}' vůči změnám na '{hostname1}'...";
         Console.WriteLine(startMessage);
         await _output.WriteLineToFileAsync(startMessage);
+
+        Thread.EndCriticalRegion();
         do
         {
             while (q1.Count == 0)
