@@ -122,15 +122,28 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
                 var remoteFileName = GetFileNameFromErrorMessage(e.Message);
                 if (remoteFileName is not null)
                 {
+                    bool adding = false;
+                    byte recheckNum = 0;
                     try
                     {
                         var existing = fu.RecheckRemotes.First(x => x.Path == remoteFileName);
-                        if (++existing.Retried < 3)
-                            return;
+                        adding = (recheckNum = ++existing.Retried) < 3;
                     }
                     catch
                     {
                         fu.RecheckRemotes.Add(new(remoteFileName));
+                        adding = true;
+                    }
+                    if (adding)
+                    {
+                        Thread.BeginCriticalRegion();
+
+                        var msg = $"{remoteFileName}, recheck #{recheckNum + 1}";
+                        await fu.PrintNameAsync(_output);
+                        Console.WriteLine(msg);
+                        await _output.WriteLineToFileAsync(msg);
+
+                        Thread.EndCriticalRegion();
                         return;
                     }
                 }
@@ -152,11 +165,7 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
         {
             if (parts[i].StartsWith("_temp_"))
             {
-                var retval = string.Join('/', parts[(i + 1)..]);
-                Console.WriteLine("===========================================");
-                Console.WriteLine(retval);
-                Console.WriteLine("===========================================");
-                return retval;
+                return string.Join('/', parts[(i + 1)..]);
             }
         }
         return null;
