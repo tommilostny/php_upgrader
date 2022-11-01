@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeExtensions;
 
-public static class AegisxDetail
+public static partial class AegisxDetail
 {
     /// <summary> [Break => Return] v souboru aegisx\detail.php (není ve smyčce, ale v if). </summary>
     public static FileWrapper UpgradeAegisxDetail(this FileWrapper file)
@@ -10,11 +10,11 @@ public static class AegisxDetail
             return file;
         }
         var content = file.Content.ToString();
-        var updated = Regex.Replace(content, @"if\s?\(\$presmeruj == ""NO""\)\s*\{\s*break;",
-                                              "if ($presmeruj == \"NO\") {\n\t\t\treturn;",
-                                              RegexOptions.None,
-                                              TimeSpan.FromSeconds(4));
+        var updated = IfPresmerujRegex().Replace(content, "if ($presmeruj == \"NO\") {\n\t\t\treturn;");
         file.Content.Replace(content, updated);
         return file;
     }
+
+    [GeneratedRegex(@"if\s?\(\$presmeruj == ""NO""\)\s*\{\s*break;", RegexOptions.None, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex IfPresmerujRegex();
 }

@@ -1,10 +1,7 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeExtensions;
 
-public static class RegexFunctions
+public static partial class RegexFunctions
 {
-    private static readonly RegexOptions _options = RegexOptions.Compiled | RegexOptions.ExplicitCapture;
-    private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(4);
-
     /// <summary>
     /// - funkci ereg nebo ereg_replace doplnit do prvního parametru delimetr na začátek a nakonec (if(ereg('.+@.+..+', $retezec))
     /// // puvodni, jiz nefunkcni >>> if(preg_match('#.+@.+..+#', $retezec)) // upravene - delimiter zvolen #)
@@ -24,13 +21,13 @@ public static class RegexFunctions
 
         var content = file.Content.ToString();
 
-        var updated = Regex.Replace(content, @"ereg(_replace|i)?\s?\('(\\'|[^'])*'", evaluator, _options, _timeout);
-        updated = Regex.Replace(updated, @"ereg(_replace|i)?\s?\(""(\\""|[^""])*""", evaluator, _options, _timeout);
+        var updated = EregSingleQuoteStrRegex().Replace(content, evaluator);
+        updated = EregDoubleQuoteStrRegex().Replace(updated, evaluator);
 
-        updated = Regex.Replace(updated, @"eregi?\s?\( ?\$", "preg_match($", _options, _timeout);
-        updated = Regex.Replace(updated, @"ereg_replace\s?\(\s?\$", "preg_replace($", _options, _timeout);
+        updated = EregiVarRegex().Replace(updated, "preg_match($");
+        updated = EregReplaceVarRegex().Replace(updated, "preg_replace($");
 
-        if (Regex.IsMatch(updated, @"\n[^//]{0,236}ereg[^(;"",]*\(", _options, _timeout))
+        if (UncommentedEregRegex().IsMatch(updated))
         {
             file.Warnings.Add("Nemodifikovaná funkce ereg!");
         }
@@ -55,13 +52,9 @@ public static class RegexFunctions
             if (!javascript && !line.Contains(".split") && line.Length > 7)
             {
                 var lineStr = line.ToString();
-                var updated = Regex.Replace(lineStr, @"\bsplit\s?\('(\\'|[^'])*'", evaluator, _options, _timeout);
-                updated = Regex.Replace(updated, @"\bsplit\s?\(""(\\""|[^""])*""", evaluator, _options, _timeout);
-                updated = Regex.Replace(updated,
-                                        @"\bsplit\s?\(\s?(?<del>[^""'].*?),",
-                                        new MatchEvaluator(SplitWithVarDelimiter),
-                                        _options,
-                                        _timeout);
+                var updated = SplitSingleQuoteStrRegex().Replace(lineStr, evaluator);
+                updated = SplitDoubleQuoteStrRegex().Replace(updated, evaluator);
+                updated = SplitVarRegex().Replace(updated, new MatchEvaluator(SplitWithVarDelimiter));
 
                 line.Replace(lineStr, updated);
             }
@@ -71,7 +64,7 @@ public static class RegexFunctions
         if (!file.Path.EndsWith(Path.Join("facebook", "src", "Facebook", "SignedRequest.php"), StringComparison.Ordinal)
             && !file.Path.EndsWith(Path.Join("funkce", "qrkod", "qrsplit.php"), StringComparison.Ordinal)
             && !file.Path.EndsWith(Path.Join("funkce", "qrkod", "phpqrcode.php"), StringComparison.Ordinal)
-            && Regex.IsMatch(file.Content.ToString(), @"(?<!(_|\.))split\s?\(", _options, _timeout))
+            && UnmodifiedSplitRegex().IsMatch(file.Content.ToString()))
         {
             file.Warnings.Add("Nemodifikovaná funkce split!");
         }
@@ -90,7 +83,7 @@ public static class RegexFunctions
             var x when x.SequenceEqual("split") => "preg_split",
             _ => "preg_match"
         };
-        char quote = match.ValueSpan[++bracketIndex];
+        var quote = match.ValueSpan[++bracketIndex];
         char? ignoreFlag = oldFunc.SequenceEqual("eregi") ? 'i' : null;
 
         var evaluator = new MatchEvaluator(PatternDelimiterEscapeEvaluator);
@@ -98,7 +91,7 @@ public static class RegexFunctions
                                     $@"(^{_delimiter})|([^\\]{_delimiter})",
                                     evaluator,
                                     RegexOptions.None,
-                                    _timeout);
+                                    TimeSpan.FromSeconds(4));
 
         return $"{pregFunction}({quote}{_delimiter}{pattern}{_delimiter}{ignoreFlag}{quote}";
     }
@@ -114,4 +107,31 @@ public static class RegexFunctions
         var delimiterVar = match.Groups["del"];
         return $"preg_split('{_delimiter}'.{delimiterVar}.'{_delimiter}',";
     }
+
+    [GeneratedRegex(@"ereg(_replace|i)?\s?\('(\\'|[^'])*'", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex EregSingleQuoteStrRegex();
+    
+    [GeneratedRegex(@"ereg(_replace|i)?\s?\(""(\\""|[^""])*""", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex EregDoubleQuoteStrRegex();
+    
+    [GeneratedRegex(@"eregi?\s?\( ?\$", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex EregiVarRegex();
+    
+    [GeneratedRegex(@"ereg_replace\s?\(\s?\$", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex EregReplaceVarRegex();
+    
+    [GeneratedRegex(@"\n[^//]{0,236}ereg[^(;"",]*\(", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex UncommentedEregRegex();
+    
+    [GeneratedRegex(@"\bsplit\s?\('(\\'|[^'])*'", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex SplitSingleQuoteStrRegex();
+    
+    [GeneratedRegex(@"\bsplit\s?\(""(\\""|[^""])*""", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex SplitDoubleQuoteStrRegex();
+    
+    [GeneratedRegex(@"\bsplit\s?\(\s?(?<del>[^""'].*?),", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex SplitVarRegex();
+    
+    [GeneratedRegex(@"(?<!(_|\.))split\s?\(", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex UnmodifiedSplitRegex();
 }

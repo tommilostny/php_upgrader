@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeExtensions;
 
-public static class RequiredParameterFollowsOptional
+public static partial class RequiredParameterFollowsOptional
 {
     /// <summary>
     /// PHPStan: Deprecated in PHP 8.0: Required parameter ${...} follows optional parameter $domain.
@@ -11,11 +11,7 @@ public static class RequiredParameterFollowsOptional
         {
             var evaluator = new MatchEvaluator(StartOptionalParamsToRequired);
             var content = file.Content.ToString();
-            var updated = Regex.Replace(content,
-                                        @"function(?!_)\s+?\w+\s*?\((?!\))((.|\n)(?!{|;))*?\$\w+\s?=\s?(.|\n)*?\)(?!,)(?!.*?\))",
-                                        evaluator,
-                                        RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                                        TimeSpan.FromSeconds(4));
+            var updated = FunctionWithParametersRegex().Replace(content, evaluator);
             file.Content.Replace(content, updated);
         }
         return file;
@@ -23,10 +19,7 @@ public static class RequiredParameterFollowsOptional
 
     private static string StartOptionalParamsToRequired(Match match)
     {
-        IEnumerable<Match> parameters = Regex.Matches(match.Value,
-                                                      @"(\w+?\s+?)?&?\$\w+\s*?(?<defval>=\s*?(((?<strq>""|').*?\k<strq>)|(array\s?\(.*?\))|([^,'""(]*?)))?\s*?(,|\))",
-                                                      RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase,
-                                                      TimeSpan.FromSeconds(2));
+        IEnumerable<Match> parameters = OptionalParametersRegex().Matches(match.Value);
         var updatedParameters = new Stack<string>();
         byte state = 0;
         //Procházíme parametry v opačném pořadí (volitelné parametry z konce přeskočit, jelikož je to povolené chování),
@@ -53,7 +46,7 @@ public static class RequiredParameterFollowsOptional
                 state = 2;
             }
             //Odstranění zbytečných mezer (mohou se objevit, pokud byly parametry na více řádcích).
-            paramValue = Regex.Replace(paramValue, @"\s{2,}", " ", RegexOptions.None, TimeSpan.FromSeconds(2));
+            paramValue = UnnecessarySpacesRegex().Replace(paramValue, " ");
             updatedParameters.Push(paramValue);
         }
         //Vrátit původní hodnotu, pokud se nedošlo do stavu 2 (nebyl vlastně nalezen žádný "volitelný" parametr).
@@ -88,4 +81,13 @@ public static class RequiredParameterFollowsOptional
             }
         }
     }
+
+    [GeneratedRegex(@"function(?!_)\s+?\w+\s*?\((?!\))((.|\n)(?!{|;))*?\$\w+\s?=\s?(.|\n)*?\)(?!,)(?!.*?\))", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex FunctionWithParametersRegex();
+    
+    [GeneratedRegex(@"\s{2,}", RegexOptions.None, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex UnnecessarySpacesRegex();
+    
+    [GeneratedRegex(@"(\w+?\s+?)?&?\$\w+\s*?(?<defval>=\s*?(((?<strq>""|').*?\k<strq>)|(array\s?\(.*?\))|([^,'""(]*?)))?\s*?(,|\))", RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex OptionalParametersRegex();
 }

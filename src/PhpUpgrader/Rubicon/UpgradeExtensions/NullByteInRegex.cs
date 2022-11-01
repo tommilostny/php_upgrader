@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeExtensions;
 
-public static class NullByteInRegex
+public static partial class NullByteInRegex
 {
     /// <summary>
     /// PHPStan:
@@ -16,11 +16,7 @@ public static class NullByteInRegex
         {
             var evaluator = new MatchEvaluator(NullBytesInPatternEvaluator);
             var content = file.Content.ToString();
-            var updated = Regex.Replace(content,
-                                        @"preg_.*?(?<pattern>"".*\\((0(?![1-7]){1,3})|(\\x0(?![1-9a-fA-F]){1,2})).*"")\s?,",
-                                        evaluator,
-                                        RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                                        TimeSpan.FromSeconds(4));
+            var updated = NullByteInPatternRegex().Replace(content, evaluator);
             file.Content.Replace(content, updated);
         }
         return file;
@@ -32,4 +28,7 @@ public static class NullByteInRegex
         var updatedPattern = $"'{pattern.ValueSpan[1..^2]}'";
         return match.Value.Replace(pattern.Value, updatedPattern, StringComparison.Ordinal);
     }
+
+    [GeneratedRegex(@"preg_.*?(?<pattern>"".*\\((0(?![1-7]){1,3})|(\\x0(?![1-9a-fA-F]){1,2})).*"")\s?,", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex NullByteInPatternRegex();
 }

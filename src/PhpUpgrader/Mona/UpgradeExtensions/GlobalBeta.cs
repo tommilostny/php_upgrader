@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeExtensions;
 
-public static class GlobalBeta
+public static partial class GlobalBeta
 {
     /// <summary>
     /// pro všechny funkce které v sobe mají dotaz na db pridat na zacatek
@@ -8,11 +8,7 @@ public static class GlobalBeta
     /// </summary>
     public static FileWrapper UpgradeGlobalBeta(this FileWrapper file)
     {
-        if (file.Content.Contains("$this")
-            || !Regex.IsMatch(file.Content.ToString(),
-                              "(?s)^(?=.*?function )(?=.*?mysqli_)",
-                              RegexOptions.Compiled,
-                              TimeSpan.FromSeconds(4)))
+        if (file.Content.Contains("$this") || !GarthSuppliedRegex().IsMatch(file.Content.ToString()))
         {
             return file;
         }
@@ -26,8 +22,7 @@ public static class GlobalBeta
             if (line.Contains("<script")) javascript = true;
             if (line.Contains("</script")) javascript = false;
 
-            if (!javascript
-                && Regex.IsMatch(line.ToString(), @"function\s", RegexOptions.Compiled, TimeSpan.FromSeconds(4))
+            if (!javascript && ContainsFuncRegex().IsMatch(line.ToString())
                 && MysqliAndBetaInFunction(i, lines))
             {
                 if ((line = lines[++i]).Contains('{'))
@@ -75,4 +70,10 @@ public static class GlobalBeta
         }
         return false;
     }
+
+    [GeneratedRegex("(?s)^(?=.*?function )(?=.*?mysqli_)", RegexOptions.None, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex GarthSuppliedRegex();
+    
+    [GeneratedRegex(@"function\s", RegexOptions.None, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex ContainsFuncRegex();
 }

@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeExtensions;
 
-public static class IfEmpty
+public static partial class IfEmpty
 {
     /// <summary> PHPStan: Right side of || is always false. </summary>
     /// <remarks> if ($id != "" || $id != null) </remarks>
@@ -8,11 +8,9 @@ public static class IfEmpty
     {
         var evaluator = new MatchEvaluator(IfEmptyMatchEvaluator);
         var content = file.Content.ToString();
-        var updated = Regex.Replace(content,
-                                    @"if\s?\(\$\w+\s?!=\s?""""\s?\|\|\s?\$\w+\s?!=\s?null\)",
-                                    evaluator,
-                                    RegexOptions.IgnoreCase | RegexOptions.Compiled,
-                                    TimeSpan.FromSeconds(4));
+
+        var updated = AlwaysFalseIfRegex().Replace(content, evaluator);
+
         file.Content.Replace(content, updated);
         return file;
     }
@@ -29,4 +27,7 @@ public static class IfEmpty
 
         return varValue1.SequenceEqual(varValue2) ? $"if (!empty({varValue1}))" : match.Value;
     }
+
+    [GeneratedRegex(@"if\s?\(\$\w+\s?!=\s?""""\s?\|\|\s?\$\w+\s?!=\s?null\)", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex AlwaysFalseIfRegex();
 }

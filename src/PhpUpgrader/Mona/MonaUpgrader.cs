@@ -4,7 +4,7 @@ using PhpUpgrader.Mona.UpgradeHandlers;
 namespace PhpUpgrader.Mona;
 
 /// <summary> PHP upgrader pro RS Mona z verze 5 na verzi 7. </summary>
-public class MonaUpgrader : PhpUpgraderBase
+public partial class MonaUpgrader : PhpUpgraderBase
 {
     /// <summary> Složky obsahující administraci RS Mona (null => 1 složka 'admin') </summary>
     public string[] AdminFolders
@@ -86,7 +86,7 @@ public class MonaUpgrader : PhpUpgraderBase
 
         //Zahlásit IP adresu serveru mcrai1, pokud není zakomentovaná.
         if (file.Content.Contains("93.185.102.228")
-            && !Regex.IsMatch(file.Content.ToString(), @"//.*93\.185\.102\.228", RegexOptions.None, TimeSpan.FromSeconds(4)))
+            && !CommentedMcrai1IPRegex().IsMatch(file.Content.ToString()))
         {
             file.Warnings.Add("Soubor obsahuje IP adresu mcrai1 (93.185.102.228).");
         }
@@ -100,4 +100,7 @@ public class MonaUpgrader : PhpUpgraderBase
             file.RemoveTrailingWhitespaces();
         }
     }
+
+    [GeneratedRegex(@"//.*93\.185\.102\.228", RegexOptions.None, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex CommentedMcrai1IPRegex();
 }

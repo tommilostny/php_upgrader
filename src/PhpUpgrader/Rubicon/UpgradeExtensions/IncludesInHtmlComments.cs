@@ -1,14 +1,11 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeExtensions;
 
-public static class IncludesInHtmlComments
+public static partial class IncludesInHtmlComments
 {
     /// <summary> templates/.../product_detail.php, zakomentovaný blok HTML stále spouští broken PHP includy, zakomentovat </summary>
     public static FileWrapper UpgradeIncludesInHtmlComments(this FileWrapper file)
     {
-        if (Regex.IsMatch(file.Path,
-                           @"(\\|/)templates(\\|/).+(\\|/)product_detail\.php",
-                           RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                           TimeSpan.FromSeconds(4)))
+        if (TemplatesProductdetailFileRegex().IsMatch(file.Path))
         {
             var lines = file.Content.Split();
             var insideHtmlComment = false;
@@ -38,4 +35,7 @@ public static class IncludesInHtmlComments
         }
         return file;
     }
+
+    [GeneratedRegex(@"(\\|/)templates(\\|/).+(\\|/)product_detail\.php", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex TemplatesProductdetailFileRegex();
 }

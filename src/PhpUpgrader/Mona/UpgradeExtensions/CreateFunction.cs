@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeExtensions;
 
-public static class CreateFunction
+public static partial class CreateFunction
 {
     public static FileWrapper UpgradeCreateFunction(this FileWrapper file)
     {
@@ -19,11 +19,7 @@ public static class CreateFunction
         var args = Array.Empty<string>(); //parametry výsledné anonymní funkce.
 
         var evaluator = new MatchEvaluator(m => CreateFunctionToAnonymousFunction(m, content, warningsCollection, lineOffset, out args));
-        var updated = Regex.Replace(content,
-                                    @"@?create_function\s?\(\s*'(?<args>.*)'\s?,\s*(?<quote>'|"")(?<code>(.|\n)*?(;|\}|\s))\k<quote>\s*\)",
-                                    evaluator,
-                                    RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                                    TimeSpan.FromSeconds(4));
+        var updated = CreateFunctionRegex().Replace(content, evaluator);
 
         return (updated, args);
     }
@@ -57,8 +53,8 @@ public static class CreateFunction
 
     private static uint AddWarning(int matchIndex, string content, ICollection<string> warningsCollection, uint lineOffset)
     {
-        uint lineNumber = 1 + lineOffset;
-        for (int i = matchIndex; i >= 0; i--)
+        var lineNumber = 1 + lineOffset;
+        for (var i = matchIndex; i >= 0; i--)
         {
             if (content[i] == '\n')
             {
@@ -120,7 +116,7 @@ public static class CreateFunction
     {
         //načíst včechny argumenty
         args = match.Groups["args"].Value.Split(',');
-        for (int i = 0; i < args.Length; i++)
+        for (var i = 0; i < args.Length; i++)
         {
             args[i] = args[i].Trim();
         }
@@ -128,10 +124,7 @@ public static class CreateFunction
         //nejsou to argumenty, ale jsou použity v těle anonymní funkce.
         parentVars = new(StringComparer.Ordinal);
         //projít všedchny proměnné v těle funkce a přidat je, pokud se nejedná o argument.
-        IEnumerable<Match> allVars = Regex.Matches(code,
-                                                   @"\$\w+",
-                                                   RegexOptions.ExplicitCapture,
-                                                   TimeSpan.FromSeconds(3));
+        IEnumerable<Match> allVars = PhpVarRegex().Matches(code);
         foreach (var variable in allVars)
         {
             if (args.All(arg => !arg.EndsWith(variable.Value, StringComparison.Ordinal)))
@@ -141,10 +134,7 @@ public static class CreateFunction
         }
         //obsahuje anonymní funkce klíčové slovo "global"?
         //globální proměnné nejsou v "use" výrazu uvedeny, smazat je z rodičovského scope.
-        var globalsMatch = Regex.Match(code,
-                                       @"global(?<vars>(\s?\$\w+,?)+);",
-                                       RegexOptions.ExplicitCapture,
-                                       TimeSpan.FromSeconds(2));
+        var globalsMatch = GlobalVarsRegex().Match(code);
         if (globalsMatch.Success)
         {
             var globals = globalsMatch.Groups["vars"].Value.Split(',');
@@ -155,10 +145,7 @@ public static class CreateFunction
         }
         //proměnné ve statických třídách také smazat z rodičovského scope,
         //jsou dostupné globáně class::$var.
-        IEnumerable<Match> staticProperties = Regex.Matches(code,
-                                                            @"\w+::\$\w+",
-                                                            RegexOptions.ExplicitCapture,
-                                                            TimeSpan.FromSeconds(2));
+        IEnumerable<Match> staticProperties = StaticClassVarRegex().Matches(code);
         foreach (var property in staticProperties)
         {
             var stored = parentVars.FirstOrDefault(pVar => property.Value.EndsWith(pVar, StringComparison.Ordinal));
@@ -174,11 +161,7 @@ public static class CreateFunction
         if (string.Equals(match.Groups["quote"].Value, "\"", StringComparison.Ordinal))
         {
             var evaluator = new MatchEvaluator(DoubleQuoteStringCodeEvaluator);
-            code = Regex.Replace(code,
-                                 @"(\\(\$|\\|""))|('\$.*?')",
-                                 evaluator,
-                                 RegexOptions.ExplicitCapture,
-                                 TimeSpan.FromSeconds(3));
+            code = UnescapedCharactersRegex().Replace(code, evaluator);
         }
         return code;
     }
@@ -188,18 +171,10 @@ public static class CreateFunction
         var inside = (Match m) => m.Groups["inside"].Value.Trim();
 
         var evaluator = new MatchEvaluator(m => _ConcatStringVariant1(m, code));
-        code = Regex.Replace(code,
-                             @"('\s?\.)(?<inside>.*?)(\.\s?')",
-                             evaluator,
-                             RegexOptions.ExplicitCapture,
-                             TimeSpan.FromSeconds(3));
+        code = ConcatRegex1().Replace(code, evaluator);
 
         evaluator = new MatchEvaluator(_ConcatStringVariant2);
-        code = Regex.Replace(code,
-                             @"(\.\s?')(?<inside>.*?)('\s?\.)",
-                             evaluator,
-                             RegexOptions.ExplicitCapture,
-                             TimeSpan.FromSeconds(3));
+        code = ConcatRegex2().Replace(code, evaluator);
         return code;
 
         // ' . . '
@@ -224,4 +199,24 @@ public static class CreateFunction
         //'$var' >> "$var" zajistí, že její hodnota bude v tomto stringu.
         return match.Value.Replace('\'', '"');
     }
+
+    [GeneratedRegex(@"@?create_function\s?\(\s*'(?<args>.*)'\s?,\s*(?<quote>'|"")(?<code>(.|\n)*?(;|\}|\s))\k<quote>\s*\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex CreateFunctionRegex();
+    
+    [GeneratedRegex(@"\$\w+", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex PhpVarRegex();
+ 
+    [GeneratedRegex(@"global(?<vars>(\s?\$\w+,?)+);", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex GlobalVarsRegex();
+    
+    [GeneratedRegex(@"(\\(\$|\\|""))|('\$.*?')", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex UnescapedCharactersRegex();
+    
+    [GeneratedRegex(@"('\s?\.)(?<inside>.*?)(\.\s?')", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex ConcatRegex1();
+    
+    [GeneratedRegex(@"(\.\s?')(?<inside>.*?)('\s?\.)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex ConcatRegex2();
+    [GeneratedRegex(@"\w+::\$\w+", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex StaticClassVarRegex();
 }

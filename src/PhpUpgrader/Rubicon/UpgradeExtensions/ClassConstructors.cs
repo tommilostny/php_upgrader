@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeExtensions;
 
-public static class ClassConstructors
+public static partial class ClassConstructors
 {
     /// <summary> Old style constructor function ClassName() => function __construct() </summary>
     /// <remarks> Deprecated: Methods with the same name as their class will not be constructors in a future version of PHP; </remarks>
@@ -17,7 +17,7 @@ public static class ClassConstructors
         for (var i = 0; i < file.Content.Length; i++)
         {
             //nalézt další třídu v souboru a přesunout se na její index.
-            var classMatch = Regex.Match(contentAhead, @"class\s.+\s*\{", RegexOptions.Multiline | RegexOptions.Compiled, TimeSpan.FromSeconds(4));
+            var classMatch = ClassRegex().Match(contentAhead);
             if (!classMatch.Success) //skončit, pokud kód neobsahuje další třídu.
             {
                 break;
@@ -37,7 +37,7 @@ public static class ClassConstructors
             }
             //prochází třídu, dokud nenarazí na funkci, zde se zavolá následující akce,
             //která zkontroluje, zda se jedná o konstruktor a případně jej aktualizuje.
-            GoThroughClass(contentStr, i, onFunctionFindAction: (int j) =>
+            GoThroughClass(contentStr, i, onFunctionFindAction: (j) =>
             {
                 AddCompatibilityConstructor(ref contentStr, className, j, constructors);
             });
@@ -66,7 +66,7 @@ public static class ClassConstructors
     {
         var result = new Dictionary<string, bool>(StringComparer.Ordinal);
 
-        GoThroughClass(content, 0, onFunctionFindAction: (int i) =>
+        GoThroughClass(content, 0, onFunctionFindAction: (i) =>
         {
             var match = Regex.Match(content[(i + 2)..],
                                     $@"^(__construct|{className})\s?\(.*\)\s",
@@ -196,12 +196,7 @@ public static class ClassConstructors
                 var oldConstructor = $"{className}({@params})";
                 higherHalf = $"__construct{higherHalf.AsSpan(className.Length)}";
 
-                var whitespace = Regex
-                    .Match(lowerHalf,
-                           @"(?<spaces>[ \t]*)(public\s?)?function\s$",
-                           RegexOptions.Multiline | RegexOptions.ExplicitCapture | RegexOptions.Compiled,
-                           TimeSpan.FromSeconds(2))
-                    .Groups["spaces"]
+                var whitespace = PublicFunctionSpacesRegex().Match(lowerHalf).Groups["spaces"]
                     .Value;
 
                 var compatibilityConstructorBuilder = new StringBuilder(oldConstructor)
@@ -245,4 +240,10 @@ public static class ClassConstructors
 
         public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : null;
     }
+
+    [GeneratedRegex(@"class\s.+\s*\{", RegexOptions.Multiline, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex ClassRegex();
+    
+    [GeneratedRegex(@"(?<spaces>[ \t]*)(public\s?)?function\s$", RegexOptions.Multiline | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex PublicFunctionSpacesRegex();
 }

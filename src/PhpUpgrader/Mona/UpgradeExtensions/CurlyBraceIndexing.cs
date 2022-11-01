@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeExtensions;
 
-public static class CurlyBraceIndexing
+public static partial class CurlyBraceIndexing
 {
     /// <summary>
     /// PhpStorm:
@@ -11,11 +11,7 @@ public static class CurlyBraceIndexing
         var content = file.Content.ToString();
         var evaluator = new MatchEvaluator(m => CurlyToSquareBracketsIndex(m, content));
 
-        var updated = Regex.Replace(content,
-                                    @"(?<array>\$[^;\n=.,(})/+*\s""'[]+?)\s?{(?<index>[^;\n]*?)}",
-                                    evaluator,
-                                    RegexOptions.ExplicitCapture | RegexOptions.Compiled,
-                                    TimeSpan.FromSeconds(4));
+        var updated = CurlyBraceAccessRegex().Replace(content, evaluator);
 
         file.Content.Replace(content, updated);
         return file;
@@ -47,7 +43,7 @@ public static class CurlyBraceIndexing
                 startQuote = !startQuote;
             }
         }
-        for (int i = match.Index + match.Length; i < source.Length && source[i] != '\n'; i++)
+        for (var i = match.Index + match.Length; i < source.Length && source[i] != '\n'; i++)
         {
             if (source[i] == '"')
             {
@@ -56,4 +52,7 @@ public static class CurlyBraceIndexing
         }
         return startQuote && endQuote;
     }
+
+    [GeneratedRegex(@"(?<array>\$[^;\n=.,(})/+*\s""'[]+?)\s?{(?<index>[^;\n]*?)}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex CurlyBraceAccessRegex();
 }

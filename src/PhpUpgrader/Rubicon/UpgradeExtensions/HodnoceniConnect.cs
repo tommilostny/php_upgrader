@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeExtensions;
 
-public static class HodnoceniConnect
+public static partial class HodnoceniConnect
 {
     /// <summary>
     /// Soubory pdf/p_listina.php, pdf/p_listina.php a rss/hodnoceni.php
@@ -21,7 +21,7 @@ public static class HodnoceniConnect
 
             var evaluator = new MatchEvaluator(_MysqliQueryEvaluator);
             var content = file.Content.ToString();
-            var updated = Regex.Replace(content, @"mysqli_query\(\$beta,.+;", evaluator, RegexOptions.None, TimeSpan.FromSeconds(4));
+            var updated = MysqliQueryBetaRegex().Replace(content, evaluator);
             file.Content.Replace(content, updated);
 
             string _MysqliQueryEvaluator(Match match)
@@ -60,4 +60,7 @@ public static class HodnoceniConnect
         yield return Path.Join("pdf", "p_listina_u.php");
         yield return Path.Join("rss", "hodnoceni.php");
     }
+
+    [GeneratedRegex(@"mysqli_query\(\$beta,.+;", RegexOptions.None, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex MysqliQueryBetaRegex();
 }

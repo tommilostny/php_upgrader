@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeExtensions;
 
-public static class Implode
+public static partial class Implode
 {
     /// <summary>
     /// PHPStorm:
@@ -17,11 +17,7 @@ public static class Implode
         {
             var evaluator = new MatchEvaluator(ImplodeParamSwitch);
             var content = file.Content.ToString();
-            var updated = Regex.Replace(content,
-                                        @"implode\s?\(\s*?(?<array>\$\w+)\s*?,\s*?(?<sep>(?<quote>(""|')).*?(?<!\\)\k<quote>)\s*?\)",
-                                        evaluator,
-                                        RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                                        TimeSpan.FromSeconds(4));
+            var updated = OldImplodeRegex().Replace(content, evaluator);
             file.Content.Replace(content, updated);
         }
         return file;
@@ -30,7 +26,10 @@ public static class Implode
     private static string ImplodeParamSwitch(Match match)
     {
         var array = match.Groups["array"];
-        var separator = match.Groups["sep"];
-        return $"implode({separator}, {array})";
+        var separatorStr = match.Groups["sep"];
+        return $"implode({separatorStr}, {array})";
     }
+
+    [GeneratedRegex(@"implode\s?\(\s*?(?<array>\$\w+)\s*?,\s*?(?<sep>(?<quote>(""|')).*?(?<!\\)\k<quote>)\s*?\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex OldImplodeRegex();
 }

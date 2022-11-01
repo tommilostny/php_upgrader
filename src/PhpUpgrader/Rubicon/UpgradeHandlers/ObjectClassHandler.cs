@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeHandlers;
 
-public sealed class ObjectClassHandler
+public sealed partial class ObjectClassHandler
 {
     private static readonly string[] _objectFileNames = new[]
     {
@@ -30,11 +30,7 @@ public sealed class ObjectClassHandler
             {
                 file.Content.Replace("class Object", "class ObjectBase");
                 var content = file.Content.ToString();
-                var updated = Regex.Replace(content,
-                                            @"function\s+Object\s*?\(",
-                                            "function ObjectBase(",
-                                            RegexOptions.None,
-                                            TimeSpan.FromSeconds(4));
+                var updated = ObjectOldConstructorRegex().Replace(content, "function ObjectBase(");
 
                 file.Content.Replace(content, updated);
                 file.MoveOnSavePath = file.Path.Replace(objectFileName, $"{Path.DirectorySeparatorChar}ObjectBase.php", StringComparison.Ordinal);
@@ -84,4 +80,7 @@ public sealed class ObjectClassHandler
         objectFileName = null;
         return false;
     }
+
+    [GeneratedRegex(@"function\s+Object\s*?\(", RegexOptions.None, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex ObjectOldConstructorRegex();
 }

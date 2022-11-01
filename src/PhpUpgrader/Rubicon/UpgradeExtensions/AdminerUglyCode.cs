@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeExtensions;
 
-public static class AdminerUglyCode
+public static partial class AdminerUglyCode
 {
     /// <summary>
     /// Minifikovaný špatně formátovaný kód v souboru 'adminer.php' rozhodí ostatní aktualizační rutiny.
@@ -47,11 +47,7 @@ public static class AdminerUglyCode
 
             var content = file.Content.ToString();
             var evaluator = new MatchEvaluator(MysqlResultEvaluator);
-            var updated = Regex.Replace(content,
-                                        @"return\s+?mysql_result\((?<result>.+?),(?<row>.+?),(?<field>.+?)\)",
-                                        evaluator,
-                                        RegexOptions.ExplicitCapture,
-                                        TimeSpan.FromSeconds(4));
+            var updated = ReturnMysqlResultRegex().Replace(content, evaluator);
             file.Content.Replace(content, updated);
         }
         return file;
@@ -66,4 +62,7 @@ public static class AdminerUglyCode
 
         return $"mysqli_data_seek({result}, {row});\n{ws}mysqli_field_seek({result}, {field});\n{ws}return mysqli_fetch_field({result})";
     }
+
+    [GeneratedRegex(@"return\s+?mysql_result\((?<result>.+?),(?<row>.+?),(?<field>.+?)\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex ReturnMysqlResultRegex();
 }

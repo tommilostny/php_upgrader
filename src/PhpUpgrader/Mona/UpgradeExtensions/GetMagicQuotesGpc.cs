@@ -2,7 +2,7 @@
 
 namespace PhpUpgrader.Mona.UpgradeExtensions;
 
-public static class GetMagicQuotesGpc
+public static partial class GetMagicQuotesGpc
 {
     /// <summary>
     /// Function get_magic_quotes_gpc() is deprecated and won't be supported in future versions of PHP.
@@ -20,28 +20,20 @@ public static class GetMagicQuotesGpc
                 file.Content.Replace("&& get_magic_quotes_gpc()", "&& /*get_magic_quotes_gpc()*/ false");
                 break;
         }
-        if ((!file.Content.Contains("get_magic_quotes_gpc()") && !file.Content.Contains("get_magic_quotes_runtime"))
+        if (!file.Content.Contains("get_magic_quotes_gpc()") && !file.Content.Contains("get_magic_quotes_runtime")
             || Is_GMQG_Commented(contentStr.Value))
         {
             return file;
         }
         //Zpracování výrazu s ternárním operátorem.
         var evaluator = new MatchEvaluator(GetMagicQuotesGpcTernaryEvaluator);
-        var updated = Regex.Replace(contentStr.Value,
-                                    @"\(?!?get_magic_quotes_(gpc|runtime)\(\)\)?\s{0,5}\?\s{0,5}(/\*.*\*/)?\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s{0,5}:\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))",
-                                    evaluator,
-                                    RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                                    TimeSpan.FromSeconds(4));
+        var updated = GetMagicQuotesTernaryRegex().Replace(contentStr.Value, evaluator);
         //Pokud výraz s get_magic_quotes_gpc nebyl aktualizován, jedná se pravděpodobně o variantu v if.
         if (!Is_GMQG_Commented(updated))
         {
             //nahradit podmínku v if za if (false) nebo if (true), podle pravdivostní hodnoty volání get_magic_quotes_gpc.
             evaluator = new MatchEvaluator(GetMagicQuotesGpcIfElseEvaluator);
-            updated = Regex.Replace(updated,
-                                    @"if\s?\(\s?(?<neg>!)?\s?(?<fn>get_magic_quotes_(gpc|runtime))\(\)\s?\)",
-                                    evaluator,
-                                    RegexOptions.ExplicitCapture,
-                                    TimeSpan.FromSeconds(3));
+            updated = GetMagicQuotesIfRegex().Replace(updated, evaluator);
 
             if (!Is_GMQG_Commented(updated))
             {
@@ -55,9 +47,7 @@ public static class GetMagicQuotesGpc
 
     private static bool Is_GMQG_Commented(string str)
     {
-        return Regex.IsMatch(str, @"/\*.{0,6}get_magic_quotes_(gpc|runtime)\(\)(\n|.){0,236}\*/",
-                             RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                             TimeSpan.FromSeconds(4));
+        return GetMagicQuotesCommentedRegex().IsMatch(str);
     }
 
     private static string GetMagicQuotesGpcTernaryEvaluator(Match match)
@@ -89,4 +79,13 @@ public static class GetMagicQuotesGpc
 
         return $"if ({booleanValue} /*{negation}{match.Groups["fn"]}()*/)";
     }
+
+    [GeneratedRegex(@"\(?!?get_magic_quotes_(gpc|runtime)\(\)\)?\s{0,5}\?\s{0,5}(/\*.*\*/)?\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s{0,5}:\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex GetMagicQuotesTernaryRegex();
+
+    [GeneratedRegex(@"if\s?\(\s?(?<neg>!)?\s?(?<fn>get_magic_quotes_(gpc|runtime))\(\)\s?\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex GetMagicQuotesIfRegex();
+
+    [GeneratedRegex(@"/\*.{0,6}get_magic_quotes_(gpc|runtime)\(\)(\n|.){0,236}\*/", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex GetMagicQuotesCommentedRegex();
 }

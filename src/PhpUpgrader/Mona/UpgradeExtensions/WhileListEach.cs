@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeExtensions;
 
-public static class WhileListEach
+public static partial class WhileListEach
 {
     /// <summary>
     /// Funkce <b>each</b> je zastaralá (v PHP 8 navíc odstraněna).
@@ -34,10 +34,7 @@ public static class WhileListEach
 
     private static Match NextMatch(string content)
     {
-        return Regex.Match(content,
-            @"(?<reset>reset\s?\((?<array1>\$[^)]+)\);(?<in_between>((.|\n)(?!reset\s?\())*?))?while\s?\(list\s?\((((?<key>\$[^),]+)\s?,\s?(?<val>\$[^),]+))|(\s*?,\s*?)*?(?<keyval>\$[^)]+))\)\s?=\s?each\s?\((?<array2>\$[^)]+)\){2}(\s?:)?",
-            RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-            TimeSpan.FromSeconds(4));
+        return ResetWhileListEachRegex().Match(content);
     }
 
     private static string WhileListEachToForeach(Match match, out bool lookForEndWhile, out ArrayKeyvalAsIndexReplace? arrayKeyval)
@@ -83,7 +80,7 @@ public static class WhileListEach
 
             var content = builder.ToString()[matchIndex..];
 
-            var whileMatch = Regex.Match(content, @"while\s?\(.+\)\s*:", RegexOptions.None, TimeSpan.FromSeconds(4));
+            var whileMatch = WhileRegex().Match(content);
             var nextWhileIndex = whileMatch.Index;
             var endWhileIndex = content.IndexOf(endWhile, StringComparison.Ordinal);
 
@@ -111,4 +108,10 @@ public static class WhileListEach
             builder.Replace($"reset({KeyVal});", string.Empty);
         }
     }
+
+    [GeneratedRegex(@"(?<reset>reset\s?\((?<array1>\$[^)]+)\);(?<in_between>((.|\n)(?!reset\s?\())*?))?while\s?\(\s?list\s?\((((?<key>\$[^),]+)\s?,\s?(?<val>\$[^),]+))|(\s*?,\s*?)*?(?<keyval>\$[^)]+))\)\s?=\s?each\s?\((?<array2>\$[^)]+)\){2}(\s?:)?", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex ResetWhileListEachRegex();
+    
+    [GeneratedRegex(@"while\s?\(.+\)\s*:", RegexOptions.None, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex WhileRegex();
 }

@@ -3,7 +3,7 @@ using PhpUpgrader.Mona.UpgradeHandlers;
 
 namespace PhpUpgrader.Rubicon.UpgradeHandlers;
 
-public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
+public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
 {
     /// <summary> Aktualizace souborů připojení systému Rubicon. </summary>
     public override void UpgradeConnect(FileWrapper file, PhpUpgraderBase upgrader)
@@ -87,10 +87,7 @@ public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
 
     private static string? LoadConnectionVariableName(string content)
     {
-        IEnumerable<Match> variables = Regex.Matches(content,
-                                                     @"\$(hostname|database|username|password)_(?<beta>\w+)",
-                                                     RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                                                     TimeSpan.FromSeconds(4));
+        IEnumerable<Match> variables = ConnectVarRegex().Matches(content);
         string? varName = null;
         foreach (var match in variables)
         {
@@ -112,10 +109,7 @@ public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
     private static string LoadMysqlQueries(string content, string varName)
     {
         StringBuilder mysqliQueries = new();
-        IEnumerable<Match> queries = Regex.Matches(content,
-                                                   @"mysql_query\("".+""\);",
-                                                   RegexOptions.Compiled,
-                                                   TimeSpan.FromSeconds(4));
+        IEnumerable<Match> queries = MysqlQueryAnyStringRegex().Matches(content);
         foreach (var match in queries)
         {
             var queryStartIndex = match.ValueSpan.IndexOf('"');
@@ -142,7 +136,7 @@ public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
         var content = file.Content.ToString();
         var evaluator = new MatchEvaluator(_NewCredentialAndComment);
 
-        var updated = Regex.Replace(content, @"\$setup_connect.*= ?"".*"";", evaluator, RegexOptions.Compiled, TimeSpan.FromSeconds(4));
+        var updated = SetupConnectRegex().Replace(content, evaluator);
 
         file.Content.Replace(content, updated)
                     .Replace("////", "//");
@@ -297,4 +291,13 @@ public sealed class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
 
         public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : null;
     }
+
+    [GeneratedRegex(@"\$setup_connect.*= ?"".*"";", RegexOptions.None, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex SetupConnectRegex();
+    
+    [GeneratedRegex(@"mysql_query\("".+""\);", RegexOptions.None, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex MysqlQueryAnyStringRegex();
+    
+    [GeneratedRegex(@"\$(hostname|database|username|password)_(?<beta>\w+)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    private static partial Regex ConnectVarRegex();
 }
