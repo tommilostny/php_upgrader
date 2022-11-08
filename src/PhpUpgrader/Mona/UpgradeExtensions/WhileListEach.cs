@@ -109,9 +109,9 @@ public static partial class WhileListEach
         }
     }
 
-    [GeneratedRegex(@"(?<reset>reset\s?\((?<array1>\$[^)]+)\);(?<in_between>((.|\n)(?!reset\s?\())*?))?while\s?\(\s?list\s?\((((?<key>\$[^),]+)\s?,\s?(?<val>\$[^),]+))|(\s*?,\s*?)*?(?<keyval>\$[^)]+))\)\s?=\s?each\s?\((?<array2>\$[^)]+)\){2}(\s?:)?", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"(?<reset>reset\s?\((?<array1>\$[^)]+)\);(?<in_between>((.|\n)(?!reset\s?\())*?))?while\s?\(\s?list\s?\((((?<key>\$[^),]+)\s?,\s?(?<val>\$[^),]+))|(\s*?,\s*?)*?(?<keyval>\$[^)]+))\)\s?=\s?each\s?\((?<array2>\$[^)]+)\){2}(\s?:)?", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
     private static partial Regex ResetWhileListEachRegex();
     
-    [GeneratedRegex(@"while\s?\(.+\)\s*:", RegexOptions.None, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"while\s?\(.+\)\s*:", RegexOptions.None, matchTimeoutMilliseconds: 3456)]
     private static partial Regex WhileRegex();
 }

@@ -63,6 +63,6 @@ public static partial class AdminerUglyCode
         return $"mysqli_data_seek({result}, {row});\n{ws}mysqli_field_seek({result}, {field});\n{ws}return mysqli_fetch_field({result})";
     }
 
-    [GeneratedRegex(@"return\s+?mysql_result\((?<result>.+?),(?<row>.+?),(?<field>.+?)\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"return\s+?mysql_result\((?<result>.+?),(?<row>.+?),(?<field>.+?)\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
     private static partial Regex ReturnMysqlResultRegex();
 }

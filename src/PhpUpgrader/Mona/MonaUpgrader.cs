@@ -101,6 +101,6 @@ public partial class MonaUpgrader : PhpUpgraderBase
         }
     }
 
-    [GeneratedRegex(@"//.*93\.185\.102\.228", RegexOptions.None, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"//.*93\.185\.102\.228", RegexOptions.None, matchTimeoutMilliseconds: 3456)]
     private static partial Regex CommentedMcrai1IPRegex();
 }

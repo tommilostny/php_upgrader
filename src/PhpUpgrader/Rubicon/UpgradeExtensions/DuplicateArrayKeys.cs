@@ -35,9 +35,9 @@ public static partial class DuplicateArrayKeys
         return $"{match.ValueSpan[..bracketIndex]}{string.Join(", ", kvExpressions)})";
     }
 
-    [GeneratedRegex(@"\$(cz_)?osetreni(_url)?\s?=\s?array\((""([^""]|\\""){0,9}""\s?=>\s?""([^""]|\\""){0,9}"",? ?)+\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"\$(cz_)?osetreni(_url)?\s?=\s?array\((""([^""]|\\""){0,9}""\s?=>\s?""([^""]|\\""){0,9}"",? ?)+\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
     private static partial Regex DupKeysArrayRegex();
     
-    [GeneratedRegex(@"""([^""]|\\""){0,9}""\s?=>\s?""([^""]|\\""){0,9}""", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"""([^""]|\\""){0,9}""\s?=>\s?""([^""]|\\""){0,9}""", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
     private static partial Regex ArrayKeyValueRegex();
 }

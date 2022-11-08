@@ -200,23 +200,23 @@ public static partial class CreateFunction
         return match.Value.Replace('\'', '"');
     }
 
-    [GeneratedRegex(@"@?create_function\s?\(\s*'(?<args>.*)'\s?,\s*(?<quote>'|"")(?<code>(.|\n)*?(;|\}|\s))\k<quote>\s*\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"@?create_function\s?\(\s*'(?<args>.*)'\s?,\s*(?<quote>'|"")(?<code>(.|\n)*?(;|\}|\s))\k<quote>\s*\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
     private static partial Regex CreateFunctionRegex();
     
-    [GeneratedRegex(@"\$\w+", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"\$\w+", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
     private static partial Regex PhpVarRegex();
  
-    [GeneratedRegex(@"global(?<vars>(\s?\$\w+,?)+);", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"global(?<vars>(\s?\$\w+,?)+);", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
     private static partial Regex GlobalVarsRegex();
     
-    [GeneratedRegex(@"(\\(\$|\\|""))|('\$.*?')", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"(\\(\$|\\|""))|('\$.*?')", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
     private static partial Regex UnescapedCharactersRegex();
     
-    [GeneratedRegex(@"('\s?\.)(?<inside>.*?)(\.\s?')", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"('\s?\.)(?<inside>.*?)(\.\s?')", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
     private static partial Regex ConcatRegex1();
     
-    [GeneratedRegex(@"(\.\s?')(?<inside>.*?)('\s?\.)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"(\.\s?')(?<inside>.*?)('\s?\.)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
     private static partial Regex ConcatRegex2();
-    [GeneratedRegex(@"\w+::\$\w+", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"\w+::\$\w+", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
     private static partial Regex StaticClassVarRegex();
 }

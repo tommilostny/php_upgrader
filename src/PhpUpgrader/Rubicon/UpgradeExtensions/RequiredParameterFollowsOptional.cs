@@ -82,12 +82,12 @@ public static partial class RequiredParameterFollowsOptional
         }
     }
 
-    [GeneratedRegex(@"function(?!_)\s+?\w+\s*?\((?!\))((.|\n)(?!{|;))*?\$\w+\s?=\s?(.|\n)*?\)(?!,)(?!.*?\))", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"function(?!_)\s+?\w+\s*?\((?!\))((.|\n)(?!{|;))*?\$\w+\s?=\s?(.|\n)*?\)(?!,)(?!.*?\))", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
     private static partial Regex FunctionWithParametersRegex();
     
-    [GeneratedRegex(@"\s{2,}", RegexOptions.None, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"\s{2,}", RegexOptions.None, matchTimeoutMilliseconds: 3456)]
     private static partial Regex UnnecessarySpacesRegex();
     
-    [GeneratedRegex(@"(\w+?\s+?)?&?\$\w+\s*?(?<defval>=\s*?(((?<strq>""|').*?\k<strq>)|(array\s?\(.*?\))|([^,'""(]*?)))?\s*?(,|\))", RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"(\w+?\s+?)?&?\$\w+\s*?(?<defval>=\s*?(((?<strq>""|').*?\k<strq>)|(array\s?\(.*?\))|([^,'""(]*?)))?\s*?(,|\))", RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 3456)]
     private static partial Regex OptionalParametersRegex();
 }

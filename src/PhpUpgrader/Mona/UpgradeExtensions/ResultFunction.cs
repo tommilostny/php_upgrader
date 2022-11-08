@@ -51,6 +51,6 @@ public static partial class ResultFunction
         return file;
     }
 
-    [GeneratedRegex(@"\$loginStrGroup\s*=\s*mysql_result\(\$LoginRS,\s*0,\s*'valid'\);\s*\n\s*\$loginUserid\s*=\s*mysql_result\(\$LoginRS,\s*0,\s*'user_id'\);", RegexOptions.None, matchTimeoutMilliseconds: 1234)]
+    [GeneratedRegex(@"\$loginStrGroup\s*=\s*mysql_result\(\$LoginRS,\s*0,\s*'valid'\);\s*\n\s*\$loginUserid\s*=\s*mysql_result\(\$LoginRS,\s*0,\s*'user_id'\);", RegexOptions.None, matchTimeoutMilliseconds: 3456)]
     private static partial Regex LoginMysqlResultRegex();
 }
