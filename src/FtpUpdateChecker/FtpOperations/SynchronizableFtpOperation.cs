@@ -79,7 +79,6 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
     /// <summary> Událost, která nastane při přenosu souboru jako součást metod stahování a nahrávání. </summary>
     private async void FileTransfered(object sender, TransferEventArgs e)
     {
-        Thread.BeginCriticalRegion();
         await PrintNameAsync(_output);
         switch (e)
         {
@@ -108,67 +107,17 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
                 await _output.WriteLineToFileAsync(e.FileName);
                 break;
         }
-        Thread.EndCriticalRegion();
     }
 
     /// <summary> Událost, která nastane, když je potřeba rozhodnutí (tj. typicky u jakékoli nezávažné chyby). </summary>
-    protected async void QueryReceived(object sender, QueryReceivedEventArgs e)
+    protected virtual async void QueryReceived(object sender, QueryReceivedEventArgs e)
     {
         if (!Regex.IsMatch(e.Message, @"^(Lost connection|Connection failed)\."))
         {
-            if (this is FtpUploader fu && e.Message.Contains("Permission denied"))
-            {
-                e.Abort();
-                var remoteFileName = GetFileNameFromErrorMessage(e.Message);
-                if (remoteFileName is not null)
-                {
-                    bool adding = false;
-                    byte recheckNum = 0;
-                    try
-                    {
-                        var existing = fu.RecheckRemotes.First(x => x.Path == remoteFileName);
-                        adding = (recheckNum = ++existing.Retried) < 3;
-                    }
-                    catch
-                    {
-                        fu.RecheckRemotes.Add(new(remoteFileName));
-                        adding = true;
-                    }
-                    if (adding)
-                    {
-                        Thread.BeginCriticalRegion();
-
-                        var msg = $"{remoteFileName}, recheck #{recheckNum + 1}";
-                        await fu.PrintNameAsync(_output);
-                        Console.WriteLine(msg);
-                        await _output.WriteLineToFileAsync(msg);
-
-                        Thread.EndCriticalRegion();
-                        return;
-                    }
-                }
-            }
-            Thread.BeginCriticalRegion();
             await PrintNameAsync(_output);
             await PrintErrorAsync(e.Message);
-            Thread.EndCriticalRegion();
         }
         e.Continue();
-    }
-
-    private static string? GetFileNameFromErrorMessage(string message)
-    {
-        var match = Regex.Match(message, @"'(?<fn>.+?)'", RegexOptions.ExplicitCapture);
-        var localPath = match.Groups["fn"].Value;
-        var parts = localPath.Split(Path.DirectorySeparatorChar);
-        for (int i = 0; i < parts.Length - 1; i++)
-        {
-            if (parts[i].StartsWith("_temp_"))
-            {
-                return string.Join('/', parts[(i + 1)..]);
-            }
-        }
-        return null;
     }
 
     private async Task PrintErrorAsync(string message)

@@ -100,10 +100,6 @@ internal abstract class FtpOperation : IDisposable
             await TryOpenSessionAsync(verbose: false);
             if (--retries > 0)
             {
-                if (this is FtpUploader and { RecheckRemotes.Count: >= 3 })
-                {
-                    return;
-                }
                 await SafeSessionActionAsync(action, retries);
             }
         }
