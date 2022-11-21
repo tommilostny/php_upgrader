@@ -36,6 +36,7 @@ public class MonaConnectHandler : IConnectHandler
         yield return Path.Join("connect", connectionFile);
         yield return Path.Join("system", connectionFile);
         yield return Path.Join("Connections", connectionFile);
+        yield return Path.Join("import", connectionFile);
     }
 
     private static void LoadConnectHeader(FileWrapper file)
