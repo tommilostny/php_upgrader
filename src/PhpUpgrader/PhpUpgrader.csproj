@@ -4,7 +4,7 @@
       <OutputType>Exe</OutputType>
       <TargetFramework>net7.0</TargetFramework>
 	  <Nullable>annotations</Nullable>
-	  <Version>1.2.203.1</Version>
+	  <Version>1.2.203.2</Version>
 	  <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Meziantou.Analyzer" Version="1.0.744">
+    <PackageReference Include="Meziantou.Analyzer" Version="1.0.757">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
