@@ -53,6 +53,10 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
     /// <returns> True, pokud se jedná o "connect soubor podobný jako v RS Mona" a bylo upraveno, jinak false. </returns>
     public bool UpgradeMonaLikeConnect(FileWrapper file, PhpUpgraderBase upgrader)
     {
+        if (file.Content.Contains("pg_connect"))
+        {
+            return true;
+        }
         if (file.Path.Contains(Path.Join(upgrader.WebName, "Connections"), StringComparison.Ordinal))
         {
             var content = file.Content.ToString();
