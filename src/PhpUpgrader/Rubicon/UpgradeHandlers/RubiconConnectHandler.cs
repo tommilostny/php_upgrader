@@ -258,8 +258,10 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
     public static void UpgradeOldDbConnect(FileWrapper file, PhpUpgraderBase upgrader)
     {
         if (file.Path.EndsWith("DB_connect.php", StringComparison.Ordinal))
-        {
+        {            
             file.Content.Replace("$DBLink = mysqli_connect ($host,$user,$pass) or mysql_errno() + mysqli_error($beta);",
+                                 "$DBLink = mysqli_connect($host, $user, $pass);")
+                        .Replace("$DBLink = mysql_connect ($host,$user,$pass) or mysql_errno() + mysql_error();",
                                  "$DBLink = mysqli_connect($host, $user, $pass);")
                         .Replace("if (!mysql_select_db( $DBname, $DBLink ))",
                                  "mysqli_select_db($DBLink, $DBname);\nif (mysqli_connect_errno())");
