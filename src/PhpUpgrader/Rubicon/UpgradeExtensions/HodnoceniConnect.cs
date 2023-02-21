@@ -61,6 +61,6 @@ public static partial class HodnoceniConnect
         yield return Path.Join("rss", "hodnoceni.php");
     }
 
-    [GeneratedRegex(@"mysqli_query\(\$beta,.+;", RegexOptions.None, matchTimeoutMilliseconds: 3456)]
+    [GeneratedRegex(@"mysqli_query\(\$beta,.+;", RegexOptions.None, matchTimeoutMilliseconds: 6666)]
     private static partial Regex MysqliQueryBetaRegex();
 }

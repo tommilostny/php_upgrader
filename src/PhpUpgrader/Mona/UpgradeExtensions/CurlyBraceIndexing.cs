@@ -53,6 +53,6 @@ public static partial class CurlyBraceIndexing
         return startQuote && endQuote;
     }
 
-    [GeneratedRegex(@"(?<array>\$[^;\n=.,(})/+*\s""'[]+?)\s?{(?<index>[^;\n]*?)}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
+    [GeneratedRegex(@"(?<array>\$[^;\n=.,(})/+*\s""'[]+?)\s?{(?<index>[^;\n]*?)}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
     private static partial Regex CurlyBraceAccessRegex();
 }

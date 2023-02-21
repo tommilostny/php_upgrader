@@ -28,6 +28,6 @@ public static partial class IfEmpty
         return varValue1.SequenceEqual(varValue2) ? $"if (!empty({varValue1}))" : match.Value;
     }
 
-    [GeneratedRegex(@"if\s?\(\$\w+\s?!=\s?""""\s?\|\|\s?\$\w+\s?!=\s?null\)", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 3456)]
+    [GeneratedRegex(@"if\s?\(\$\w+\s?!=\s?""""\s?\|\|\s?\$\w+\s?!=\s?null\)", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 6666)]
     private static partial Regex AlwaysFalseIfRegex();
 }

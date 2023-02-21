@@ -81,6 +81,6 @@ public sealed partial class ObjectClassHandler
         return false;
     }
 
-    [GeneratedRegex(@"function\s+Object\s*?\(", RegexOptions.None, matchTimeoutMilliseconds: 3456)]
+    [GeneratedRegex(@"function\s+Object\s*?\(", RegexOptions.None, matchTimeoutMilliseconds: 6666)]
     private static partial Regex ObjectOldConstructorRegex();
 }

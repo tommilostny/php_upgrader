@@ -14,6 +14,6 @@ public static partial class FloatExplodeConversions
         return file;
     }
 
-    [GeneratedRegex(@"\s\$stranka_end = \$stranka_pocet \/ 10;\s+\$stranka_end = explode\(""\."", \$stranka_end\);\s+\$stranka_end = \$stranka_end\[0\];\s+\$stranka_end = \$stranka_end \* 10 \+ 10;", RegexOptions.None, matchTimeoutMilliseconds: 3456)]
+    [GeneratedRegex(@"\s\$stranka_end = \$stranka_pocet \/ 10;\s+\$stranka_end = explode\(""\."", \$stranka_end\);\s+\$stranka_end = \$stranka_end\[0\];\s+\$stranka_end = \$stranka_end \* 10 \+ 10;", RegexOptions.None, matchTimeoutMilliseconds: 6666)]
     private static partial Regex FloatExplodeRegex();
 }

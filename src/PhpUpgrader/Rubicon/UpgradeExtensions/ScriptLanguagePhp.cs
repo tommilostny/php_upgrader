@@ -38,6 +38,6 @@ public static partial class ScriptLanguagePhp
         return file;
     }
 
-    [GeneratedRegex(_oldScriptTagStart, RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 3456)]
+    [GeneratedRegex(_oldScriptTagStart, RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 6666)]
     private static partial Regex OldScriptTagRegex();
 }

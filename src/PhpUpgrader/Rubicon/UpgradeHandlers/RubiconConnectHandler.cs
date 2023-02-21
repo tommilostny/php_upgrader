@@ -298,12 +298,12 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : null;
     }
 
-    [GeneratedRegex(@"\$setup_connect.*= ?"".*"";", RegexOptions.None, matchTimeoutMilliseconds: 3456)]
+    [GeneratedRegex(@"\$setup_connect.*= ?"".*"";", RegexOptions.None, matchTimeoutMilliseconds: 6666)]
     private static partial Regex SetupConnectRegex();
     
-    [GeneratedRegex(@"mysql_query\("".+""\);", RegexOptions.None, matchTimeoutMilliseconds: 3456)]
+    [GeneratedRegex(@"mysql_query\("".+""\);", RegexOptions.None, matchTimeoutMilliseconds: 6666)]
     private static partial Regex MysqlQueryAnyStringRegex();
     
-    [GeneratedRegex(@"\$(hostname|database|username|password)_(?<beta>\w+)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
+    [GeneratedRegex(@"\$(hostname|database|username|password)_(?<beta>\w+)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
     private static partial Regex ConnectVarRegex();
 }

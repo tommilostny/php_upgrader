@@ -29,6 +29,6 @@ public static partial class NullByteInRegex
         return match.Value.Replace(pattern.Value, updatedPattern, StringComparison.Ordinal);
     }
 
-    [GeneratedRegex(@"preg_.*?(?<pattern>"".*\\((0(?![1-7]){1,3})|(\\x0(?![1-9a-fA-F]){1,2})).*"")\s?,", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 3456)]
+    [GeneratedRegex(@"preg_.*?(?<pattern>"".*\\((0(?![1-7]){1,3})|(\\x0(?![1-9a-fA-F]){1,2})).*"")\s?,", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
     private static partial Regex NullByteInPatternRegex();
 }
