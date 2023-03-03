@@ -40,7 +40,7 @@ internal sealed class FtpDownloader : SynchronizableFtpOperation
         {
             while (q2.Count == 0)
             {
-                await Task.Delay(10);
+                await Task.Yield();
             }
             var item = q2.Dequeue();
             if (item is null)

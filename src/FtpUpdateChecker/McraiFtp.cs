@@ -130,8 +130,11 @@ public sealed class McraiFtp : IDisposable
         var checkTask2 = fc2.RunAsync(q1, q2);
         var checkTask1 = fc1.RunAsync(q1, q2, GetRemotePath(), _baseFolder, _webName);
 
-        await Task.WhenAll(checkTask1, checkTask2, uploadTask);
+        //postupné dokončení všech stupňů, které běží paralelně
+        await checkTask1;
+        await checkTask2;
         var tempDir = await downloadTask;
+        await uploadTask;
         if (tempDir.Exists)
         {
             tempDir.Delete(recursive: true);

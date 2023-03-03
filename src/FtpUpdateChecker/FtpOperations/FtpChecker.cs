@@ -142,7 +142,7 @@ internal sealed class FtpChecker : FtpOperation
         {
             while (q1.Count == 0)
             {
-                await Task.Delay(10);
+                await Task.Yield();
             }
             var item = q1.Dequeue();
             if (item is null)
