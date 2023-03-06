@@ -119,5 +119,8 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("get_magic_quotes_runtime();",
          "false /*get_magic_quotes_runtime()*/;"
         ),
+        ("$USER_KOSIK_POLOZKY[\"$data_id\"]",
+         "$data_id"
+        ),
     };
 }
