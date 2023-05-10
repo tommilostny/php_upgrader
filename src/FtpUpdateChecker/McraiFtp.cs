@@ -24,6 +24,7 @@ public sealed class McraiFtp : IDisposable
     private readonly int _year;
     private readonly LoginParser _login;
     private readonly Output _output;
+    private readonly string[]? _ignoreFolders;
 
     public McraiFtp(string? username, string? password,
                     string? path, string? webName,
@@ -61,9 +62,10 @@ public sealed class McraiFtp : IDisposable
         _year = year;
     }
 
-    public McraiFtp(string webName, string baseFolder, string host = DefaultHostname1)
+    public McraiFtp(string webName, string baseFolder, string[]? ignoreFolders, string host = DefaultHostname1)
         : this(null, null, null, webName, baseFolder, host)
     {
+        _ignoreFolders = ignoreFolders;
     }
 
     public void Dispose()
@@ -78,7 +80,7 @@ public sealed class McraiFtp : IDisposable
         var q3 = new Queue<string?>();
 
         //kontrola všech souborů na serveru mcrai1 a získání seznamu ne-PHP souborů
-        using var fc1 = new FtpChecker(_output, _login.Username, _login.Password, _host, _webName, _baseFolder, _day, _month, _year)
+        using var fc1 = new FtpChecker(_output, _login.Username, _login.Password, _host, _webName, _baseFolder, _day, _month, _year, _ignoreFolders)
         {
             Name = "FC1",
             Color = ConsoleColor.Blue,

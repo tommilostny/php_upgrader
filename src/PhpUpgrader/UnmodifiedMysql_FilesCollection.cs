@@ -28,6 +28,6 @@ public sealed partial class UnmodifiedMysql_FilesCollection : IReadOnlyCollectio
 
     IEnumerator IEnumerable.GetEnumerator() => _files.GetEnumerator();
     
-    [GeneratedRegex(@"(?<!(//.*)|(/\*((.|\n)(?!\*/))*)|\$|->|_|PDO::|'|"")mysql_[^( )]+", RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"(?<!(//.*)|(/\*((.|\n)(?!\*/))*)|\$|->|_|PDO::|'|"")mysql_[^( )]+", RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex Mysql_Regex();
 }

@@ -1,10 +1,13 @@
-﻿using EO = WinSCP.EnumerationOptions;
+﻿using System.Linq;
+using EO = WinSCP.EnumerationOptions;
 
 namespace FtpUpdateChecker.FtpOperations;
 
 /// <summary> Třída nad knihovnou WinSCP kontrolující soubory na FTP po určitém datu. </summary>
 internal sealed class FtpChecker : FtpOperation
 {
+    private readonly string[]? _ignoreFolders;
+
     /// <summary> Datum, od kterého hlásit změnu. </summary>
     public DateTime FromDate { get; }
 
@@ -21,10 +24,11 @@ internal sealed class FtpChecker : FtpOperation
     public uint PhpFoundCount { get; private set; }
 
     /// <summary> Inicializace sezení spojení WinSCP, nastavení data. </summary>
-    public FtpChecker(Output output, string username, string password, string hostname, string webName, string baseFolder, int day, int month, int year)
+    public FtpChecker(Output output, string username, string password, string hostname, string webName, string baseFolder, int day, int month, int year, string[]? ignoreFolders = null)
         : base(output, username, password, hostname)
     {
         FromDate = LoadFromDateTime(webName, baseFolder, day, month, year);
+        _ignoreFolders = ignoreFolders;
     }
 
     /// <summary> Spustit procházení všech souborů na FTP serveru v zadané cestě. </summary>
@@ -54,7 +58,9 @@ internal sealed class FtpChecker : FtpOperation
         Thread.EndCriticalRegion();
 
         var enumerationOptions = EO.EnumerateDirectories | EO.AllDirectories;
-        var fileInfos = _session.EnumerateRemoteFiles(path, null, enumerationOptions);
+        var fileInfos = _session.EnumerateRemoteFiles(path, null, enumerationOptions)
+            .Where(fileInfo => _ignoreFolders is null || _ignoreFolders
+                .All(dir => !fileInfo.FullName.Contains($"/{dir}/")));
 
         FileCount = FolderCount = PhpFoundCount = FoundCount = 0;
         try //Enumerate files

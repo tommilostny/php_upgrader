@@ -5,6 +5,7 @@ internal abstract class FtpOperation : IDisposable
     protected readonly SessionOptions _sessionOptions;
     protected readonly Session _session = new();
     protected readonly Output _output;
+    private readonly Random _random = new();
 
     public string Name { private get; init; }
 
@@ -97,6 +98,7 @@ internal abstract class FtpOperation : IDisposable
         catch //Chyba při komunikaci se serverem, znovu připojit a zkusit načíst informace o souboru.
         {
             _session.Close();
+            await Task.Delay((retries << 1) * _random.Next(1, 100));
             await TryOpenSessionAsync(verbose: false);
             if (--retries > 0)
             {

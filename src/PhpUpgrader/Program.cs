@@ -35,11 +35,13 @@ class Program
     /// <param name="upload"> Neptat se a vždy po dokončení lokální aktualizace nahrát tyto soubory na FTP nového serveru. </param>
     /// <param name="dontUpload"> Neptat se a po aktualizaci soubory nenahrávat. </param>
     /// <param name="dontUpgrade"> Nespouštět PHP upgrader, pouze ostatní nastavené procesy s FTP. </param>
+    /// <param name="ignoreFolders"> Ignorovat dané složky při kontrole FTP (FORMAT: "media" => valid; "/media/" => invalid). </param>
     static async Task Main(string[] webName, string[]? adminFolders = null, string[]? rootFolders = null,
                            string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
                            string host = "localhost", string? beta = null, string connectionFile = "connection.php",
                            bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false,
-                           bool checkFtp = false, bool ignoreFtp = false, bool upload = false, bool dontUpload = false, bool dontUpgrade = false)
+                           bool checkFtp = false, bool ignoreFtp = false, bool upload = false, bool dontUpload = false, bool dontUpgrade = false,
+                           string[]? ignoreFolders = null)
     {
         if (webName is null or { Length: 0 })
         {
@@ -52,7 +54,7 @@ class Program
         for (int i = 0; i < webName.Length; i++)
         {
             _webName = webName[i];
-            _lazyFtp = new(() => new McraiFtp(_webName, _baseFolder));
+            _lazyFtp = new(() => new McraiFtp(_webName, _baseFolder, ignoreFolders));
 
             //0. fáze: příprava PHP upgraderu (kontrola zadaných argumentů)
             // Může nastat případ, kdy složka webu neexistuje. Uživatel je tázán, zda se pokusit stáhnout z FTP mcrai1.
