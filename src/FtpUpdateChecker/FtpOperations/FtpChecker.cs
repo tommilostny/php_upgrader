@@ -58,12 +58,15 @@ internal sealed class FtpChecker : FtpOperation
         Thread.EndCriticalRegion();
 
         var enumerationOptions = EO.EnumerateDirectories | EO.AllDirectories;
-        var fileInfos = _session.EnumerateRemoteFiles(path, null, enumerationOptions)
-            .Where(fileInfo => _ignoreFolders is null || _ignoreFolders
-                .All(dir => !fileInfo.FullName.Contains($"/{dir}/")));
+        var fileInfos = _session.EnumerateRemoteFiles(path, null, enumerationOptions);
+
+        if (_ignoreFolders is not null && _ignoreFolders.Length > 0)
+        {
+            fileInfos = fileInfos.Where(fileInfo => _ignoreFolders.All(dir => !fileInfo.FullName.Contains($"/{dir}/")));
+        }
 
         FileCount = FolderCount = PhpFoundCount = FoundCount = 0;
-        try //Enumerate files
+        try //Enumerace souborů.
         {
             foreach (var fileInfo in fileInfos)
             {
