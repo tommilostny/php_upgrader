@@ -5,8 +5,11 @@ namespace FtpUpdateChecker.FtpOperations;
 /// <summary>
 /// FTP operace podporující WinSCP synchronizaci.
 /// </summary>
-internal abstract class SynchronizableFtpOperation : FtpOperation
+internal abstract partial class SynchronizableFtpOperation : FtpOperation
 {
+    [GeneratedRegex("^(Lost connection|Connection failed)\\.")]
+    private static partial Regex ConnectionRegex();
+
     protected abstract SynchronizationMode SynchronizationMode { get; }
 
     protected SynchronizableFtpOperation(Output output, string username, string password, string hostname)
@@ -79,7 +82,7 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
     /// <summary> Událost, která nastane při přenosu souboru jako součást metod stahování a nahrávání. </summary>
     private async void FileTransfered(object sender, TransferEventArgs e)
     {
-        await PrintNameAsync(_output);
+        var messageBuilder = new StringBuilder();
         switch (e)
         {
             case { Error: not null }:
@@ -89,22 +92,14 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
                 switch (SynchronizationMode)
                 {
                     case SynchronizationMode.Local:
-                        const string downloadedFrom = "⏬ Staženo z ";
-                        Console.Write(downloadedFrom);
-                        await _output.WriteToFileAsync(downloadedFrom);
+                        messageBuilder.Append("⏬ Staženo z ");
                         break;
                     case SynchronizationMode.Remote:
-                        const string uploadedTo = "⏫ Nahráno na ";
-                        Console.Write(uploadedTo);
-                        await _output.WriteToFileAsync(uploadedTo);
+                        messageBuilder.Append("⏫ Nahráno na ");
                         break;
                 }
-                Console.Write(_sessionOptions.HostName);
-                Console.Write(": ");
-                Console.WriteLine(e.FileName);
-                await _output.WriteToFileAsync(_sessionOptions.HostName);
-                await _output.WriteToFileAsync(": ");
-                await _output.WriteLineToFileAsync(e.FileName);
+                messageBuilder.Append(_sessionOptions.HostName).Append(": ").AppendLine(e.FileName);
+                await PrintMessageAsync(_output, messageBuilder.ToString());
                 break;
         }
     }
@@ -112,9 +107,9 @@ internal abstract class SynchronizableFtpOperation : FtpOperation
     /// <summary> Událost, která nastane, když je potřeba rozhodnutí (tj. typicky u jakékoli nezávažné chyby). </summary>
     protected virtual async void QueryReceived(object sender, QueryReceivedEventArgs e)
     {
-        if (!Regex.IsMatch(e.Message, @"^(Lost connection|Connection failed)\."))
+        if (!ConnectionRegex().IsMatch(e.Message))
         {
-            await PrintNameAsync(_output);
+            await PrintMessageAsync(_output, string.Empty);
             await PrintErrorAsync(e.Message);
         }
         e.Continue();

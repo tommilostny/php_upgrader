@@ -18,6 +18,6 @@ class Program
         string? path = null, int year = McraiFtp.DefaultYear, int month = McraiFtp.DefaultMonth, int day = McraiFtp.DefaultDay,
         string baseFolder = McraiFtp.DefaultBaseFolder, string? webName = null)
     {
-        await new McraiFtp(username, password, path, webName, baseFolder, host, day, month, year).UpdateAsync();
+        await new McraiFtp(username, password, path, webName, baseFolder, host, day, month, year).UpdateAsync().ConfigureAwait(false);
     }
 }

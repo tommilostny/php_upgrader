@@ -75,10 +75,6 @@ public sealed class McraiFtp : IDisposable
 
     public async Task UpdateAsync(string upgradeServerHostname = DefaultHostnameUpgrade)
     {
-        var q1 = new Queue<RemoteFileInfo?>();
-        var q2 = new Queue<RemoteFileInfo?>();
-        var q3 = new Queue<string?>();
-
         //kontrola všech souborů na serveru mcrai1 a získání seznamu ne-PHP souborů
         using var fc1 = new FtpChecker(_output, _login.Username, _login.Password, _host, _webName, _baseFolder, _day, _month, _year, _ignoreFolders)
         {
@@ -105,41 +101,33 @@ public sealed class McraiFtp : IDisposable
             Name = "FU2",
             Color = ConsoleColor.Magenta,
         };
-        await fc1.PrintNameAsync(_output);
-        var fc1Message = $"{_host} FTP checker.";
-        Console.WriteLine(fc1Message);
-        await _output.WriteLineToFileAsync(fc1Message);
 
-        await fc2.PrintNameAsync(_output);
-        var fc2Message = $"{upgradeServerHostname} FTP checker.";
-        Console.WriteLine(fc2Message);
-        await _output.WriteLineToFileAsync(fc2Message);
-
-        await fd1.PrintNameAsync(_output);
-        var fd1Message = $"{_host} FTP downloader.";
-        Console.WriteLine(fd1Message);
-        await _output.WriteLineToFileAsync(fd1Message);
-
-        await fu2.PrintNameAsync(_output);
-        var fu2Message = $"{upgradeServerHostname} FTP uploader.";
-        Console.WriteLine(fu2Message);
-        await _output.WriteLineToFileAsync(fu2Message);
-        Console.WriteLine();
-
-        //spuštění ve více vláknech
-        var uploadTask = fu2.RunAsync(q3, _baseFolder, _webName, GetRemotePath());
-        var downloadTask = fd1.RunAsync(q2, q3, _baseFolder, _webName, GetRemotePath());
-        var checkTask2 = fc2.RunAsync(q1, q2);
-        var checkTask1 = fc1.RunAsync(q1, q2, GetRemotePath(), _baseFolder, _webName);
-
-        //postupné dokončení všech stupňů, které běží paralelně
-        await checkTask1;
-        await checkTask2;
-        var tempDir = await downloadTask;
-        await uploadTask;
-        if (tempDir.Exists)
+        //spuštění ve více vláknech paralelně
+        var q1 = new ConcurrentQueue<RemoteFileInfo?>();
+        var q2 = new ConcurrentQueue<RemoteFileInfo?>();
+        var q3 = new ConcurrentQueue<string?>();
+        var remPath = GetRemotePath();
+        DirectoryInfo? tempDir = null;
+        var tasks = new List<Func<Task>>
         {
-            tempDir.Delete(recursive: true);
+            async () => await fc1.RunAsync(q1, q2, remPath, _baseFolder, _webName),
+            async () => await fc2.RunAsync(q1, q2),
+            async () => tempDir = await fd1.RunAsync(q2, q3, _baseFolder, _webName, remPath),
+            async () => await fu2.RunAsync(q3, _baseFolder, _webName, remPath),
+        };
+        try
+        {
+            await Task.WhenAll(tasks.AsParallel().Select(async task => await task()));
+        }
+        catch (AggregateException ex)
+        {
+            foreach (var innerEx in ex.InnerExceptions)
+                Console.WriteLine($"Exception type {innerEx.GetType()} from {innerEx.Source}.");
+        }
+        finally
+        {
+            if (tempDir?.Exists is true)
+                tempDir.Delete(recursive: true);
         }
     }
 

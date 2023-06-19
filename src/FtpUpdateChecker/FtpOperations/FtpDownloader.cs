@@ -11,6 +11,8 @@ internal sealed class FtpDownloader : SynchronizableFtpOperation
 
     protected override SynchronizationMode SynchronizationMode => SynchronizationMode.Local;
 
+    protected override string Type => "FTP downloader";
+
     public override void Run(string path, string baseFolder, string webName)
     {
         var startMessage = $"Probíhá synchronizace obsahu ze serveru pomocí FTP do lokální složky webu {webName}...";
@@ -22,42 +24,28 @@ internal sealed class FtpDownloader : SynchronizableFtpOperation
     /// a do fronty <paramref name="q3"/> umístí jejich lokální cesty.
     /// </summary>
     /// <remarks> Task běží dokud první prvek fronty není null. </remarks>
-    public async Task<DirectoryInfo> RunAsync(Queue<RemoteFileInfo?> q2, Queue<string?> q3, string baseFolder, string webName, string path)
+    public async Task<DirectoryInfo> RunAsync(ConcurrentQueue<RemoteFileInfo?> q2,
+                                              ConcurrentQueue<string?> q3,
+                                              string baseFolder,
+                                              string webName,
+                                              string path)
     {
         await TryOpenSessionAsync();
         var tempDirectory = Path.Join(baseFolder, $"_temp_{webName}");
         var tempDirectoryInfo = new DirectoryInfo(tempDirectory);
-
-        Thread.BeginCriticalRegion();
-
-        await PrintNameAsync(_output);
-        var startMessage = $"Probíhá stahování nových souborů z {_sessionOptions.HostName} do dočasné složky {tempDirectoryInfo.FullName}...";
-        Console.WriteLine(startMessage);
-        await _output.WriteLineToFileAsync(startMessage);
-
-        Thread.EndCriticalRegion();
-        do
+        await PrintMessageAsync(_output, $"Probíhá stahování nových souborů z {_sessionOptions.HostName} do dočasné složky {tempDirectoryInfo.FullName}...");
+        while (true)
         {
-            while (q2.Count == 0)
+            RemoteFileInfo? item;
+            while (!q2.TryDequeue(out item))
             {
                 await Task.Yield();
             }
-            var item = q2.Dequeue();
             if (item is null)
             {
-                Thread.BeginCriticalRegion();
-
                 q3.Enqueue(null);
-                await PrintNameAsync(_output);
-                var endMessage = $"✅ Stahování souborů z {_sessionOptions.HostName} dokončeno.";
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine(endMessage);
-                Console.ResetColor();
+                await PrintMessageAsync(_output, $"{ConsoleColor.Green}✅ Stahování souborů z {_sessionOptions.HostName} dokončeno.\n");
                 _session.Close();
-                await _output.WriteLineToFileAsync(endMessage);
-                await _output.WriteLineToFileAsync(string.Empty);
-                
-                Thread.EndCriticalRegion();
                 return tempDirectoryInfo;
             }
             var localDirPath = Path.Join(tempDirectory, item.FullName.Replace($"/{path}/", string.Empty)
@@ -67,8 +55,8 @@ internal sealed class FtpDownloader : SynchronizableFtpOperation
             {
                 _session.GetFileToDirectory(item.FullName, localDirPath);
                 q3.Enqueue(Path.Join(localDirPath, item.Name));
+                return Task.CompletedTask;
             });
         }
-        while (true);
     }
 }

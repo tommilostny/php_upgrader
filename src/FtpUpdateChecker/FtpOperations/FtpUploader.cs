@@ -12,6 +12,8 @@ internal sealed class FtpUploader : SynchronizableFtpOperation
 
     protected override SynchronizationMode SynchronizationMode => SynchronizationMode.Remote;
 
+    protected override string Type => "FTP uploader";
+
     public override void Run(string path, string baseFolder, string webName)
     {
         var startMessage = $"Probíhá synchronizace lokálně aktualizované složky webu {webName} na server {_sessionOptions.HostName}...";
@@ -41,45 +43,29 @@ internal sealed class FtpUploader : SynchronizableFtpOperation
         temporaryDirectory.Delete(recursive: true);
     }
 
-    //protected override void QueryReceived(object sender, QueryReceivedEventArgs e)
-    //{
-    //    //TODO: (ukládat si chybové soubory, po dokončení přenosu ověřit, že na serveru existují? se správným datumem? zkusit znovu.)
-    //    //Error transferring file 'C:\McRAI\_temp_olejemaziva\images_11-9-2022.backup\755132759.jpg'.
-    //    //Copying files to remote side failed.
-    //    //755132759.jpg: Append / Restart not permitted, try again
-    //    base.QueryReceived(sender, e);
-    //}
-
     /// <summary>
     /// Nahraje lokální soubory specifikované ve frontě <paramref name="q3"/>.
     /// </summary>
     /// <remarks> Task běží dokud první prvek fronty není null. </remarks>
-    public async Task RunAsync(Queue<string?> q3, string baseFolder, string webName, string path)
+    public async Task RunAsync(ConcurrentQueue<string?> q3,
+                               string baseFolder,
+                               string webName,
+                               string path)
     {
         await TryOpenSessionAsync();
         var tempDirectory = Path.Join(baseFolder, $"_temp_{webName}");
-        await PrintNameAsync(_output);
-        var startMessage = $"Probíhá nahrávání nových souborů z dočasné složky {tempDirectory} na server {_sessionOptions.HostName}...";
-        Console.WriteLine(startMessage);
-        await _output.WriteLineToFileAsync(startMessage);
-        do
+        await PrintMessageAsync(_output, $"Probíhá nahrávání nových souborů z dočasné složky {tempDirectory} na server {_sessionOptions.HostName}...");
+        while (true)
         {
-            while (q3.Count == 0)
+            string? item;
+            while (!q3.TryDequeue(out item))
             {
                 await Task.Yield();
             }
-            var item = q3.Dequeue();
             if (item is null)
             {
-                await PrintNameAsync(_output);
-                Console.ForegroundColor = ConsoleColor.Green;
-                var endMessage = $"✅ Nahrávání souborů na {_sessionOptions.HostName} dokončeno.";
-                Console.WriteLine(endMessage);
-                Console.WriteLine();
-                Console.ResetColor();
+                await PrintMessageAsync(_output, $"{ConsoleColor.Green}✅ Nahrávání souborů na {_sessionOptions.HostName} dokončeno.\n");
                 _session.Close();
-                await _output.WriteLineToFileAsync(endMessage);
-                await _output.WriteLineToFileAsync(string.Empty);
                 return;
             }
             var s = Path.DirectorySeparatorChar;
@@ -92,15 +78,15 @@ internal sealed class FtpUploader : SynchronizableFtpOperation
             await SafeSessionActionAsync(() =>
             {
                 _session.PutFileToDirectory(item, remoteDirPath, remove: true);
+                return Task.CompletedTask;
             });
         }
-        while (true);
     }
 
     protected override async void QueryReceived(object sender, QueryReceivedEventArgs e)
     {
         base.QueryReceived(sender, e);
-        await Task.Delay(20);
+        await Task.Delay(23);
         if (e.Message.Contains("Permission denied"))
         {
             e.Abort();

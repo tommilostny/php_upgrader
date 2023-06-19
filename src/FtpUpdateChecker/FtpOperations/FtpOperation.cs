@@ -11,6 +11,8 @@ internal abstract class FtpOperation : IDisposable
 
     public ConsoleColor Color { private get; init; }
 
+    protected abstract string Type { get; }
+
     /// <summary> Inicializace sezení spojení WinSCP. </summary>
     public FtpOperation(Output output, string username, string password, string hostname)
     {
@@ -22,7 +24,7 @@ internal abstract class FtpOperation : IDisposable
             Password = password,
             FtpSecure = FtpSecure.Explicit
         };
-        _output = output;
+        PrintMessageAsync(_output = output, $"{hostname} {Type}.").RunSynchronously();
     }
 
     /// <summary> Spustit FTP operaci. </summary>
@@ -37,16 +39,19 @@ internal abstract class FtpOperation : IDisposable
 
     public override string ToString() => Name;
 
-    public async Task PrintNameAsync(Output output)
+    public async Task PrintMessageAsync(Output output, string message)
     {
+        Thread.BeginCriticalRegion();
         if (!string.IsNullOrEmpty(Name))
         {
-            Console.ForegroundColor = Color;
-            Console.Write(Name);
-            Console.ResetColor();
-            Console.Write(": ");
+            ColoredConsole.SetColor(Color)
+                .Write(Name)
+                .ResetColor()
+                .Write(": ")
+                .WriteLine(message);
         }
-        await output.WriteToFileAsync($"{Name}: ");
+        Thread.EndCriticalRegion();
+        await output.WriteToFileAsync($"{Name}: {message}");
     }
 
     protected async Task TryOpenSessionAsync(bool verbose = true)
@@ -55,10 +60,7 @@ internal abstract class FtpOperation : IDisposable
         {
             if (verbose)
             {
-                await PrintNameAsync(_output);
-                var connectingMessage = $"Připojování k FTP {_sessionOptions.UserName}@{_sessionOptions.HostName}...";
-                Console.WriteLine(connectingMessage);
-                await _output.WriteLineToFileAsync(connectingMessage);
+                await PrintMessageAsync(_output, $"Připojování k FTP {_sessionOptions.UserName}@{_sessionOptions.HostName}...");
             }
             int retries = 4;
             do
@@ -68,10 +70,7 @@ internal abstract class FtpOperation : IDisposable
                     _session.Open(_sessionOptions);
                     if (verbose)
                     {
-                        await PrintNameAsync(_output);
-                        const string connectionSuccess = "Připojení proběhlo úspěšně!";
-                        Console.WriteLine(connectionSuccess);
-                        await _output.WriteLineToFileAsync(connectionSuccess);
+                        await PrintMessageAsync(_output, "Připojení proběhlo úspěšně!");
                     }
                     retries = 0;
                 }
@@ -89,20 +88,20 @@ internal abstract class FtpOperation : IDisposable
         }
     }
 
-    protected async Task SafeSessionActionAsync(Action action, int retries = 4)
+    protected async Task SafeSessionActionAsync(Func<Task> task, int retries = 3)
     {
         try
         {
-            action();
+            await task();
         }
         catch //Chyba při komunikaci se serverem, znovu připojit a zkusit načíst informace o souboru.
         {
             _session.Close();
-            await Task.Delay((retries << 1) * _random.Next(1, 100));
+            await Task.Delay(retries * _random.Next(10, 250));
             await TryOpenSessionAsync(verbose: false);
             if (--retries > 0)
             {
-                await SafeSessionActionAsync(action, retries);
+                await SafeSessionActionAsync(task, retries);
             }
         }
     }

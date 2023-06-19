@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using EO = WinSCP.EnumerationOptions;
+﻿using EO = WinSCP.EnumerationOptions;
 
 namespace FtpUpdateChecker.FtpOperations;
 
@@ -23,6 +22,8 @@ internal sealed class FtpChecker : FtpOperation
     /// <summary> Počet PHP souborů přidaných po datu <see cref="FromDate"/>. </summary>
     public uint PhpFoundCount { get; private set; }
 
+    protected override string Type => "FTP checker";
+
     /// <summary> Inicializace sezení spojení WinSCP, nastavení data. </summary>
     public FtpChecker(Output output, string username, string password, string hostname, string webName, string baseFolder, int day, int month, int year, string[]? ignoreFolders = null)
         : base(output, username, password, hostname)
@@ -35,7 +36,7 @@ internal sealed class FtpChecker : FtpOperation
     /// <remarks> Výsledky prohledávání jsou dostupné ve veřejných atributech. </remarks>
     public override void Run(string path, string baseFolder, string webName)
     {
-        
+
     }
 
     /// <summary> Spustit procházení všech souborů na FTP serveru v zadané cestě. </summary>
@@ -44,18 +45,14 @@ internal sealed class FtpChecker : FtpOperation
     /// Do fronty <paramref name="q2"/> dá nové soubory po datu zadané <see cref="FromDate"/>.
     /// Na konec fronty vloží zarážku null (víme, kdy skončit v dalších krocích).
     /// </remarks>
-    public async Task RunAsync(Queue<RemoteFileInfo?> q1, Queue<RemoteFileInfo?> q2, string path, string baseFolder, string webName)
+    public async Task RunAsync(ConcurrentQueue<RemoteFileInfo?> q1,
+                               ConcurrentQueue<RemoteFileInfo?> q2,
+                               string path,
+                               string baseFolder,
+                               string webName)
     {
-        await TryOpenSessionAsync();
-
-        Thread.BeginCriticalRegion();
-
-        await PrintNameAsync(_output);
-        var startMessage = $"Probíhá kontrola '{_sessionOptions}/{path}' na změny po {FromDate}...";
-        Console.WriteLine(startMessage);
-        await _output.WriteLineToFileAsync(startMessage);
-
-        Thread.EndCriticalRegion();
+        await TryOpenSessionAsync();        
+        await PrintMessageAsync(_output, $"Probíhá kontrola '{_sessionOptions}/{path}' na změny po {FromDate}...");
 
         var enumerationOptions = EO.EnumerateDirectories | EO.AllDirectories;
         var fileInfos = _session.EnumerateRemoteFiles(path, null, enumerationOptions);
@@ -132,28 +129,22 @@ internal sealed class FtpChecker : FtpOperation
 
     /// <summary>
     /// Kontrola daných souborů ve frontě <paramref name="q1"/>
-    /// a vložení souborů, které je třeba stáhnou do fronty <paramref name="q2"/>.
+    /// a vložení souborů, které je třeba stáhnout do fronty <paramref name="q2"/>.
     /// </summary>
-    /// <remarks> Task běží dokud první prvek fronty není null. </remarks>
-    public async Task RunAsync(Queue<RemoteFileInfo?> q1, Queue<RemoteFileInfo?> q2, string hostname1 = McraiFtp.DefaultHostname1)
+    /// <remarks> Task běží dokud se z fronty nevyjme <em>null</em>. </remarks>
+    public async Task RunAsync(ConcurrentQueue<RemoteFileInfo?> q1,
+                               ConcurrentQueue<RemoteFileInfo?> q2,
+                               string hostname1 = McraiFtp.DefaultHostname1)
     {
         await TryOpenSessionAsync();
-
-        Thread.BeginCriticalRegion();
-
-        await PrintNameAsync(_output);
-        var startMessage = $"Probíhá kontrola '{_sessionOptions.HostName}' vůči změnám na '{hostname1}'...";
-        Console.WriteLine(startMessage);
-        await _output.WriteLineToFileAsync(startMessage);
-
-        Thread.EndCriticalRegion();
-        do
+        await PrintMessageAsync(_output, $"Probíhá kontrola '{_sessionOptions.HostName}' vůči změnám na '{hostname1}'...");
+        while (true)
         {
-            while (q1.Count == 0)
+            RemoteFileInfo? item;
+            while (!q1.TryDequeue(out item))
             {
                 await Task.Yield();
             }
-            var item = q1.Dequeue();
             if (item is null)
             {
                 _session.Close();
@@ -161,7 +152,7 @@ internal sealed class FtpChecker : FtpOperation
                 q2.Enqueue(null);
                 return;
             }
-            await SafeSessionActionAsync(() =>
+            await SafeSessionActionAsync(async () =>
             {
                 var exists = _session.FileExists(item.FullName);
                 var fileInfo = exists ? _session.GetFileInfo(item.FullName) : null;
@@ -170,13 +161,11 @@ internal sealed class FtpChecker : FtpOperation
                 {
                     q2.Enqueue(item);
                     FoundCount++;
-                    _output.WriteFilesDiffAsync(this, hostname1, _sessionOptions.HostName, item, fileInfo)
-                        .RunSynchronously();
+                    await _output.WriteFilesDiffAsync(this, hostname1, _sessionOptions.HostName, item, fileInfo);
                 }
             });
             FileCount++;
         }
-        while (true);
     }
 
     /// <summary>

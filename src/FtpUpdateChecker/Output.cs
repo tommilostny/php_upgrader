@@ -23,7 +23,7 @@ internal class Output : IDisposable
         }
         catch (InvalidOperationException)
         {
-            await Task.Delay(1);
+            await Task.Yield();
             await WriteLineToFileAsync(message);
         }
     }
@@ -36,7 +36,7 @@ internal class Output : IDisposable
         }
         catch (InvalidOperationException)
         {
-            await Task.Delay(1);
+            await Task.Yield();
             await WriteToFileAsync(message);
         }
     }
@@ -44,31 +44,17 @@ internal class Output : IDisposable
     /// <summary> Outputs formatted message to stderr. </summary>
     internal async Task WriteErrorAsync(FtpOperation? ftp, string message)
     {
-        await ftp?.PrintNameAsync(this);
-
-        var errMessage = $"❌ {message}";
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.Error.WriteLine(errMessage);
-        Console.ResetColor();
+        await ftp?.PrintMessageAsync(this, $"{ConsoleColor.Red}❌ {message}");
 
         Console.Error.WriteLine("Tip: Spusťte s parametrem --help k zobrazení nápovědy.");
         Console.Error.WriteLine("     Nebo více informací na https://github.com/tommilostny/php_upgrader/blob/master/README.md");
         Console.Error.WriteLine();
-
-        await WriteLineToFileAsync(message);
     }
 
     /// <summary> Outputs process completition message to stdout. </summary>
     internal async Task WriteCompletedAsync(FtpOperation ftp, string hostname)
     {
-        await ftp.PrintNameAsync(this);
-        
-        var message = $"✅ Proces kontroly FTP '{hostname}' dokončen.";
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine(message);
-        Console.ResetColor();
-
-        await WriteLineToFileAsync(message);
+        await ftp.PrintMessageAsync(this, $"{ConsoleColor.Green}✅ Proces kontroly FTP '{hostname}' dokončen.");
     }
 
     /// <summary>
@@ -96,7 +82,7 @@ internal class Output : IDisposable
     {
         if (fc is not null)
         {
-            await fc.PrintNameAsync(this);
+            await fc.PrintMessageAsync(this, string.Empty);
 
             var numberStr = $"{fc.FoundCount}.";
             Console.ForegroundColor = ConsoleColor.Yellow;
@@ -126,7 +112,7 @@ internal class Output : IDisposable
     {
         var hostnameEndIndex = (host1.Length > host2.Length ? host1.Length : host2.Length) + 8;
 
-        await fc.PrintNameAsync(this);
+        await fc.PrintMessageAsync(this, string.Empty);
         Console.Write(host1);
         await WriteToFileAsync(host1);
         await OutputSpacesAsync(host1.Length + 5, hostnameEndIndex);
