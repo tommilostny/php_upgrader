@@ -8,6 +8,7 @@ public class MonaFindReplaceHandler : IFindReplaceHandler
         ( "mysql_num_rows", "mysqli_num_rows" ),
         ( "MySQL_num_rows", "mysqli_num_rows" ),
         ( "mysql_error()", "mysqli_error($beta)" ),
+        ( "mysql_error($beta)", "mysqli_error($beta)" ),
         ( "mysql_connect", "mysqli_connect" ),
         ( "mysql_close", "mysqli_close" ),
         ( "MySQL_Close", "mysqli_close" ),

@@ -137,14 +137,14 @@ public class FtpSynchronizer
         }
         try
         {
-            using var stream = new MemoryStream();
+            using var stream = new MemoryStream();            
             if (await sourceClient.DownloadStream(stream, sourcePath))
             {
                 stream.Seek(0, SeekOrigin.Begin);
                 lock (_writeLock)
                     ColoredConsole.WriteLine($"🔼 Probíhá upload\t{ConsoleColor.DarkGray}{destinationPath}{Symbols.PREVIOUS_COLOR}...");
 
-                var status = await destinationClient.UploadStream(stream, destinationPath);        
+                var status = await destinationClient.UploadStream(stream, destinationPath, createRemoteDir: true);        
                 if (status.IsSuccess())
                     return;
             }
