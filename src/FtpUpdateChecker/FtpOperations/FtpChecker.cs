@@ -65,12 +65,12 @@ internal sealed class FtpChecker : FtpOperation
         FileCount = FolderCount = PhpFoundCount = FoundCount = 0;
         try //Enumerace souborů.
         {
-            foreach (var fileInfo in fileInfos)
+            await Parallel.ForEachAsync(fileInfos, async (fileInfo, ct) =>
             {
                 if (fileInfo.IsDirectory)
                 {
                     FolderCount++;
-                    continue;
+                    return;
                 }
                 var isPhp = fileInfo.FullName.EndsWith(".php");
                 if (fileInfo.LastWriteTime >= FromDate)
@@ -112,7 +112,7 @@ internal sealed class FtpChecker : FtpOperation
                     q1.Enqueue(fileInfo);
                 }
                 FileCount++;
-            }
+            });
         }
         catch (SessionRemoteException ex)
         {

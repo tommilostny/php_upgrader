@@ -1,4 +1,6 @@
-﻿namespace FtpUpdateChecker;
+﻿using FtpSync;
+
+namespace FtpUpdateChecker;
 
 /// <summary>
 /// Třída poskytující McRAI FTP funkcionalitu pro vnější použití.
@@ -75,6 +77,9 @@ public sealed class McraiFtp : IDisposable
 
     public async Task UpdateAsync(string upgradeServerHostname = DefaultHostnameUpgrade)
     {
+        var synchronizer = new FtpSynchronizer(GetRemotePath(), _baseFolder, _webName);
+        await synchronizer.NewSync(_host, upgradeServerHostname, _login.Username, _login.Password);
+        /*
         //kontrola všech souborů na serveru mcrai1 a získání seznamu ne-PHP souborů
         using var fc1 = new FtpChecker(_output, _login.Username, _login.Password, _host, _webName, _baseFolder, _day, _month, _year, _ignoreFolders)
         {
@@ -128,7 +133,7 @@ public sealed class McraiFtp : IDisposable
         {
             if (tempDir?.Exists is true)
                 tempDir.Delete(recursive: true);
-        }
+        }*/
     }
 
     public void Upload(string upgradeServerHostname = DefaultHostnameUpgrade)

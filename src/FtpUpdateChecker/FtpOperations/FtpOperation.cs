@@ -24,7 +24,8 @@ internal abstract class FtpOperation : IDisposable
             Password = password,
             FtpSecure = FtpSecure.Explicit
         };
-        PrintMessageAsync(_output = output, $"{hostname} {Type}.").RunSynchronously();
+        _output = output;
+        //PrintMessageAsync(, $"{hostname} {Type}.");
     }
 
     /// <summary> Spustit FTP operaci. </summary>
@@ -47,8 +48,9 @@ internal abstract class FtpOperation : IDisposable
             ColoredConsole.SetColor(Color)
                 .Write(Name)
                 .ResetColor()
-                .Write(": ")
-                .WriteLine(message);
+                .Write(": ");
+            if (!string.IsNullOrEmpty(message))
+                ColoredConsole.WriteLine(message);
         }
         Thread.EndCriticalRegion();
         await output.WriteToFileAsync($"{Name}: {message}");
@@ -97,7 +99,7 @@ internal abstract class FtpOperation : IDisposable
         catch //Chyba při komunikaci se serverem, znovu připojit a zkusit načíst informace o souboru.
         {
             _session.Close();
-            await Task.Delay(retries * _random.Next(10, 250));
+            await Task.Delay(retries * _random.Next(1, 100));
             await TryOpenSessionAsync(verbose: false);
             if (--retries > 0)
             {

@@ -15,4 +15,8 @@
     <PackageReference Include="WinSCP" Version="6.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FtpSync\FtpSync.csproj" />
+  </ItemGroup>
+
 </Project>

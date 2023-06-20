@@ -98,7 +98,7 @@ internal abstract partial class SynchronizableFtpOperation : FtpOperation
                         messageBuilder.Append("⏫ Nahráno na ");
                         break;
                 }
-                messageBuilder.Append(_sessionOptions.HostName).Append(": ").AppendLine(e.FileName);
+                messageBuilder.Append(_sessionOptions.HostName).Append(": ").Append(e.FileName);
                 await PrintMessageAsync(_output, messageBuilder.ToString());
                 break;
         }
