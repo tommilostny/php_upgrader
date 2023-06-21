@@ -6,7 +6,7 @@ using System.Net;
 
 namespace FtpSync;
 
-public class FtpSynchronizer
+public sealed class FtpSynchronizer
 {
     private const int _defaultRetries = 3;
     private static readonly object _writeLock = new();
