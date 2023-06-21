@@ -1,7 +1,4 @@
-﻿using System.Globalization;
-using SystemPath = System.IO.Path;
-
-namespace PhpUpgrader;
+﻿namespace PhpUpgrader;
 
 /// <summary> Třída udržující informace o souboru (obsah, cesta, příznak modifikace). </summary>
 public sealed class FileWrapper
@@ -97,7 +94,7 @@ public sealed class FileWrapper
 
     public static void PrintFile(string filePath, string symbol)
     {
-        var s = SystemPath.DirectorySeparatorChar;
+        var s = System.IO.Path.DirectorySeparatorChar;
         var webyIndex = filePath.IndexOf($"{s}weby{s}", StringComparison.Ordinal);
 
         var displayName = webyIndex != -1 ? filePath.AsSpan(webyIndex + 6) : filePath;

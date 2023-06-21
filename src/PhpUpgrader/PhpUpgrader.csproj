@@ -4,7 +4,7 @@
       <OutputType>Exe</OutputType>
       <TargetFramework>net7.0</TargetFramework>
 	<Nullable>annotations</Nullable>
-	<Version>1.2.204.1</Version>
+	<Version>1.2.205.23</Version>
 	<ImplicitUsings>enable</ImplicitUsings>
 	<Optimize>true</Optimize>
   </PropertyGroup>
@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FtpUpdateChecker\FtpUpdateChecker.csproj" />
+    <ProjectReference Include="..\FtpSync\FtpSync.csproj" />
   </ItemGroup>
 
 </Project>

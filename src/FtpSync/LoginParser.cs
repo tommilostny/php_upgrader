@@ -1,4 +1,4 @@
-﻿namespace FtpUpdateChecker;
+﻿namespace FtpSync;
 
 /// <summary> Třída obsahující informace o přihlašovacích údajích k FTP. </summary>
 internal sealed class LoginParser
@@ -10,7 +10,7 @@ internal sealed class LoginParser
     public string? Password { get; private set; }
 
     /// <summary> Cesty v root na FTP serveru ke kontrole. </summary>
-    public string Path { get; private set; }
+    public string? Path { get; private set; }
 
     /// <summary> Inicializace uživatelského jména a hesla. </summary>
     public LoginParser(string username, string password)
@@ -22,7 +22,7 @@ internal sealed class LoginParser
     /// <summary> Zkusit načíst uživatelské jméno z názvu webu. </summary>
     /// <remarks> Použit výchozí parametr userName místo webName, pokud není prázdné/null. </remarks>
     public LoginParser(string? webName, string? password, string? overrideUsername, string baseFolder)
-        : this(overrideUsername, password)
+        : this(overrideUsername ?? string.Empty, password ?? string.Empty)
     {
         LoadCredentialsFromWebName(baseFolder, webName);
     }
@@ -30,24 +30,24 @@ internal sealed class LoginParser
     /// <summary> Načíst a zkontrolovat přihlašovací údaje dle parametru useLoginsFile. </summary>
     private void LoadCredentialsFromWebName(string baseFolder, string? webName)
     {
-        if (webName is not null && Password is null && Username is null)
-        {
-            var loginsFilePath = System.IO.Path.Join(baseFolder, "ftp_logins.txt");
-            using var sr = new StreamReader(loginsFilePath);
+        if (string.IsNullOrWhiteSpace(webName) || !string.IsNullOrWhiteSpace(Password) || !string.IsNullOrWhiteSpace(Username))
+            return;
 
-            while (!sr.EndOfStream)
+        var loginsFilePath = System.IO.Path.Join(baseFolder, "ftp_logins.txt");
+        using var sr = new StreamReader(loginsFilePath);
+
+        while (!sr.EndOfStream)
+        {
+            var loginLine = sr.ReadLine();
+            if (loginLine?.StartsWith(webName, StringComparison.Ordinal) is true)
             {
-                var loginLine = sr.ReadLine();
-                if (loginLine.StartsWith(webName))
-                {
-                    var login = loginLine.Split(" : ");
-                    Username = login[1].Trim();
-                    Password = login[2].Trim();
-                    Path = login[3].Trim();
-                    return;
-                }
+                var login = loginLine.Split(" : ");
+                Username = login[1].Trim();
+                Password = login[2].Trim();
+                Path = login[3].Trim();
+                return;
             }
-            throw new InvalidOperationException($"Nelze načíst heslo ze souboru {loginsFilePath} pro web {webName}.");
         }
+        throw new InvalidOperationException($"Nelze načíst heslo ze souboru {loginsFilePath} pro web {webName}.");
     }
 }

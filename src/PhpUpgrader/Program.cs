@@ -1,12 +1,9 @@
-﻿using FtpUpdateChecker;
+﻿namespace PhpUpgrader;
 
-namespace PhpUpgrader;
-
-class Program
+static class Program
 {
     private static string _webName;
     private static string _baseFolder;
-
     private static Lazy<McraiFtp> _lazyFtp;
 
     /// <summary>
@@ -56,10 +53,9 @@ class Program
 
             //0. fáze: příprava PHP upgraderu (kontrola zadaných argumentů)
             // Může nastat případ, kdy složka webu neexistuje. Uživatel je tázán, zda se pokusit stáhnout z FTP mcrai1.
-            var upgrader = LoadPhpUpgrader(rubicon, adminFolders, rootFolders, beta,
-                                           connectionFile, ignoreConnect, db, user, password, host,
-                                           out var workDir);
-            if (upgrader is not null) //PHP upgrader se povedlo inicializovat.
+            var uw = await LoadPhpUpgraderAsync(rubicon, adminFolders, rootFolders, beta,
+                                                connectionFile, ignoreConnect, db, user, password, host).ConfigureAwait(false);
+            if (uw is not null and var (upgrader, workDir)) //PHP upgrader se povedlo inicializovat.
             {
                 //1. fáze: (pokud je vyžadováno)
                 // Kontrola nově upravených souborů na původním serveru (mcrai1) a jejich případné stažení.
@@ -74,15 +70,15 @@ class Program
 
                     //3. fáze: (pokud je vyžadováno)
                     // Nahrání veškerých aktualizovaných souborů na nový server.
-                    UploadtToFtp(upgrader, upload, dontUpload);
+                    await UploadToFtpAsync(upgrader, upload, dontUpload).ConfigureAwait(false);
                 }
             }
         }
     }
 
-    static PhpUpgraderBase? LoadPhpUpgrader(bool rubicon, string[] adminFolders, string[] rootFolders, string beta, string connectionFile, bool ignoreConnect, string db, string user, string password, string host, out string workDir)
+    static async Task<(PhpUpgraderBase, string workDir)?> LoadPhpUpgraderAsync(bool rubicon, string[] adminFolders, string[] rootFolders, string beta, string connectionFile, bool ignoreConnect, string db, string user, string password, string host)
     {
-        workDir = Path.Join(_baseFolder, "weby", _webName);
+        var workDir = Path.Join(_baseFolder, "weby", _webName);
         if (_webName == string.Empty)
         {
             Console.Error.WriteLine($"Složka {workDir} není validní, protože argument '--web-name' není zadán.");
@@ -103,8 +99,7 @@ class Program
             }
             try
             {
-                Directory.CreateDirectory(workDir);
-                _lazyFtp.Value.Download();
+                await _lazyFtp.Value.DownloadAsync().ConfigureAwait(false);
             }
             catch
             {
@@ -128,7 +123,7 @@ class Program
             upgrader.Hostname = host;
         }
         upgrader.OtherRootFolders = rootFolders;
-        return upgrader;
+        return (upgrader, workDir);
     }
 
     static void RunUpgrade(PhpUpgraderBase upgrader, bool useBackup, bool ignoreBackup, string workDir)
@@ -195,7 +190,7 @@ class Program
         }
     }
 
-    static void UploadtToFtp(PhpUpgraderBase upgrader, bool upload, bool dontUpload)
+    static async Task UploadToFtpAsync(PhpUpgraderBase upgrader, bool upload, bool dontUpload)
     {
         if (dontUpload || upgrader.ModifiedFiles.Count == 0 || upgrader.FilesContainingMysql.Count > 0)
         {
@@ -208,7 +203,7 @@ class Program
         }
         if (upload)
         {
-            _lazyFtp.Value.Upload();
+            await _lazyFtp.Value.UploadAsync().ConfigureAwait(false);
         }
     }
 }

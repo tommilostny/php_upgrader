@@ -1,6 +1,4 @@
-﻿using System.Collections;
-
-namespace PhpUpgrader;
+﻿namespace PhpUpgrader;
 
 /// <summary>
 /// Třída, která je kolekcí <seealso cref="UnmodifiedMysql_File"/> pouze pro čtení
