@@ -17,6 +17,7 @@ internal sealed class FtpUploader : FtpBase
 
         await Client1.UploadDirectory(localFolder: Path.Join(_baseFolder, "weby", _webName),
                                       remoteFolder: _path,
+                                      mode: FtpFolderSyncMode.Mirror,
                                       existsMode: FtpRemoteExists.Overwrite,
                                       rules: PhpRules,
                                       progress: new FtpProgressReport(FO.Upload)).ConfigureAwait(false);
