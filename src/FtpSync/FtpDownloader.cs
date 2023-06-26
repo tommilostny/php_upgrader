@@ -22,7 +22,6 @@ internal sealed class FtpDownloader : FtpBase
 
         await Client1.DownloadDirectory(localFolder: Path.GetTempPath(),
                                         remoteFolder: _path,
-                                        mode: FtpFolderSyncMode.Mirror,
                                         existsMode: FtpLocalExists.Overwrite,
                                         rules: PhpRules,
                                         progress: new FtpProgressReport(FO.Download)).ConfigureAwait(false);

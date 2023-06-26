@@ -44,25 +44,6 @@ internal abstract class FtpBase : IDisposable
             ColoredConsole.WriteLine($"{ConsoleColor.DarkYellow}{client.Credentials.UserName}@{client.Host}{Symbols.PREVIOUS_COLOR}: připojeno.");
     }
 
-    protected async Task<FtpListItem[]> GetFileListingAsync(AsyncFtpClient client)
-    {
-        lock (_writeLock)
-            ColoredConsole.SetColor(ConsoleColor.DarkYellow)
-                .Write(client.Host)
-                .ResetColor()
-                .WriteLine($": Získávání informací o souborech {_path}...");
-
-        var fileList = await client.GetListing(_path, FtpListOption.Recursive | FtpListOption.Modify).ConfigureAwait(false);
-        var fileArray = fileList.Where(f => f.Type == FtpObjectType.File).ToArray();
-
-        lock (_writeLock)
-            ColoredConsole.SetColor(ConsoleColor.Yellow)
-                .Write(client.Host)
-                .ResetColor()
-                .WriteLine($": Nalezeno celkem {fileArray.Length} souborů.");
-        return fileArray;
-    }
-
     private sealed class PhpFtpRule : FtpRule
     {
         public override bool IsAllowed(FtpListItem result)

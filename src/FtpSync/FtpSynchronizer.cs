@@ -21,12 +21,12 @@ internal sealed class FtpSynchronizer : FtpBase
         await ConnectClientAsync(Client1).ConfigureAwait(false);
         await ConnectClientAsync(Client2).ConfigureAwait(false);
 
-        FtpListItem[]? files1 = null;
-        FtpListItem[]? files2 = null;
+        ImmutableList<FtpListItem>? files1 = null;
+        ImmutableList<FtpListItem>? files2 = null;
         var tasks = new List<Func<Task>>
         {
-            async () => files1 = await GetFileListingAsync(Client1).ConfigureAwait(false),
-            async () => files2 = await GetFileListingAsync(Client2).ConfigureAwait(false),
+            async () => files1 = await GetFileListingAsync(Client1, order: false).ConfigureAwait(false),
+            async () => files2 = await GetFileListingAsync(Client2, order: true).ConfigureAwait(false),
         };
         try
         {
@@ -36,7 +36,9 @@ internal sealed class FtpSynchronizer : FtpBase
         {
             foreach (var innerEx in ex.InnerExceptions)
             {
-                ColoredConsole.WriteLineError($"{ConsoleColor.Red}❌ Exception type {innerEx.GetType()} from {innerEx.Source}.").ResetColor();
+                ColoredConsole.SetColor(ConsoleColor.Red)
+                    .WriteLineError($"❌ Exception type {innerEx.GetType()} from {innerEx.Source}.")
+                    .ResetColor();
             }
             return;
         }
@@ -46,7 +48,33 @@ internal sealed class FtpSynchronizer : FtpBase
         }
     }
 
-    private async Task SynchronizeFilesAsync(FtpListItem[] files1, FtpListItem[] files2, AsyncFtpClient client1, AsyncFtpClient client2)
+    private async Task<ImmutableList<FtpListItem>> GetFileListingAsync(AsyncFtpClient client, bool order)
+    {
+        lock (_writeLock)
+            ColoredConsole.SetColor(ConsoleColor.DarkYellow)
+                .Write(client.Host)
+                .ResetColor()
+                .WriteLine($": Získávání informací o souborech {_path}...");
+
+        var files = (await client.GetListing(_path, FtpListOption.Recursive | FtpListOption.Modify)
+            .ConfigureAwait(false))
+            .Where(f => f.Type == FtpObjectType.File);
+        
+        if (order)
+        {
+            files = files.OrderBy(f => f.FullName, StringComparer.Ordinal);
+        }
+        var filesList = files.ToImmutableList();
+
+        lock (_writeLock)
+            ColoredConsole.SetColor(ConsoleColor.Yellow)
+                .Write(client.Host)
+                .ResetColor()
+                .WriteLine($": Nalezeno celkem {filesList.Count} souborů.");
+        return filesList;
+    }
+
+    private async Task SynchronizeFilesAsync(ImmutableList<FtpListItem> files1, ImmutableList<FtpListItem> files2, AsyncFtpClient client1, AsyncFtpClient client2)
     {
         using var dc2 = new AsyncFtpClient(client1.Host, client1.Credentials, config: client1.Config);
         using var dc3 = new AsyncFtpClient(client1.Host, client1.Credentials, config: client1.Config);
@@ -61,28 +89,28 @@ internal sealed class FtpSynchronizer : FtpBase
         await uc3.Connect().ConfigureAwait(false);
         await uc4.Connect().ConfigureAwait(false);
 
-        var clients1 = new AsyncFtpClient[] { client1, dc2, dc3, dc4 };
-        var clients2 = new AsyncFtpClient[] { client2, uc2, uc3, uc4 };
+        var dcs = new ConcurrentQueue<AsyncFtpClient>(new[] { client1, dc2, dc3, dc4 });
+        var ucs = new ConcurrentQueue<AsyncFtpClient>(new[] { client2, uc2, uc3, uc4 });
 
         ColoredConsole.SetColor(ConsoleColor.Cyan)
             .WriteLine($"🔄️ Probíhá synchronizace souborů mezi {client1.Host} a {client2.Host}...")
             .ResetColor();
 
         var tasks = new List<Task>();
-        for (int i = 0; i < files1.Length; i++)
+        var comparer = new FtpFileComparer();
+        foreach (var file1 in files1)
         {
-            var file1 = files1[i];
-            var file2 = files2.FirstOrDefault(f => string.Equals(f.FullName, file1.FullName, StringComparison.Ordinal));
-            if (file2 is null || file1.Modified > file2.Modified)
+            var j = files2.BinarySearch(file1, comparer);
+            if (j < 0 || j > files2.Count || file1.Modified > files2[j].Modified)
             {
-                tasks.Add(DownloadAndUploadAsync(clients1[tasks.Count], clients2[tasks.Count], file1.FullName, file1.FullName));
-            }
-            if (tasks.Count == 4 || i == files1.Length - 1)
-            {
-                await Task.WhenAll(tasks).ConfigureAwait(false);
-                tasks.Clear();
+                AsyncFtpClient? cl1, cl2;
+                while (!dcs.TryDequeue(out cl1)) await Task.Yield();
+                while (!ucs.TryDequeue(out cl2)) await Task.Yield();
+
+                tasks.Add(DownloadAndUploadAsync(cl1, cl2, file1.FullName, file1.FullName, dcs, ucs));
             }
         }
+        await Task.WhenAll(tasks).ConfigureAwait(false);
         ColoredConsole.SetColor(ConsoleColor.Green).WriteLine("✅ Synchronizace FTP serverů dokončena.").WriteLine().ResetColor();
     }
 
@@ -90,15 +118,22 @@ internal sealed class FtpSynchronizer : FtpBase
                                               AsyncFtpClient destinationClient,
                                               string sourcePath,
                                               string destinationPath,
+                                              ConcurrentQueue<AsyncFtpClient> returnQueue1,
+                                              ConcurrentQueue<AsyncFtpClient> returnQueue2,
                                               int retries = _defaultRetries)
     {
-        if (retries >= _defaultRetries) lock (_writeLock)
+        var isPhp = sourcePath.EndsWith(".php", StringComparison.Ordinal);
+
+        if (retries >= _defaultRetries)
+            lock (_writeLock)
+                ColoredConsole.Write("🔽 Probíhá download\t")
+                    .SetColor(isPhp ? ConsoleColor.Cyan : ConsoleColor.DarkGray)
+                    .WriteLine($"{sourcePath}{Symbols.PREVIOUS_COLOR}...");
+        if (isPhp)
         {
-            ColoredConsole.WriteLine($"🔽 Probíhá download\t{ConsoleColor.DarkGray}{sourcePath}{Symbols.PREVIOUS_COLOR}...");
-        }
-        if (sourcePath.EndsWith(".php", StringComparison.Ordinal))
-        {
+            returnQueue2.Enqueue(destinationClient);
             await HandlePhpFileAsync(sourceClient, sourcePath).ConfigureAwait(false);
+            returnQueue1.Enqueue(sourceClient);
             return;
         }
         try
@@ -112,7 +147,11 @@ internal sealed class FtpSynchronizer : FtpBase
 
                 var status = await destinationClient.UploadStream(stream, destinationPath, createRemoteDir: true).ConfigureAwait(false);
                 if (status.IsSuccess())
+                {
+                    returnQueue1.Enqueue(sourceClient);
+                    returnQueue2.Enqueue(destinationClient);
                     return;
+                }
             }
         }
         catch (FtpException ex)
@@ -126,8 +165,12 @@ internal sealed class FtpSynchronizer : FtpBase
         if (--retries > 0)
         {
             await Task.Delay(retries * _random.Next(0, 100)).ConfigureAwait(false);
-            await DownloadAndUploadAsync(sourceClient, destinationClient, sourcePath, destinationPath, retries).ConfigureAwait(false);
+            await DownloadAndUploadAsync(sourceClient, destinationClient, sourcePath, destinationPath, returnQueue1, returnQueue2, retries)
+                .ConfigureAwait(false);
+            return;
         }
+        returnQueue1.Enqueue(sourceClient);
+        returnQueue2.Enqueue(destinationClient);
     }
 
     private async Task HandlePhpFileAsync(AsyncFtpClient sourceClient, string sourcePath)
@@ -153,5 +196,10 @@ internal sealed class FtpSynchronizer : FtpBase
             if (File.Exists(backupFilePath))
                 File.Delete(backupFilePath);
         }
+    }
+
+    private sealed class FtpFileComparer : IComparer<FtpListItem>
+    {
+        public int Compare(FtpListItem? x, FtpListItem? y) => string.CompareOrdinal(x?.FullName, y?.FullName);
     }
 }
