@@ -2,12 +2,14 @@
 
 internal sealed class FtpSynchronizer : FtpBase
 {
+    private const byte _nStreams = 8;
+
     private AsyncFtpClient Client2 { get; set; }
 
     public FtpSynchronizer(string path, string baseFolder, string webName, string server1, string server2, string username, string password)
         : base(path, baseFolder, webName, server1, username, password)
     {
-        Client2 = new AsyncFtpClient(server2, Client1.Credentials, port: 21, Client1.Config);
+        Client2 = new AsyncFtpClient(server2, Client1.Credentials, config: Client1.Config);
     }
 
     public override void Dispose()
@@ -44,7 +46,7 @@ internal sealed class FtpSynchronizer : FtpBase
         }
         if (files1 is not null && files2 is not null)
         {
-            await SynchronizeFilesAsync(files1, files2, Client1, Client2).ConfigureAwait(false);
+            await SynchronizeFilesAsync(files1, files2).ConfigureAwait(false);
         }
     }
 
@@ -74,28 +76,29 @@ internal sealed class FtpSynchronizer : FtpBase
         return filesList;
     }
 
-    private async Task SynchronizeFilesAsync(ImmutableList<FtpListItem> files1, ImmutableList<FtpListItem> files2, AsyncFtpClient client1, AsyncFtpClient client2)
+    private async Task SynchronizeFilesAsync(ImmutableList<FtpListItem> files1, ImmutableList<FtpListItem> files2)
     {
-        using var dc2 = new AsyncFtpClient(client1.Host, client1.Credentials, config: client1.Config);
-        using var dc3 = new AsyncFtpClient(client1.Host, client1.Credentials, config: client1.Config);
-        using var dc4 = new AsyncFtpClient(client1.Host, client1.Credentials, config: client1.Config);
-        await dc2.Connect().ConfigureAwait(false);
-        await dc3.Connect().ConfigureAwait(false);
-        await dc4.Connect().ConfigureAwait(false);
-        using var uc2 = new AsyncFtpClient(client2.Host, client2.Credentials, config: client2.Config);
-        using var uc3 = new AsyncFtpClient(client2.Host, client2.Credentials, config: client2.Config);
-        using var uc4 = new AsyncFtpClient(client2.Host, client2.Credentials, config: client2.Config);
-        await uc2.Connect().ConfigureAwait(false);
-        await uc3.Connect().ConfigureAwait(false);
-        await uc4.Connect().ConfigureAwait(false);
-
-        var dcs = new ConcurrentQueue<AsyncFtpClient>(new[] { client1, dc2, dc3, dc4 });
-        var ucs = new ConcurrentQueue<AsyncFtpClient>(new[] { client2, uc2, uc3, uc4 });
-
         ColoredConsole.SetColor(ConsoleColor.Cyan)
-            .WriteLine($"🔄️ Probíhá synchronizace souborů mezi {client1.Host} a {client2.Host}...")
+            .WriteLine($"🔄️ Probíhá synchronizace souborů mezi {Client1.Host} a {Client2.Host}...")
             .ResetColor();
 
+        // Inicializace více klientů pro paralelní streaming.
+        var dcs = new ConcurrentQueue<AsyncFtpClient>();
+        var ucs = new ConcurrentQueue<AsyncFtpClient>();
+        dcs.Enqueue(Client1);
+        ucs.Enqueue(Client2);
+        for (byte i = 1; i < _nStreams; i++)
+        {
+            var dc = new AsyncFtpClient(Client1.Host, Client1.Credentials, config: Client1.Config);
+            await dc.Connect().ConfigureAwait(false);
+            dcs.Enqueue(dc);
+
+            var uc = new AsyncFtpClient(Client2.Host, Client2.Credentials, config: Client2.Config);
+            await uc.Connect().ConfigureAwait(false);
+            ucs.Enqueue(uc);
+        }
+
+        // Spouštění synchronizačních tasků nad klienty ve frontě (je přidělen prvnímu volnému, jinak se čeká na navrácení do fronty).
         var tasks = new List<Task>();
         var comparer = new FtpFileComparer();
         foreach (var file1 in files1)
@@ -112,6 +115,15 @@ internal sealed class FtpSynchronizer : FtpBase
         }
         await Task.WhenAll(tasks).ConfigureAwait(false);
         ColoredConsole.SetColor(ConsoleColor.Green).WriteLine("✅ Synchronizace FTP serverů dokončena.").WriteLine().ResetColor();
+
+        // Odpojení přidaných paralelních klientů po dokončení synchronizace.
+        while (dcs.TryDequeue(out var dc))
+            if (dc != Client1)
+                dc.Dispose();
+
+        while (ucs.TryDequeue(out var uc))
+            if (uc != Client2)
+                uc.Dispose();
     }
 
     private async Task DownloadAndUploadAsync(AsyncFtpClient sourceClient,
