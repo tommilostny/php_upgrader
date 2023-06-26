@@ -103,8 +103,8 @@ internal sealed class FtpSynchronizer : FtpBase
         var comparer = new FtpFileComparer();
         foreach (var file1 in files1)
         {
-            var j = files2.BinarySearch(file1, comparer);
-            if (j < 0 || j > files2.Count || file1.Modified > files2[j].Modified)
+            var i = files2.BinarySearch(file1, comparer);
+            if (i < 0 || i > files2.Count || file1.Modified > files2[i].Modified)
             {
                 AsyncFtpClient? cl1, cl2;
                 while (!dcs.TryDequeue(out cl1)) await Task.Yield();
