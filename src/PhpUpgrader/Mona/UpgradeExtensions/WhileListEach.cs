@@ -104,8 +104,9 @@ public static partial class WhileListEach
     {
         public void Upgrade(StringBuilder builder)
         {
-            builder.Replace($"{Array}[\"{KeyVal}\"]", KeyVal);
-            builder.Replace($"reset({KeyVal});", string.Empty);
+            builder.Replace($"{Array}[\"{KeyVal}\"]", KeyVal)
+                .Replace($"{Array}[{KeyVal}]", KeyVal)
+                .Replace($"reset({KeyVal});", string.Empty);
         }
     }
 
