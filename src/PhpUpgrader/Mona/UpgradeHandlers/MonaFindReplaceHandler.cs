@@ -18,6 +18,7 @@ public class MonaFindReplaceHandler : IFindReplaceHandler
         ( "mysql_Fetch_Row", "mysqli_fetch_row" ),
         ( "mysql_fetch_array", "mysqli_fetch_array" ),
         ( "mysql_fetch_assoc", "mysqli_fetch_assoc" ),
+        ( "MySQL_Fetch_Assoc", "mysqli_fetch_assoc" ),
         ( "mysql_fetch_object", "mysqli_fetch_object" ),
         ( "MySQL_fetch_object", "mysqli_fetch_object" ),
         ( "MYSQL_ASSOC", "MYSQLI_ASSOC" ),

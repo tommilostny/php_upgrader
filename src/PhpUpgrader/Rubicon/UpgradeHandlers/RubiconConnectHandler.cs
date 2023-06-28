@@ -15,7 +15,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         UpgradeSetup(file, upgrader);
         UpgradeHostname(file, upgrader);
         UpgradeOldDbConnect(file, upgrader);
-        UpgradeRubiconModulesDB(file);
+        UpgradeRubiconModulesDB(file, upgrader);
     }
 
     public static void UpgradeMysqlConnect(FileWrapper file)
@@ -273,7 +273,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         }
     }
     
-    public static void UpgradeRubiconModulesDB(FileWrapper file)
+    public static void UpgradeRubiconModulesDB(FileWrapper file, PhpUpgraderBase upgrader)
     {
         if (file.Path.EndsWith(Path.Join("core", "modules", "core", "module.php"), StringComparison.Ordinal))
         {
@@ -281,6 +281,15 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
                                  "mysqli_connect($rubicon_db->mysql_hostname, $rubicon_db->mysql_username, $rubicon_db->mysql_password)")
                         .Replace("mysql_select_db($rubicon_db->mysql_database, $its_connect)",
                                  "mysqli_select_db($its_connect, $rubicon_db->mysql_database)");
+            return;
+        }
+        if (file.Path.EndsWith(Path.Join("rss", "_off", "rss_shop-sport.php"), StringComparison.Ordinal))
+        {
+            file.Content.Replace("@$db = mysql_pconnect($hostname_beta, $username_beta, $password_beta) or die (\"Nelze navázat spojení s databazí\");",
+                                 "$beta = mysqli_connect($hostname_beta, $username_beta, $password_beta);")
+                        .Replace("@mysql_Select_DB($database_beta) or die (\"Nenalezena databáze\");",
+                                 "mysqli_select_db($beta, $database_beta);\r\n\r\nif(mysqli_connect_errno())\r\n  {\r\n    printf(\"Nelze navázat spojení s databazí: %s\\n\", mysqli_connect_error());\r\n    exit();\r\n  }");
+            (upgrader as MonaUpgrader).RenameVar(file.Content, newVarName: "beta", oldVarName: "db");
         }
     }
 

@@ -28,11 +28,7 @@ public static partial class WhileListEach
             //před další iterací uložit aktuálně upravený obsah.
             content = updatedSB.ToString();
         }
-        if (!string.Equals(content, initialContent, StringComparison.Ordinal))
-        {
-            file.Content.Replace(initialContent, content);
-            file.Warnings.Add("Nahrazeno while(list(...)=each(...)) => foreach(...)");
-        }
+        file.Content.Replace(initialContent, content);
         return file;
     }
 
