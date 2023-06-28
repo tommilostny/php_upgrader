@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeHandlers;
 
-public class MonaConnectHandler : IConnectHandler
+public partial class MonaConnectHandler : IConnectHandler
 {
     private const string _hostnameVarPart = "$hostname_";
     private const string _databaseVarPart = "$database_";
@@ -48,28 +48,28 @@ public class MonaConnectHandler : IConnectHandler
         for (var i = 0; i < lines.Count; i++)
         {
             var line = lines[i];
-
-            if (line.Contains("/*")) inComment = true;
-            if (line.Contains("*/")) inComment = false;
-
+            var lookupStartPosition = 0;
+            var commentStartPosition = line.IndexOf("*/");
+            if (commentStartPosition != -1)
+            {
+                lookupStartPosition = commentStartPosition + 2;
+                inComment = true;
+            }
+            var commentEndPosition = line.IndexOf("*/");
+            if (commentEndPosition != -1)
+            {
+                lookupStartPosition = commentEndPosition + 2;
+                inComment = false;
+            }
             if (!inComment)
             {
-                if (line.Contains(_hostnameVarPart) && !line.Contains($"//{_hostnameVarPart}"))
-                {
-                    hostLoaded = true;
-                }
-                else if (line.Contains(_databaseVarPart) && !line.Contains($"//{_databaseVarPart}"))
-                {
-                    dbnameLoaded = true;
-                }
-                else if (line.Contains(_usernameVarPart) && !line.Contains($"//{_usernameVarPart}"))
-                {
-                    usernameLoaded = true;
-                }
-                else if (line.Contains(_passwordVarPart) && !line.Contains($"//{_passwordVarPart}"))
-                {
-                    passwdLoaded = true;
-                }
+                var lookupChars = new Lazy<string>(() => line.ToString()[lookupStartPosition..]);
+
+                hostLoaded = hostLoaded || HostnameRegex().IsMatch(lookupChars.Value);
+                dbnameLoaded = dbnameLoaded || DatabaseRegex().IsMatch(lookupChars.Value);
+                usernameLoaded = usernameLoaded || UsernameRegex().IsMatch(lookupChars.Value);
+                passwdLoaded = passwdLoaded || PasswordRegex().IsMatch(lookupChars.Value);
+
                 if (hostLoaded && dbnameLoaded && usernameLoaded && passwdLoaded)
                 {
                     lines.RemoveRange(i + 1, lines.Count - i - 1);
@@ -96,4 +96,16 @@ public class MonaConnectHandler : IConnectHandler
             }
         }
     }
+
+    [GeneratedRegex($@"(?<!\/\/)\{_hostnameVarPart}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    private static partial Regex HostnameRegex();
+
+    [GeneratedRegex($@"(?<!\/\/)\{_usernameVarPart}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    private static partial Regex UsernameRegex();
+
+    [GeneratedRegex($@"(?<!\/\/)\{_passwordVarPart}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    private static partial Regex PasswordRegex();
+
+    [GeneratedRegex($@"(?<!\/\/)\{_databaseVarPart}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    private static partial Regex DatabaseRegex();
 }
