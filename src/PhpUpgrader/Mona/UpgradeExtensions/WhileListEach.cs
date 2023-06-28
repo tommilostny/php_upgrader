@@ -28,7 +28,11 @@ public static partial class WhileListEach
             //před další iterací uložit aktuálně upravený obsah.
             content = updatedSB.ToString();
         }
-        file.Content.Replace(initialContent, content);
+        if (!string.Equals(content, initialContent, StringComparison.Ordinal))
+        {
+            file.Content.Replace(initialContent, content);
+            file.Warnings.Add("Nahrazeno while(list(...)=each(...)) => foreach(...)");
+        }
         return file;
     }
 
@@ -61,7 +65,7 @@ public static partial class WhileListEach
             //volání funkce list má jeden parametr, převést pouze na "as $keyvalue".
             arrayKeyval = new ArrayKeyvalAsIndexReplace(array, keyval.Value);
 
-            return $"{inBetween}foreach ({array} as {keyval}){colon}";
+            return $"{inBetween}foreach (array_keys({array}) as {keyval}){colon}";
         }
         //volání funkce list má dva parametry, převést na "as $key => $value".
         arrayKeyval = null;
@@ -104,8 +108,8 @@ public static partial class WhileListEach
     {
         public void Upgrade(StringBuilder builder)
         {
-            builder.Replace($"{Array}[\"{KeyVal}\"]", KeyVal)
-                .Replace($"{Array}[{KeyVal}]", KeyVal)
+            builder//.Replace($"{Array}[\"{KeyVal}\"]", KeyVal)
+                //.Replace($"{Array}[{KeyVal}]", KeyVal)
                 .Replace($"reset({KeyVal});", string.Empty);
         }
     }
