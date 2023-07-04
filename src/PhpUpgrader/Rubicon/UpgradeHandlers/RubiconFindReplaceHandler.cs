@@ -124,5 +124,9 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ),
         ("$shop_id = pg_fetch_row(pg_query(\"SELECT shop_id FROM shop WHERE domain = '{$_SERVER['HTTP_HOST']}' \"))\n",
          "$shop_id = pg_fetch_row(pg_query(\"SELECT shop_id FROM shop WHERE domain = '{$_SERVER['HTTP_HOST']}' \"));\n"),
+        ("mysql_select_db($nazev_databaze,$db)",
+         "mysqli_select_db($db, $nazev_databaze)"),
+        ("mysql_select_db('pazitka', $link)",
+         "mysqli_select_db($link, 'pazitka')"),
     };
 }
