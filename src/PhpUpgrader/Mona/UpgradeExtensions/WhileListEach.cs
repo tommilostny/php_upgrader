@@ -61,7 +61,7 @@ public static partial class WhileListEach
             //volání funkce list má jeden parametr, převést pouze na "as $keyvalue".
             arrayKeyval = new ArrayKeyvalAsIndexReplace(array, keyval.Value);
 
-            return $"{inBetween}foreach ({array} as {keyval}){colon}"; ;
+            return $"{inBetween}foreach ({array} as {keyval}){colon}";
         }
         //volání funkce list má dva parametry, převést na "as $key => $value".
         arrayKeyval = null;
