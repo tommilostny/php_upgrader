@@ -69,17 +69,18 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
             var mysqliQueries = LoadMysqlQueries(content, varName);
 
             //uložit si původní hodnoty parametrů
-            var backup = (upgrader.ConnectionFile, upgrader.Hostname);
+            var backup = (upgrader.ConnectionFile, upgrader.Hostname, upgrader.Database, upgrader.Username, upgrader.Password);
             upgrader.ConnectionFile = file.Path.Split(Path.DirectorySeparatorChar)[^1];
 
             if (string.Equals(upgrader.Hostname, "localhost", StringComparison.Ordinal))
-                upgrader.Hostname = null;
-
+            {
+                upgrader.Hostname = upgrader.Database = upgrader.Username = upgrader.Password = null;
+            }
             //aktualizovat stejně jako connect pro RS Mona.
             base.UpgradeConnect(file, upgrader);
             
             //načíst zálohu hodnot.
-            (upgrader.ConnectionFile, upgrader.Hostname) = backup;
+            (upgrader.ConnectionFile, upgrader.Hostname, upgrader.Database, upgrader.Username, upgrader.Password) = backup;
             (upgrader as MonaUpgrader)?.RenameVar(file.Content, varName);
 
             //nakonec přidat aktualizované původní dotazy.
