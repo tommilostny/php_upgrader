@@ -12,7 +12,7 @@ public static partial class WhileListEach
         var content = file.Content.ToString();
         var initialContent = content;
 
-        while ((m = NextMatch(content)).Success)
+        while ((m = ResetWhileListEachRegex().Match(content)).Success)
         {
             //nahradit while(list(...)=each(...)) >> foreach(...)
             var updatedLine = WhileListEachToForeach(m, out var lookForEndWhile, out var arrayKeyvalAsIndexReplace, content);
@@ -34,11 +34,6 @@ public static partial class WhileListEach
             file.Warnings.Add("Nahrazeno while(list(...)=each(...)) => foreach(...)");
         }
         return file;
-    }
-
-    private static Match NextMatch(string content)
-    {
-        return ResetWhileListEachRegex().Match(content);
     }
 
     private static string WhileListEachToForeach(Match match, out bool lookForEndWhile, out ArrayKeyvalAsIndexReplace? arrayKeyval, in string content)
@@ -71,11 +66,6 @@ public static partial class WhileListEach
 
             //jestli se proměnná používá i jinak než index, nahradit pouze s array_keys (pak jsou to indexy do pole).
             case (true, true):
-                //foreach (var item in NotIndexVarRegex().Matches(content))
-                //{
-                //    Console.Write("!!!!!!!!!!!!!!!!!!!!!!!");
-                //    Console.WriteLine(item);
-                //}
                 arrayKeyval = null;
                 return $"{inBetween}foreach (array_keys({array}) as {keyval}){colon}";
 
