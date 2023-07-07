@@ -15,7 +15,7 @@ public static partial class WhileListEach
         while ((m = NextMatch(content)).Success)
         {
             //nahradit while(list(...)=each(...)) >> foreach(...)
-            var updatedLine = WhileListEachToForeach(m, out var lookForEndWhile, out var arrayKeyvalAsIndexReplace);
+            var updatedLine = WhileListEachToForeach(m, out var lookForEndWhile, out var arrayKeyvalAsIndexReplace, content);
             var updatedSB = new StringBuilder(content).Replace(m.Value, updatedLine, m.Index, m.Value.Length);
 
             //byl while ve formátu "while(...):"? hledat příslušný endwhile; a nahradit endforeach;.
@@ -28,7 +28,11 @@ public static partial class WhileListEach
             //před další iterací uložit aktuálně upravený obsah.
             content = updatedSB.ToString();
         }
-        file.Content.Replace(initialContent, content);
+        if (!string.Equals(content, initialContent, StringComparison.Ordinal))
+        {
+            file.Content.Replace(initialContent, content);
+            file.Warnings.Add("Nahrazeno while(list(...)=each(...)) => foreach(...)");
+        }
         return file;
     }
 
@@ -37,7 +41,7 @@ public static partial class WhileListEach
         return ResetWhileListEachRegex().Match(content);
     }
 
-    private static string WhileListEachToForeach(Match match, out bool lookForEndWhile, out ArrayKeyvalAsIndexReplace? arrayKeyval)
+    private static string WhileListEachToForeach(Match match, out bool lookForEndWhile, out ArrayKeyvalAsIndexReplace? arrayKeyval, in string content)
     {
         //match končí dvojtečkou => hledat endwhile a nahradit jej za endforeach.
         //jinak jsou použity složené závorky, které není třeba upravovat.
@@ -56,19 +60,26 @@ public static partial class WhileListEach
                 : $"reset({arrayInReset});{inBetween}";
         }
         var keyval = match.Groups["keyval"];
-        if (keyval.Success)
+        var isUsed = NotIndexVarRegex().Matches(content).Any(x => string.Equals(x.Value.Trim(), keyval.Value.Trim(), StringComparison.Ordinal));
+        arrayKeyval = null;
+
+        switch ((keyval.Success, isUsed))
         {
             //volání funkce list má jeden parametr, převést pouze na "as $keyvalue".
-            arrayKeyval = new ArrayKeyvalAsIndexReplace(array, keyval.Value);
+            case (true, false):
+                arrayKeyval = new ArrayKeyvalAsIndexReplace(array, keyval.Value);
+                return $"{inBetween}foreach ({array} as {keyval}){colon}";
 
-            return $"{inBetween}foreach ({array} as {keyval}){colon}";
+            //jestli se proměnná používá i jinak než index, nahradit pouze s array_keys (pak jsou to indexy do pole).
+            case (true, true):
+                return $"{inBetween}foreach (array_keys({array}) as {keyval}){colon}";
+
+            //volání funkce list má dva parametry, převést na "as $key => $value".
+            default:
+                var key = match.Groups["key"];
+                var value = match.Groups["val"];
+                return $"{inBetween}foreach ({array} as {key} => {value}){colon}";
         }
-        //volání funkce list má dva parametry, převést na "as $key => $value".
-        arrayKeyval = null;
-        var key = match.Groups["key"];
-        var value = match.Groups["val"];
-
-        return $"{inBetween}foreach ({array} as {key} => {value}){colon}";
     }
 
     private static void EndWhileToEndForeach(StringBuilder builder, bool lookForEndWhile, int matchIndex)
@@ -115,4 +126,7 @@ public static partial class WhileListEach
     
     [GeneratedRegex(@"while\s?\(.+\)\s*:", RegexOptions.None, matchTimeoutMilliseconds: 6666)]
     private static partial Regex WhileRegex();
+
+    [GeneratedRegex(@"(?<!list\s?\(\s?)\$\w+(?![[""'\]\w])", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    private static partial Regex NotIndexVarRegex();
 }
