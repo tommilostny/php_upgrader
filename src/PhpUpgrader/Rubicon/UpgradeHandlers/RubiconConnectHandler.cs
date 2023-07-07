@@ -223,7 +223,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
     }
 
     /// <summary> Aktualizace Database::connect. </summary>
-    public static void UpgradeDatabaseConnectCall(FileWrapper file, string oldHost, string newHost)
+    public static void UpgradeDatabaseConnectCall(FileWrapper file, PhpUpgraderBase upgrader, string oldHost, string newHost)
     {
         var lookingFor = $"Database::connect('{oldHost}'";
         var commented = $"//{lookingFor}";
@@ -243,12 +243,21 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
 
         string _DCMatchEvaluator(Match match)
         {
-            var startIndex = match.ValueSpan.IndexOf('(') + oldHost.Length + 2;
-            var afterOldHost = match.ValueSpan[startIndex..];
-
             var spaces = match.ValueSpan[..match.ValueSpan.IndexOf('D')];
+            var sb = new StringBuilder($"{spaces}//{match.ValueSpan.TrimStart()}\n{spaces}Database::connect('{newHost}");
 
-            return $"{spaces}//{match.ValueSpan.TrimStart()}\n{spaces}Database::connect('{newHost}{afterOldHost}";
+            switch (upgrader)
+            {
+                case { Database: null } or { Username: null } or { Password: null }:
+                    var startIndex = match.ValueSpan.IndexOf('(') + oldHost.Length + 2;
+                    var afterOldHost = match.ValueSpan[startIndex..];
+                    sb.Append(afterOldHost);
+                    break;
+                default:
+                    sb.Append($"{upgrader.Username}, {upgrader.Password}, {upgrader.Database}, '5432');");
+                    break;
+            }
+            return sb.ToString();
         }
     }
 

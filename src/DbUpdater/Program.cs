@@ -16,10 +16,10 @@ var filesToUpdate = Directory
 
 Parallel.ForEach(filesToUpdate, file =>
 {
-    var content = File.ReadAllText(file).Replace("\\connect", "--\\connect");
-    //content = Regexes.DropCreate(content);
-    content = Regexes.Drop(content);
-    content = Regexes.Schema(content);
+    var content = File.ReadAllText(file).Replace("\\connect", "--\\connect")
+        .RegexReplaceDefaultNumVals()
+        .RegexReplaceDrop()
+        .RegexReplaceSchema();
 
     File.WriteAllText(file.Replace(".sql", "_UPDATED.sql"), content);
 });

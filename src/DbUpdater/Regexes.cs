@@ -1,9 +1,10 @@
 ﻿namespace DbUpdater;
 
-public partial class Regexes
+public static partial class Regexes
 {
-    public static string Schema(string content) => _schemaRegex().Replace(content, _schemaEval);
-    public static string Drop(string content) => _dropRegex().Replace(content, _dropEval);
+    public static string RegexReplaceSchema(this string content) => _schemaRegex().Replace(content, _schemaEval);
+    public static string RegexReplaceDrop(this string content) => _dropRegex().Replace(content, _dropEval);
+    public static string RegexReplaceDefaultNumVals(this string content) => _smallintRegex().Replace(content, _smallintEval);
 
 
     [GeneratedRegex(@".*?(SCHEMA|(FUNCTION(?!\w|.*?')(.|\n)*?;))", RegexOptions.ExplicitCapture)]
@@ -21,4 +22,13 @@ public partial class Regexes
     (
         match => $"DROP{match.Groups["what"]} CASCADE;"
     );
+
+    [GeneratedRegex("(smallint|numeric) DEFAULT '\\((?<num>\\d+?)\\)'", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    private static partial Regex _smallintRegex();
+
+    private static MatchEvaluator _smallintEval = new
+    (
+        match => $"smallint DEFAULT '{match.Groups["num"]}'"
+    );
+
 }
