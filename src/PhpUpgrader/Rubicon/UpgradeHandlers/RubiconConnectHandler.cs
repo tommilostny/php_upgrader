@@ -57,37 +57,37 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         {
             return true;
         }
-        if (file.Path.Contains(Path.Join(upgrader.WebName, "Connections"), StringComparison.Ordinal))
+        if (!file.Path.Contains(Path.Join(upgrader.WebName, "Connections"), StringComparison.Ordinal))
         {
-            var content = file.Content.ToString();
-            var varName = LoadConnectionVariableName(content);
-            if (varName is null) //nemáme název proměnné? skončit.
-            {
-                return false;
-            }
-            //načíst původní dotazy z konce souboru.
-            var mysqliQueries = LoadMysqlQueries(content, varName);
-
-            //uložit si původní hodnoty parametrů
-            var backup = (upgrader.ConnectionFile, upgrader.Database, upgrader.Username, upgrader.Password);
-            upgrader.ConnectionFile = file.Path.Split(Path.DirectorySeparatorChar)[^1];
-
-            if (string.Equals(upgrader.Hostname, "localhost", StringComparison.Ordinal))
-            {
-                upgrader.Database = upgrader.Username = upgrader.Password = null;
-            }
-            //aktualizovat stejně jako connect pro RS Mona.
-            base.UpgradeConnect(file, upgrader);
-            
-            //načíst zálohu hodnot.
-            (upgrader.ConnectionFile, upgrader.Database, upgrader.Username, upgrader.Password) = backup;
-            (upgrader as MonaUpgrader)?.RenameVar(file.Content, varName);
-
-            //nakonec přidat aktualizované původní dotazy.
-            file.Content.Replace($"mysqli_query(${varName}, \"SET CHARACTER SET utf8\");", mysqliQueries);
-            return true;
+            return false;
         }
-        return false;
+        var content = file.Content.ToString();
+        var varName = LoadConnectionVariableName(content);
+        if (varName is null) //nemáme název proměnné? skončit.
+        {
+            return false;
+        }
+        //načíst původní dotazy z konce souboru.
+        var mysqliQueries = LoadMysqlQueries(content, varName);
+
+        //uložit si původní hodnoty parametrů
+        var backup = (upgrader.ConnectionFile, upgrader.Database, upgrader.Username, upgrader.Password);
+        upgrader.ConnectionFile = file.Path.Split(Path.DirectorySeparatorChar)[^1];
+
+        if (string.Equals(upgrader.Hostname, "localhost", StringComparison.Ordinal))
+        {
+            upgrader.Database = upgrader.Username = upgrader.Password = null;
+        }
+        //aktualizovat stejně jako connect pro RS Mona.
+        base.UpgradeConnect(file, upgrader);
+
+        //načíst zálohu hodnot.
+        (upgrader.ConnectionFile, upgrader.Database, upgrader.Username, upgrader.Password) = backup;
+        (upgrader as MonaUpgrader)?.RenameVar(file.Content, varName);
+
+        //nakonec přidat aktualizované původní dotazy.
+        file.Content.Replace($"mysqli_query(${varName}, \"SET CHARACTER SET utf8\");", mysqliQueries);
+        return true;
     }
 
     private static string? LoadConnectionVariableName(string content)

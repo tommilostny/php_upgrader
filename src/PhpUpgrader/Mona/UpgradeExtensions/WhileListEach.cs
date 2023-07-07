@@ -61,7 +61,6 @@ public static partial class WhileListEach
         }
         var keyval = match.Groups["keyval"];
         var isUsed = NotIndexVarRegex().Matches(content).Any(x => string.Equals(x.Value.Trim(), keyval.Value.Trim(), StringComparison.Ordinal));
-        arrayKeyval = null;
 
         switch ((keyval.Success, isUsed))
         {
@@ -72,10 +71,17 @@ public static partial class WhileListEach
 
             //jestli se proměnná používá i jinak než index, nahradit pouze s array_keys (pak jsou to indexy do pole).
             case (true, true):
+                //foreach (var item in NotIndexVarRegex().Matches(content))
+                //{
+                //    Console.Write("!!!!!!!!!!!!!!!!!!!!!!!");
+                //    Console.WriteLine(item);
+                //}
+                arrayKeyval = null;
                 return $"{inBetween}foreach (array_keys({array}) as {keyval}){colon}";
 
             //volání funkce list má dva parametry, převést na "as $key => $value".
             default:
+                arrayKeyval = null;
                 var key = match.Groups["key"];
                 var value = match.Groups["val"];
                 return $"{inBetween}foreach ({array} as {key} => {value}){colon}";
@@ -127,6 +133,6 @@ public static partial class WhileListEach
     [GeneratedRegex(@"while\s?\(.+\)\s*:", RegexOptions.None, matchTimeoutMilliseconds: 6666)]
     private static partial Regex WhileRegex();
 
-    [GeneratedRegex(@"(?<!list\s?\(\s?)\$\w+(?![[""'\]\w])", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"(?<![""[]|(list|reset)\s?\(\s?)\$\w+(?![[""'\]\w])", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
     private static partial Regex NotIndexVarRegex();
 }
