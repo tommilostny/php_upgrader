@@ -10,7 +10,8 @@ public static class CloseIndex
             var closeArg = upgrader is RubiconUpgrader ? "pg_close" : "mysqli_close";
             if (!file.Content.Contains(closeArg))
             {
-                file.Content.Append(new CloseFunctionFormat(), $"\n<?php {closeArg}($beta); ?>");
+                file.Content.Append(HasClosingPhpTag(file) ? "\n<?php " : "\n")
+                    .Append(new CloseFunctionFormat(), $"{closeArg}($beta); ?>");
             }
         }
         return file;
@@ -18,13 +19,32 @@ public static class CloseIndex
 
     private static bool IsRootIndexFile(string path, MonaUpgrader upgrader)
     {
-        return path.EndsWith(Path.Join(upgrader.WebName, "index.php"), StringComparison.Ordinal)
+        return (path.EndsWith(Path.Join(upgrader.WebName, "index.php"), StringComparison.Ordinal)
+            && !path.EndsWith(Path.Join("templates", upgrader.WebName, "index.php"), StringComparison.Ordinal))
             || upgrader.OtherRootFolders?.Any(rf =>
             {
                 return path.EndsWith(Path.Join(upgrader.WebName, rf, "index.php"), StringComparison.Ordinal)
                     || path.EndsWith(Path.Join(upgrader.WebName, rf, "index_new.php"), StringComparison.Ordinal);
             })
             == true;
+    }
+
+    private static bool HasClosingPhpTag(FileWrapper file)
+    {
+        for (var i = file.Content.Length - 2; i >= 0; i--)
+        {
+            if (file.Content[i] == '?'
+                && file.Content[i + 1] == '>')
+                return true;
+            if (i < file.Content.Length - 5
+                && file.Content[i] == '<'
+                && file.Content[i + 1] == '?'
+                && file.Content[i + 2] == 'p'
+                && file.Content[i + 3] == 'h'
+                && file.Content[i + 4] == 'p')
+                return false;
+        }
+        return true;
     }
 
     private class CloseFunctionFormat : IFormatProvider, ICustomFormatter
