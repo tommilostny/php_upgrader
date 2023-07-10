@@ -119,9 +119,6 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("get_magic_quotes_runtime();",
          "false /*get_magic_quotes_runtime()*/;"
         ),
-        ("$USER_KOSIK_POLOZKY[\"$data_id\"]",
-         "$data_id"
-        ),
         ("$shop_id = pg_fetch_row(pg_query(\"SELECT shop_id FROM shop WHERE domain = '{$_SERVER['HTTP_HOST']}' \"))\n",
          "$shop_id = pg_fetch_row(pg_query(\"SELECT shop_id FROM shop WHERE domain = '{$_SERVER['HTTP_HOST']}' \"));\n"),
         ("mysql_select_db($nazev_databaze,$db)",

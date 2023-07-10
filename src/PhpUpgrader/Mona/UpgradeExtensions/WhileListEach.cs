@@ -15,8 +15,8 @@ public static partial class WhileListEach
         while ((m = ResetWhileListEachRegex().Match(content)).Success)
         {
             //nahradit while(list(...)=each(...)) >> foreach(...)
-            var updatedLine = WhileListEachToForeach(m, out var lookForEndWhile, out var arrayKeyvalAsIndexReplace, content, workingDirectory);
-            var updatedSB = new StringBuilder(content).Replace(m.Value, updatedLine, m.Index, m.Value.Length);
+            var updated = WhileListEachToForeach(m, out var lookForEndWhile, out var arrayKeyvalAsIndexReplace, content, workingDirectory);
+            var updatedSB = new StringBuilder(content).Replace(m.Value, updated, m.Index, m.Value.Length + 1);
 
             //byl while ve formátu "while(...):"? hledat příslušný endwhile; a nahradit endforeach;.
             EndWhileToEndForeach(updatedSB, lookForEndWhile, m.Index);
@@ -55,28 +55,14 @@ public static partial class WhileListEach
                 : $"reset({arrayInReset});{inBetween}";
         }
         var keyVal = match.Groups["keyval"];
-        var isUsed = NotIndexVarRegex().Matches(content).Any(x => string.Equals(x.Value.Trim(), keyVal.Value.Trim(), StringComparison.Ordinal));
+        var isUsed = NotIndexVarRegex().Matches(content).Any(x => string.Equals(x.Value, keyVal.Value, StringComparison.Ordinal));
 
         switch ((keyVal.Success, isUsed))
         {
             //volání funkce list má jeden parametr, převést pouze na "as $keyvalue".
             case (true, false):
                 arrayKeyVal = new ArrayKeyValAsIndexReplace(array, keyVal.Value);
-
-                //najít všechny includy
-                var includes = IncludeRegex().Matches(content).Select(x => x.Groups["file"].Value).ToArray();
-                //TML_URL: složka "templates/{něco}" + soubor "/product/product_prehled_buy.php"
-                foreach (var templateDir in Directory.EnumerateDirectories(Path.Join(baseDir, "templates")))
-                {
-                    foreach (var includeFile in includes)
-                    {
-                        var path = Path.Join(templateDir, includeFile);
-                        var includeFileContent = new StringBuilder(File.ReadAllText(path));
-                        
-                        arrayKeyVal.Upgrade(includeFileContent);
-                        File.WriteAllText(path, includeFileContent.ToString());
-                    }
-                }
+                ReplaceKeyValInIncludedFiles(arrayKeyVal, content, baseDir);
                 return $"{inBetween}foreach ({array} as {keyVal}){colon}";
 
             //jestli se proměnná používá i jinak než index, nahradit pouze s array_keys (pak jsou to indexy do pole).
@@ -90,6 +76,27 @@ public static partial class WhileListEach
                 var key = match.Groups["key"];
                 var value = match.Groups["val"];
                 return $"{inBetween}foreach ({array} as {key} => {value}){colon}";
+        }
+    }
+
+    private static void ReplaceKeyValInIncludedFiles(ArrayKeyValAsIndexReplace arrayKeyVal, string content, string baseDir)
+    {
+        //najít všechny includy
+        var includes = IncludeRegex().Matches(content).Select(x => x.Groups["file"].Value).ToArray();
+        //TML_URL: složka "templates/{něco}" + soubor "/product/product_prehled_buy.php"
+        foreach (var templateDir in Directory.EnumerateDirectories(Path.Join(baseDir, "templates")))
+        {
+            foreach (var includeFile in includes)
+            {
+                var path = Path.Join(templateDir, includeFile);
+                if (File.Exists(path))
+                {
+                    var includeFileContent = new StringBuilder(File.ReadAllText(path));
+
+                    arrayKeyVal.Upgrade(includeFileContent);
+                    File.WriteAllText(path, includeFileContent.ToString());
+                }
+            }
         }
     }
 
