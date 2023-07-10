@@ -208,7 +208,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
                 file.Content.Replace($"$api = new RubiconAPI($_REQUEST['url'], '{hn}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');",
                                      $"//$api = new RubiconAPI($_REQUEST['url'], '{hn}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');\n\t$api = new RubiconAPI($_REQUEST['url'], '{upgrader.Hostname}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');");
             }
-            UpgradeDatabaseConnectCall(file, hn, upgrader.Hostname);
+            UpgradeDatabaseConnectCall(file, upgrader, hn, upgrader.Hostname);
         }
     }
 
@@ -244,17 +244,17 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         string _DCMatchEvaluator(Match match)
         {
             var spaces = match.ValueSpan[..match.ValueSpan.IndexOf('D')];
-            var sb = new StringBuilder($"{spaces}//{match.ValueSpan.TrimStart()}\n{spaces}Database::connect('{newHost}");
+            var sb = new StringBuilder($"{spaces}//{match.ValueSpan.TrimStart()}\n{spaces}Database::connect('{newHost}'");
 
             switch (upgrader)
             {
                 case { Database: null } or { Username: null } or { Password: null }:
-                    var startIndex = match.ValueSpan.IndexOf('(') + oldHost.Length + 2;
+                    var startIndex = match.ValueSpan.IndexOf('(') + oldHost.Length + 3;
                     var afterOldHost = match.ValueSpan[startIndex..];
                     sb.Append(afterOldHost);
                     break;
                 default:
-                    sb.Append($"{upgrader.Username}, {upgrader.Password}, {upgrader.Database}, '5432');");
+                    sb.Append($", '{upgrader.Username}', '{upgrader.Password}', '{upgrader.Database}', '5432');");
                     break;
             }
             return sb.ToString();

@@ -167,7 +167,7 @@ public class RubiconUpgraderTests : UnitTestWithOutputBase
         var file = new FileWrapper(Path.Join("test-site", "index.php"), originalContent);
 
         //Act
-        RubiconConnectHandler.UpgradeDatabaseConnectCall(file, "93.185.102.228", "mcrai-upgrade.vshosting.cz");
+        RubiconConnectHandler.UpgradeDatabaseConnectCall(file, new MonaUpgraderFixture(), oldHost: "93.185.102.228", newHost: "mcrai-upgrade.vshosting.cz");
 
         //Assert
         var contentStr = file.Content.ToString();
