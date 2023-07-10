@@ -79,7 +79,7 @@ public partial class MonaUpgrader : PhpUpgraderBase
             .UpgradeRegexFunctions()
             .UpgradeIfEmpty()
             .UpgradeGetMagicQuotesGpc()
-            .UpgradeWhileListEach()
+            .UpgradeWhileListEach(Path.Join(BaseFolder, "weby", WebName))
             .UpgradeCreateFunction()
             .UpgradeImplode()
             .UpgradeCurlyBraceIndexing();

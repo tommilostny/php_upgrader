@@ -6,7 +6,7 @@ public static partial class WhileListEach
     /// Funkce <b>each</b> je zastaralá (v PHP 8 navíc odstraněna).
     /// <code>reset($polozky); while(list($key, $val) = each($polozky))</code> je nevalidní kód.
     /// </summary>
-    public static FileWrapper UpgradeWhileListEach(this FileWrapper file)
+    public static FileWrapper UpgradeWhileListEach(this FileWrapper file, string workingDirectory)
     {
         Match m;
         var content = file.Content.ToString();
@@ -15,7 +15,7 @@ public static partial class WhileListEach
         while ((m = ResetWhileListEachRegex().Match(content)).Success)
         {
             //nahradit while(list(...)=each(...)) >> foreach(...)
-            var updatedLine = WhileListEachToForeach(m, out var lookForEndWhile, out var arrayKeyvalAsIndexReplace, content);
+            var updatedLine = WhileListEachToForeach(m, out var lookForEndWhile, out var arrayKeyvalAsIndexReplace, content, workingDirectory);
             var updatedSB = new StringBuilder(content).Replace(m.Value, updatedLine, m.Index, m.Value.Length);
 
             //byl while ve formátu "while(...):"? hledat příslušný endwhile; a nahradit endforeach;.
@@ -36,7 +36,7 @@ public static partial class WhileListEach
         return file;
     }
 
-    private static string WhileListEachToForeach(Match match, out bool lookForEndWhile, out ArrayKeyValAsIndexReplace? arrayKeyVal, in string content)
+    private static string WhileListEachToForeach(Match match, out bool lookForEndWhile, out ArrayKeyValAsIndexReplace? arrayKeyVal, in string content, in string baseDir)
     {
         //match končí dvojtečkou => hledat endwhile a nahradit jej za endforeach.
         //jinak jsou použity složené závorky, které není třeba upravovat.
@@ -62,6 +62,21 @@ public static partial class WhileListEach
             //volání funkce list má jeden parametr, převést pouze na "as $keyvalue".
             case (true, false):
                 arrayKeyVal = new ArrayKeyValAsIndexReplace(array, keyVal.Value);
+
+                //najít všechny includy
+                var includes = IncludeRegex().Matches(content).Select(x => x.Groups["file"].Value).ToArray();
+                //TML_URL: složka "templates/{něco}" + soubor "/product/product_prehled_buy.php"
+                foreach (var templateDir in Directory.EnumerateDirectories(Path.Join(baseDir, "templates")))
+                {
+                    foreach (var includeFile in includes)
+                    {
+                        var path = Path.Join(templateDir, includeFile);
+                        var includeFileContent = new StringBuilder(File.ReadAllText(path));
+                        
+                        arrayKeyVal.Upgrade(includeFileContent);
+                        File.WriteAllText(path, includeFileContent.ToString());
+                    }
+                }
                 return $"{inBetween}foreach ({array} as {keyVal}){colon}";
 
             //jestli se proměnná používá i jinak než index, nahradit pouze s array_keys (pak jsou to indexy do pole).
@@ -125,4 +140,7 @@ public static partial class WhileListEach
 
     [GeneratedRegex(@"(?<!as\s|[""[]|(list|reset)\s?\(\s?)\$\w+(?![[""'\]\w])", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
     private static partial Regex NotIndexVarRegex();
+
+    [GeneratedRegex(@"include TML_URL\s?\.\s?(""|')(?<file>.+?)(""|')", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    private static partial Regex IncludeRegex();
 }
