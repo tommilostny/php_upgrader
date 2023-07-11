@@ -6,7 +6,7 @@ public static partial class WhileListEach
     /// Funkce <b>each</b> je zastaralá (v PHP 8 navíc odstraněna).
     /// <code>reset($polozky); while(list($key, $val) = each($polozky))</code> je nevalidní kód.
     /// </summary>
-    public static FileWrapper UpgradeWhileListEach(this FileWrapper file, string workingDirectory)
+    public static FileWrapper UpgradeWhileListEach(this FileWrapper file, string? workingDirectory)
     {
         Match m;
         var content = file.Content.ToString();
@@ -36,7 +36,7 @@ public static partial class WhileListEach
         return file;
     }
 
-    private static string WhileListEachToForeach(Match match, out bool lookForEndWhile, out ArrayKeyValAsIndexReplace? arrayKeyVal, in string content, in string baseDir)
+    private static string WhileListEachToForeach(Match match, out bool lookForEndWhile, out ArrayKeyValAsIndexReplace? arrayKeyVal, in string content, in string? baseDir)
     {
         //match končí dvojtečkou => hledat endwhile a nahradit jej za endforeach.
         //jinak jsou použity složené závorky, které není třeba upravovat.
@@ -79,8 +79,10 @@ public static partial class WhileListEach
         }
     }
 
-    private static void ReplaceKeyValInIncludedFiles(ArrayKeyValAsIndexReplace arrayKeyVal, string content, string baseDir)
+    private static void ReplaceKeyValInIncludedFiles(ArrayKeyValAsIndexReplace arrayKeyVal, string content, string? baseDir)
     {
+        if (baseDir is null)
+            return;
         //najít všechny includy
         var includes = IncludeRegex().Matches(content).Select(x => x.Groups["file"].Value).ToArray();
         //TML_URL: složka "templates/{něco}" + soubor "/product/product_prehled_buy.php"

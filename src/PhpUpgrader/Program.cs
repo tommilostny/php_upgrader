@@ -92,11 +92,7 @@ static class Program
         //Pokusit se stáhnout soubory, pokud složka neexistuje (aka děláme nový web poprvé).
         if (!Directory.Exists(workDir))
         {
-            Console.WriteLine($"Složka {workDir} neexistuje. Pokusit se načíst údaje z ftp_logins.txt a stáhnout z FTP {McraiFtp.DefaultHostname1}? (y/n)");
-            if (Console.Read() != 'y')
-            {
-                return null;
-            }
+            Console.WriteLine($"Složka {workDir} neexistuje. Načítám údaje z ftp_logins.txt a stahuji z FTP {McraiFtp.DefaultHostname1}.");
             try
             {
                 await _lazyFtp.Value.DownloadAsync().ConfigureAwait(false);

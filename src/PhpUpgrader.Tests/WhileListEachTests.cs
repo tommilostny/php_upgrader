@@ -28,7 +28,7 @@ public class WhileListEachTests : UnitTestWithOutputBase
         var file = new FileWrapper("file.php", content);
 
         //Act
-        file.UpgradeWhileListEach();
+        file.UpgradeWhileListEach(null);
 
         //Assert
         _output.WriteLine(content);
