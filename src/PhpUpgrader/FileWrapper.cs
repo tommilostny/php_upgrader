@@ -64,7 +64,7 @@ public sealed class FileWrapper
 
             if (MoveOnSavePath is not null) //Přesunout soubor, pokud je potřeba změnit jméno.
             {
-                File.Move(Path, MoveOnSavePath, overwrite: true);
+                File.Copy(Path, MoveOnSavePath, overwrite: true);
             }
         }
     }
