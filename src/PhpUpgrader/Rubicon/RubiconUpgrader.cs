@@ -48,7 +48,8 @@ public sealed class RubiconUpgrader : MonaUpgrader
                     .UpgradeRequiredParameterFollowsOptional()
                     .UpgradeNullByteInRegex()
                     .UpgradePclZipLib()
-                    .UpgradeAdminerMysql();
+                    .UpgradeAdminerMysql()
+                    .UpgradeNajdiVDb();
                 return file;
         }
     }
