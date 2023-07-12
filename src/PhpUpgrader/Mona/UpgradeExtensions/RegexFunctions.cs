@@ -108,30 +108,30 @@ public static partial class RegexFunctions
         return $"preg_split('{_delimiter}'.{delimiterVar}.'{_delimiter}',";
     }
 
-    [GeneratedRegex(@"ereg(_replace|i)?\s?\('(\\'|[^'])*'", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"ereg(_replace|i)?\s?\('(\\'|[^'])*'", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex EregSingleQuoteStrRegex();
     
-    [GeneratedRegex(@"ereg(_replace|i)?\s?\(""(\\""|[^""])*""", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"ereg(_replace|i)?\s?\(""(\\""|[^""])*""", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex EregDoubleQuoteStrRegex();
     
-    [GeneratedRegex(@"eregi?\s?\( ?\$", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"eregi?\s?\( ?\$", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex EregiVarRegex();
     
-    [GeneratedRegex(@"ereg_replace\s?\(\s?\$", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"ereg_replace\s?\(\s?\$", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex EregReplaceVarRegex();
     
-    [GeneratedRegex(@"\n[^//]{0,236}ereg[^(;"",]*\(", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"\n[^//]{0,236}ereg[^(;"",]*\(", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex UncommentedEregRegex();
     
-    [GeneratedRegex(@"\bsplit\s?\('(\\'|[^'])*'", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"\bsplit\s?\('(\\'|[^'])*'", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex SplitSingleQuoteStrRegex();
     
-    [GeneratedRegex(@"\bsplit\s?\(""(\\""|[^""])*""", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"\bsplit\s?\(""(\\""|[^""])*""", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex SplitDoubleQuoteStrRegex();
     
-    [GeneratedRegex(@"\bsplit\s?\(\s?(?<del>[^""'].*?),", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"\bsplit\s?\(\s?(?<del>[^""'].*?),", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex SplitVarRegex();
     
-    [GeneratedRegex(@"(?<!(_|\.))split\s?\(", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"(?<!(_|\.))split\s?\(", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex UnmodifiedSplitRegex();
 }

@@ -14,6 +14,6 @@ public static partial class XmlFeeds
         return file;
     }
 
-    [GeneratedRegex("xml_feeds_[^edit]", RegexOptions.None, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex("xml_feeds_[^edit]", RegexOptions.None, matchTimeoutMilliseconds: 66666)]
     private static partial Regex XmlFeedsRegex();
 }

@@ -36,6 +36,6 @@ public static partial class IncludesInHtmlComments
         return file;
     }
 
-    [GeneratedRegex(@"(\\|/)templates(\\|/).+(\\|/)product_detail\.php", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"(\\|/)templates(\\|/).+(\\|/)product_detail\.php", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex TemplatesProductdetailFileRegex();
 }

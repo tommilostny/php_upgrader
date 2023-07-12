@@ -80,12 +80,12 @@ public static partial class GetMagicQuotesGpc
         return $"if ({booleanValue} /*{negation}{match.Groups["fn"]}()*/)";
     }
 
-    [GeneratedRegex(@"\(?!?get_magic_quotes_(gpc|runtime)\(\)\)?\s{0,5}\?\s{0,5}(/\*.*\*/)?\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s{0,5}:\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"\(?!?get_magic_quotes_(gpc|runtime)\(\)\)?\s{0,5}\?\s{0,5}(/\*.*\*/)?\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s{0,5}:\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex GetMagicQuotesTernaryRegex();
 
-    [GeneratedRegex(@"if\s?\(\s?(?<neg>!)?\s?(?<fn>get_magic_quotes_(gpc|runtime))\(\)\s?\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"if\s?\(\s?(?<neg>!)?\s?(?<fn>get_magic_quotes_(gpc|runtime))\(\)\s?\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex GetMagicQuotesIfRegex();
 
-    [GeneratedRegex(@"/\*.{0,6}get_magic_quotes_(gpc|runtime)\(\)(\n|.){0,236}\*/", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"/\*.{0,6}get_magic_quotes_(gpc|runtime)\(\)(\n|.){0,236}\*/", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex GetMagicQuotesCommentedRegex();
 }

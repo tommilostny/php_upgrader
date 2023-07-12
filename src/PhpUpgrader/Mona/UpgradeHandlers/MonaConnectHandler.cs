@@ -97,15 +97,15 @@ public partial class MonaConnectHandler : IConnectHandler
         }
     }
 
-    [GeneratedRegex($@"(?<!\/\/)\{_hostnameVarPart}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex($@"(?<!\/\/)\{_hostnameVarPart}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex HostnameRegex();
 
-    [GeneratedRegex($@"(?<!\/\/)\{_usernameVarPart}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex($@"(?<!\/\/)\{_usernameVarPart}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex UsernameRegex();
 
-    [GeneratedRegex($@"(?<!\/\/)\{_passwordVarPart}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex($@"(?<!\/\/)\{_passwordVarPart}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex PasswordRegex();
 
-    [GeneratedRegex($@"(?<!\/\/)\{_databaseVarPart}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex($@"(?<!\/\/)\{_databaseVarPart}", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex DatabaseRegex();
 }

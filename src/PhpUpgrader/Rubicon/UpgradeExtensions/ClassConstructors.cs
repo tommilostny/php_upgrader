@@ -241,9 +241,9 @@ public static partial class ClassConstructors
         public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : null;
     }
 
-    [GeneratedRegex(@"class\s.+\s*\{", RegexOptions.Multiline, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"class\s.+\s*\{", RegexOptions.Multiline, matchTimeoutMilliseconds: 66666)]
     private static partial Regex ClassRegex();
     
-    [GeneratedRegex(@"(?<spaces>[ \t]*)(public\s?)?function\s$", RegexOptions.Multiline | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"(?<spaces>[ \t]*)(public\s?)?function\s$", RegexOptions.Multiline | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex PublicFunctionSpacesRegex();
 }

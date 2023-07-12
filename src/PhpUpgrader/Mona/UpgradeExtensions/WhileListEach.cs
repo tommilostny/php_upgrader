@@ -81,12 +81,13 @@ public static partial class WhileListEach
 
     private static void ReplaceKeyValInIncludedFiles(ArrayKeyValAsIndexReplace arrayKeyVal, string content, string? baseDir)
     {
-        if (baseDir is null)
+        var templatesPath = Path.Join(baseDir, "templates");
+        if (baseDir is null || !Directory.Exists(templatesPath))
             return;
         //najít všechny includy
         var includes = IncludeRegex().Matches(content).Select(x => x.Groups["file"].Value).ToArray();
         //TML_URL: složka "templates/{něco}" + soubor "/product/product_prehled_buy.php"
-        foreach (var templateDir in Directory.EnumerateDirectories(Path.Join(baseDir, "templates")))
+        foreach (var templateDir in Directory.EnumerateDirectories(templatesPath))
         {
             foreach (var includeFile in includes)
             {
@@ -141,15 +142,15 @@ public static partial class WhileListEach
         }
     }
 
-    [GeneratedRegex(@"(?<reset>reset\s?\((?<array1>\$[^)]+)\);(?<in_between>((.|\n)(?!reset\s?\())*?))?while\s?\(\s?list\s?\((((?<key>\$[^),]+)\s?,\s?(?<val>\$[^),]+))|(\s*?,\s*?)*?(?<keyval>\$[^)]+))\)\s?=\s?each\s?\((?<array2>\$[^)]+)\){2}(\s?:)?", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"(?<reset>reset\s?\((?<array1>\$[^)]+)\);(?<in_between>((.|\n)(?!reset\s?\())*?))?while\s?\(\s?list\s?\((((?<key>\$[^),]+)\s?,\s?(?<val>\$[^),]+))|(\s*?,\s*?)*?(?<keyval>\$[^)]+))\)\s?=\s?each\s?\((?<array2>\$[^)]+)\){2}(\s?:)?", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex ResetWhileListEachRegex();
     
-    [GeneratedRegex(@"while\s?\(.+\)\s*:", RegexOptions.None, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"while\s?\(.+\)\s*:", RegexOptions.None, matchTimeoutMilliseconds: 66666)]
     private static partial Regex WhileRegex();
 
-    [GeneratedRegex(@"(?<!as\s|[""[]|(list|reset)\s?\(\s?)\$\w+(?![[""'\]\w])", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"(?<!as\s|[""[]|(list|reset)\s?\(\s?)\$\w+(?![[""'\]\w])", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex NotIndexVarRegex();
 
-    [GeneratedRegex(@"include TML_URL\s?\.\s?(""|')(?<file>.+?)(""|')", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"include TML_URL\s?\.\s?(""|')(?<file>.+?)(""|')", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex IncludeRegex();
 }

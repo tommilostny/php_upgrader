@@ -71,9 +71,9 @@ public static partial class GlobalBeta
         return false;
     }
 
-    [GeneratedRegex("(?s)^(?=.*?function )(?=.*?mysqli_)", RegexOptions.None, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex("(?s)^(?=.*?function )(?=.*?mysqli_)", RegexOptions.None, matchTimeoutMilliseconds: 66666)]
     private static partial Regex GarthSuppliedRegex();
     
-    [GeneratedRegex(@"function\s", RegexOptions.None, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"function\s", RegexOptions.None, matchTimeoutMilliseconds: 66666)]
     private static partial Regex ContainsFuncRegex();
 }

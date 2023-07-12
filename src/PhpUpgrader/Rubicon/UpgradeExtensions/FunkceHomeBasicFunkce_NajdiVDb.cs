@@ -13,7 +13,7 @@ public static partial class FunkceHomeBasicFunkce_NajdiVDb
         return file;
     }
 
-    [GeneratedRegex(@"\$vysledek\s?=\s?(?<condVar>\$\w+?)\[(.|\n)*?return\s?\(?\$vysledek\)?;.*?\n", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"\$vysledek\s?=\s?(?<condVar>\$\w+?)\[(.|\n)*?return\s?\(?\$vysledek\)?;.*?\n", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex VysledekRegex();
 
     private static MatchEvaluator _wrapInIfEval = new

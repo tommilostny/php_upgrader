@@ -23,7 +23,7 @@ public static partial class Regexes
         match => $"DROP{match.Groups["what"]} CASCADE;"
     );
 
-    [GeneratedRegex("(smallint|numeric) DEFAULT '\\((?<num>\\d+?)\\)'", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex("(smallint|numeric) DEFAULT '\\((?<num>\\d+?)\\)'", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex _smallintRegex();
 
     private static MatchEvaluator _smallintEval = new

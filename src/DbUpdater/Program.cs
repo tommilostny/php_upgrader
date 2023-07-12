@@ -19,7 +19,8 @@ Parallel.ForEach(filesToUpdate, file =>
     var content = File.ReadAllText(file).Replace("\\connect", "--\\connect")
         .RegexReplaceDefaultNumVals()
         .RegexReplaceDrop()
-        .RegexReplaceSchema();
+        //.RegexReplaceSchema()
+        ;
 
     File.WriteAllText(file.Replace(".sql", "_UPDATED.sql"), content);
 });

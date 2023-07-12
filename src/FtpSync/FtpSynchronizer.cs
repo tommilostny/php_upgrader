@@ -60,12 +60,11 @@ internal sealed class FtpSynchronizer : FtpBase
 
         var files = (await client.GetListing(_path, FtpListOption.Recursive | FtpListOption.Modify)
             .ConfigureAwait(false))
-            .Where(f => f.Type == FtpObjectType.File);
-        
+            .Where(f => f.Type == FtpObjectType.File && f.Size < 900_000_000);
+
         if (order)
-        {
             files = files.OrderBy(f => f.FullName, StringComparer.Ordinal);
-        }
+
         var filesList = files.ToImmutableList();
 
         lock (_writeLock)
@@ -144,7 +143,13 @@ internal sealed class FtpSynchronizer : FtpBase
         if (isPhp)
         {
             returnQueue2.Enqueue(destinationClient);
+
             await HandlePhpFileAsync(sourceClient, sourcePath).ConfigureAwait(false);
+            lock (_writeLock)
+                ColoredConsole.Write("🔽 Download dokončen\t")
+                    .SetColor(ConsoleColor.DarkGreen)
+                    .WriteLine($"{sourcePath}{Symbols.PREVIOUS_COLOR}...");
+
             returnQueue1.Enqueue(sourceClient);
             return;
         }

@@ -82,9 +82,9 @@ public static partial class RequiredParameterFollowsOptional
         }
     }
 
-    [GeneratedRegex(@"function(?!_)\s+?\w+\s*?\((?!\))((.|\n)(?!{|;))*?\$\w+\s?=\s?(.|\n)*?\)(?!,)(?!.*?\))", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"function(?!_)\s+?\w+\s*?\((?!\))((.|\n)(?!{|;))*?\$\w+\s?=\s?(.|\n)*?\)(?!,)(?!.*?\))", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex FunctionWithParametersRegex();
     
-    [GeneratedRegex(@"\s{2,}", RegexOptions.None, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"\s{2,}", RegexOptions.None, matchTimeoutMilliseconds: 66666)]
     private static partial Regex UnnecessarySpacesRegex();
 }

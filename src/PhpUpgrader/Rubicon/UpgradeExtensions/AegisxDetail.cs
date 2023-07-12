@@ -15,6 +15,6 @@ public static partial class AegisxDetail
         return file;
     }
 
-    [GeneratedRegex(@"if\s?\(\$presmeruj == ""NO""\)\s*\{\s*break;", RegexOptions.None, matchTimeoutMilliseconds: 6666)]
+    [GeneratedRegex(@"if\s?\(\$presmeruj == ""NO""\)\s*\{\s*break;", RegexOptions.None, matchTimeoutMilliseconds: 66666)]
     private static partial Regex IfPresmerujRegex();
 }
