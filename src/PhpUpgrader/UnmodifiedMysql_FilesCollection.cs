@@ -14,6 +14,9 @@ public sealed partial class UnmodifiedMysql_FilesCollection : IReadOnlyCollectio
     /// <summary> Zjistí, zda soubor obsahuje funkce "mysql_". A případně jej přidá do kolekce. </summary>
     public void CheckAdd(FileWrapper file)
     {
+        if (!file.Content.Contains("mysql_", StringComparison.OrdinalIgnoreCase))
+            return;
+
         var matches = Mysql_Regex().Matches(file.Content.ToString());
         if (matches.Count > 0)
         {
