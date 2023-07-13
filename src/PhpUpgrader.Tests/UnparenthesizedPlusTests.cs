@@ -23,4 +23,22 @@ public class UnparenthesizedPlusTests : UnitTestWithOutputBase
         _output.WriteLine(updated);
         Assert.True(file.IsModified);
     }
+
+    [Theory]
+    [InlineData("for ($pocet_a = 1; $pocet_a <= 191; ++$poceta) {\r\n                $polozka = \"polozka\".$pocet_a;\r\n                $$polozka = $data[$pocet_a+17];\r\n        }\r\n        fputs($fp, $product_id.\"\\n\");")]
+    public void IgnoresNotValid(string content)
+    {
+        //Arrange
+        var file = new FileWrapper("file.php", content);
+
+        //Act
+        file.UpgradeUnparenthesizedPlus();
+
+        //Assert
+        _output.WriteLine(content);
+        _output.WriteLine("=========================================================");
+        var updated = file.Content.ToString();
+        _output.WriteLine(updated);
+        Assert.False(file.IsModified);
+    }
 }

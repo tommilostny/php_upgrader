@@ -11,7 +11,7 @@ public static partial class AdminerUglyCode
     /// </remarks>
     public static void UpgradeAdminerUglyCode(this RubiconUpgrader upgrader, string filePath)
     {
-        if (!IsAdminer(filePath))
+        if (!AdminerFileNameRegex().IsMatch(filePath))
         {
             return;
         }
@@ -32,7 +32,7 @@ public static partial class AdminerUglyCode
 
     public static FileWrapper UpgradeAdminerMysql(this FileWrapper file)
     {
-        if (IsAdminer(file.Path))
+        if (AdminerFileNameRegex().IsMatch(file.Path))
         {
             file.Content.Replace("mysql_get_server_info($this->_link)", "mysqli_get_server_info($this->_link)")
                         .Replace("mysql_errno($this->_link)", "mysqli_errno($this->_link)")
@@ -49,17 +49,6 @@ public static partial class AdminerUglyCode
         }
         return file;
     }
-
-    [GeneratedRegex(@"adminer.*?\.php", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 666666)]
-    private static partial Regex AdminerFileNameRegex();
-
-    private static bool IsAdminer(string path)
-    {
-        return AdminerFileNameRegex().IsMatch(path);
-    }
-
-    [GeneratedRegex(@"return\s+?mysql_result\((?<result>.+?),(?<row>.+?),(?<field>.+?)\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
-    private static partial Regex ReturnMysqlResultRegex();
 
     private static void UpgradeMysqlResult(FileWrapper file)
     {
@@ -78,9 +67,6 @@ public static partial class AdminerUglyCode
             return $"mysqli_data_seek({result}, {row});\n{ws}mysqli_field_seek({result}, {field});\n{ws}return mysqli_fetch_field({result})";
         }
     }
-
-    [GeneratedRegex(@"(?<func>(mysql_(set_charset|select_db|unbuffered_query))|mysqli_real_escape_string)\s?\((?<var1>.+?)\s?,\s?(?<var2>.+?)\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
-    private static partial Regex MysqlTwoVarsSwitchRegex();
 
     private static void UpgradeMysqlTwoVarsSwitch(FileWrapper file)
     {
@@ -101,9 +87,6 @@ public static partial class AdminerUglyCode
         }
     }
 
-    [GeneratedRegex(@"(?<var1>\$.+?)\s?=\s?mysql_fetch_field\s?\((?<invar1>.+?)\s?,\s?(?<invar2>.+?)\);", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
-    private static partial Regex MysqlFetchFieldRegex();
-
     private static void UpgradeMysqlFetchField(FileWrapper file)
     {
         var content = file.Content.ToString();
@@ -120,4 +103,16 @@ public static partial class AdminerUglyCode
             return $"mysqli_field_seek({invar1}, {invar2});\n                {var1}=mysqli_fetch_field({invar1});";
         }
     }
+
+    [GeneratedRegex(@"(?<var1>\$.+?)\s?=\s?mysql_fetch_field\s?\((?<invar1>.+?)\s?,\s?(?<invar2>.+?)\);", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    private static partial Regex MysqlFetchFieldRegex();
+
+    [GeneratedRegex(@"adminer.*?\.php", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 666666)]
+    private static partial Regex AdminerFileNameRegex();
+
+    [GeneratedRegex(@"return\s+?mysql_result\((?<result>.+?),(?<row>.+?),(?<field>.+?)\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    private static partial Regex ReturnMysqlResultRegex();
+
+    [GeneratedRegex(@"(?<func>(mysql_(set_charset|select_db|unbuffered_query))|mysqli_real_escape_string)\s?\((?<var1>.+?)\s?,\s?(?<var2>.+?)\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    private static partial Regex MysqlTwoVarsSwitchRegex();
 }

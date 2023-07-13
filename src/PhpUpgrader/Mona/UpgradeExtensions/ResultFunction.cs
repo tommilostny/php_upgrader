@@ -2,6 +2,9 @@
 
 public static partial class ResultFunction
 {
+    private static string[] _oldResultFuncs = new[] { "mysql_result", "pg_result" };
+    private static string[] _newNumRowsFuncs = new[] { "mysqli_num_rows", "pg_num_rows" };
+
     /// <summary>
     /// mysql_result >>> mysqli_num_rows + odmazat druhy parametr (vetsinou - , 0) + predelat COUNT(*) na *
     /// </summary>
@@ -13,12 +16,7 @@ public static partial class ResultFunction
             var updated = LoginMysqlResultRegex().Replace(content, "mysqli_field_seek($LoginRS, 0);\n    $field = mysqli_fetch_field($LoginRS);\n    $loginStrGroup = $field->valid;\n    $loginUserid  = $field->user_id;\n    mysqli_free_result($LoginRS);");
             file.Content.Replace(content, updated);
         }
-        var (oldResultFunc, newNumRowsFunc) = upgrader switch
-        {
-            RubiconUpgrader => ("pg_result", "pg_num_rows"),
-            MonaUpgrader => ("mysql_result", "mysqli_num_rows")
-        };
-        if (!file.Content.Contains(oldResultFunc))
+        if (_oldResultFuncs.All(f => !file.Content.Contains(f)))
         {
             return file;
         }
@@ -27,25 +25,31 @@ public static partial class ResultFunction
 
         for (var i = 0; i < lines.Count; i++)
         {
-            if (!(currentLine = lines[i]).Contains(oldResultFunc))
+            for (var j = 0; j < _oldResultFuncs.Length; j++)
             {
-                continue;
-            }
-            const string countFunc = "COUNT(*)";
-            var countIndex = currentLine.IndexOf(countFunc);
-            if (countIndex == -1)
-            {
-                if (upgrader is not RubiconUpgrader)
+                var oldResultFunc = _oldResultFuncs[j];
+                var newNumRowsFunc = _newNumRowsFuncs[j];
+
+                if (!(currentLine = lines[i]).Contains(oldResultFunc))
                 {
-                    file.Warnings.Add($"Neobvyklé použití {oldResultFunc}!");
                     continue;
                 }
-                currentLine.Replace(oldResultFunc, "pg_fetch_result");
-                continue;
+                const string countFunc = "COUNT(*)";
+                var countIndex = currentLine.IndexOf(countFunc);
+                if (countIndex == -1)
+                {
+                    if (upgrader is not RubiconUpgrader)
+                    {
+                        file.Warnings.Add($"Neobvyklé použití {oldResultFunc}!");
+                        continue;
+                    }
+                    currentLine.Replace(oldResultFunc, "pg_fetch_result");
+                    continue;
+                }
+                currentLine.Replace(countFunc, "*", countIndex)
+                           .Replace(", 0", string.Empty)
+                           .Replace(oldResultFunc, newNumRowsFunc);
             }
-            currentLine.Replace(countFunc, "*", countIndex)
-                       .Replace(", 0", string.Empty)
-                       .Replace(oldResultFunc, newNumRowsFunc);
         }
         lines.JoinInto(file.Content);
         return file;
