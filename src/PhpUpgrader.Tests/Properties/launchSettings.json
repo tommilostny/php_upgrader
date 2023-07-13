@@ -1,8 +1,7 @@
 {
   "profiles": {
-    "PhpUpgrader": {
+    "PhpUpgrader.Tests": {
       "commandName": "Project",
-      "commandLineArgs": "--web-name bily-kralik --rubicon",
       "nativeDebugging": true
     }
   }
