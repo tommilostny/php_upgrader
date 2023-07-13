@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Mona.UpgradeExtensions;
+﻿using System.Collections.Immutable;
+
+namespace PhpUpgrader.Mona.UpgradeExtensions;
 
 public static partial class WhileListEach
 {
@@ -36,16 +38,18 @@ public static partial class WhileListEach
         return file;
     }
 
-    private static string WhileListEachToForeach(Match match, out bool lookForEndWhile, out ArrayKeyValAsIndexReplace? arrayKeyVal, in string content, in string? baseDir)
+    private static string WhileListEachToForeach(Match match, out bool lookForEndWhile, out ArrayKeyValAsIndexReplace? arrayKeyVal, string content, string? baseDir)
     {
+        var array = match.Groups["array2"].Value;
+        var keyVal = match.Groups["keyval"];
+        
         //match končí dvojtečkou => hledat endwhile a nahradit jej za endforeach.
         //jinak jsou použity složené závorky, které není třeba upravovat.
         char? colon = (lookForEndWhile = match.Value.EndsWith(':')) ? ':' : null;
-
-        var array = match.Groups["array2"].Value;
         string? inBetween = null;
 
-        if (match.Groups["reset"].Success) //match obsahuje část s funkcí reset, načíst obsah mezi tím a cyklem while.
+        //match obsahuje část s funkcí reset, načíst obsah mezi tím a cyklem while.
+        if (match.Groups["reset"].Success)
         {
             inBetween = match.Groups["in_between"].Value;
             var arrayInReset = match.Groups["array1"].Value;
@@ -54,8 +58,24 @@ public static partial class WhileListEach
                 ? inBetween.TrimStart()
                 : $"reset({arrayInReset});{inBetween}";
         }
-        var keyVal = match.Groups["keyval"];
-        var isUsed = NotIndexVarRegex().Matches(content).Any(x => string.Equals(x.Value, keyVal.Value, StringComparison.Ordinal));
+
+        //index "keyVal" je použit i na jiné proměnné než "array" (např. $SETY["$ids"] a $DATA["$ids"]).
+        var allArrayAccesses = ArrayAccessRegex().Matches(content);
+        var isUsedByOtherVarAsIndex = allArrayAccesses
+            .Where(x => string.Equals(x.Groups["keyval"].Value, keyVal.Value, StringComparison.Ordinal))
+            .All(x =>
+            {
+                var otherArray = x.Groups["array"].Value;
+
+                return string.Equals(otherArray, array, StringComparison.Ordinal)
+                    || Regex.IsMatch(content, @$"each\s?\(\s?\{otherArray}(\)|\sas)",
+                                     RegexOptions.ExplicitCapture, matchTimeout: TimeSpan.FromSeconds(66));
+            });
+
+        //proměnná "keyVal" se používá samostatně (i někde jinde např. v SQL dotazu, nejen jako index do pole).
+        //indikuje jestli se má nahradit $ARRAY["$keyval"] => $keyval (automaticky ne, pokud se používá jako index u jiné proměnné).
+        var isUsed = (allArrayAccesses.Count > 0 && !isUsedByOtherVarAsIndex)
+            || NotIndexVarRegex().Matches(content).Any(x => string.Equals(x.Value, keyVal.Value, StringComparison.Ordinal));
 
         switch ((keyVal.Success, isUsed))
         {
@@ -148,9 +168,12 @@ public static partial class WhileListEach
     [GeneratedRegex(@"while\s?\(.+\)\s*:", RegexOptions.None, matchTimeoutMilliseconds: 66666)]
     private static partial Regex WhileRegex();
 
-    [GeneratedRegex(@"(?<!as\s|[""[]|(list|reset)\s?\(\s?)\$\w+(?![[""'\]\w])", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    [GeneratedRegex(@"(?<!list\s?\(\s?,\s?|as\s|[""[]|(list|reset)\s?\(\s?)\$\w+(?![[""'\]\w])", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex NotIndexVarRegex();
 
     [GeneratedRegex(@"include TML_URL\s?\.\s?(""|')(?<file>.+?)(""|')", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex IncludeRegex();
+
+    [GeneratedRegex(@"(?<array>\$\w+?)\[""(?<keyval>\$\w+?)""\]", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 666666)]
+    private static partial Regex ArrayAccessRegex();
 }
