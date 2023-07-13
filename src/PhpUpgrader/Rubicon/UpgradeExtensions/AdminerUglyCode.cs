@@ -16,6 +16,15 @@ public static partial class AdminerUglyCode
             return;
         }
         BackupManager.CreateBackupFile(filePath, upgrader.BaseFolder, upgrader.WebName, modified: true);
+        var adminerCacheFile = new FileInfo(filePath.Replace(
+            Path.Join(upgrader.BaseFolder, "weby", upgrader.WebName),
+            Path.Join(upgrader.BaseFolder, "weby", _adminer_cache", upgrader.WebName), StringComparison.Ordinal
+        ));
+        if (adminerCacheFile.Exists)
+        {
+            adminerCacheFile.CopyTo(filePath);
+            return;
+        }
         try
         {
             PhpCsFixerWrapper.FormatPhp(filePath);
@@ -28,6 +37,11 @@ public static partial class AdminerUglyCode
             Console.Error.WriteLine(ex.Message);
             Console.ResetColor();
         }
+        if (!adminerCacheFile.Directory.Exists)
+        {
+            Directory.CreateDirectory(adminerCacheFile.DirectoryName);
+        }
+        File.Copy(filePath, adminerCacheFile.FullName);
     }
 
     public static FileWrapper UpgradeAdminerMysql(this FileWrapper file)

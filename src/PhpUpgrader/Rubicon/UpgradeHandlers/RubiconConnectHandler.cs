@@ -182,7 +182,8 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
     /// <summary> Aktualizace hostname z mcrai1 na <see cref="PhpUpgraderBase.Hostname"/>. </summary>
     public static void UpgradeHostname(FileWrapper file, PhpUpgraderBase upgrader)
     {
-        var connBeta = file.Path.EndsWith(Path.Join("Connections", "beta.php"), StringComparison.Ordinal);
+        var connBeta = file.Path.EndsWith(Path.Join("Connections", "beta.php"), StringComparison.Ordinal)
+                    || file.Path.EndsWith("setup.php", StringComparison.Ordinal);
         var moneyXmlInclude = file.Path.EndsWith("MONEY_XML_INCLUDE.php", StringComparison.Ordinal);
         var pListina = file.Path.EndsWith(Path.Join("pdf", "p_listina.php"), StringComparison.Ordinal)
                      || file.Path.EndsWith(Path.Join("pdf", "p_listina_u.php"), StringComparison.Ordinal);
