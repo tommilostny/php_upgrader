@@ -3,7 +3,7 @@
 internal sealed class FtpSynchronizer : FtpBase
 {
     private const byte _nStreams = 8;
-    private const long _fileSizeLimit = 900_000_000;
+    private const long _fileSizeLimit = 600_000_000;
 
     private AsyncFtpClient Client2 { get; set; }
 
@@ -130,7 +130,7 @@ internal sealed class FtpSynchronizer : FtpBase
         await Task.Delay(100).ConfigureAwait(false);
         if (tasks.Exists(t => !t.IsCompleted)) lock (_writeLock)
         {
-            ColoredConsole.SetColor(ConsoleColor.White).WriteLine("🔄️Čeká se na dokončení posledních zbývajících operací...").ResetColor();
+            ColoredConsole.SetColor(ConsoleColor.White).WriteLine("🔄️Čeká se na dokončení posledních operací...").ResetColor();
         }
         await Task.WhenAll(tasks).ConfigureAwait(false);
         ColoredConsole.SetColor(ConsoleColor.Green).WriteLine("✅ Synchronizace FTP serverů dokončena.").WriteLine().ResetColor();
