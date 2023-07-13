@@ -12,7 +12,7 @@ internal sealed class FtpUploader : FtpBase
         await ConnectClientAsync(Client1).ConfigureAwait(false);
 
         ColoredConsole.SetColor(ConsoleColor.Cyan)
-            .WriteLine($"🔄️ Probíhá nahrávání upravených PHP souborů na {Client1.Host}...")
+            .WriteLine($"🔄️Probíhá nahrávání upravených PHP souborů na {Client1.Host}...")
             .ResetColor();
 
         await Client1.UploadDirectory(localFolder: Path.Join(_baseFolder, "weby", _webName),

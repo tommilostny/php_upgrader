@@ -12,7 +12,7 @@ internal sealed class FtpDownloader : FtpBase
         await ConnectClientAsync(Client1).ConfigureAwait(false);
 
         ColoredConsole.SetColor(ConsoleColor.Cyan)
-            .WriteLine($"🔄️ Probíhá stahování PHP souborů z {Client1.Host}...")
+            .WriteLine($"🔄️Probíhá stahování PHP souborů z {Client1.Host}...")
             .ResetColor();
 
         var temporaryPath = Path.Join(Path.GetTempPath(), _path);

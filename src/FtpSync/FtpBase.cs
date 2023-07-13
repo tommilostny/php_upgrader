@@ -58,7 +58,7 @@ internal abstract class FtpBase : IDisposable
     {
         private readonly string? _lineStartStr;
         private readonly FO _operation;
-        private readonly HashSet<string> _paths = new(StringComparer.Ordinal);
+        private string _prevPath = string.Empty;
 
         public FtpProgressReport(FO operation)
         {
@@ -69,11 +69,11 @@ internal abstract class FtpBase : IDisposable
         public void Report(FtpProgress value)
         {
             var path = _operation == FO.Download ? value.RemotePath : value.LocalPath;
-            if (_paths.Contains(path))
-                return;
-
-            _paths.Add(path);
-            ColoredConsole.Write(_lineStartStr).SetColor(ConsoleColor.DarkGray).Write(path).ResetColor().WriteLine("...");
+            if (!string.Equals(_prevPath, path, StringComparison.Ordinal))
+            {
+                _prevPath = path;
+                ColoredConsole.Write(_lineStartStr).SetColor(ConsoleColor.DarkGray).Write(path).ResetColor().WriteLine("...");
+            }
         }
     }
 }
