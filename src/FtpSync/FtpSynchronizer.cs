@@ -112,9 +112,10 @@ internal sealed class FtpSynchronizer : FtpBase
                 tasks.Add(DownloadAndUploadAsync(cl1, cl2, file1.FullName, file1.FullName, dcs, ucs));
             }
         }
+        await Task.Delay(100).ConfigureAwait(false);
         if (tasks.Exists(t => !t.IsCompleted)) lock (_writeLock)
         {
-            ColoredConsole.SetColor(ConsoleColor.White).WriteLine("🔄️ Čeká se na dokončení zbývajícíh operací...").WriteLine().ResetColor();
+            ColoredConsole.SetColor(ConsoleColor.White).WriteLine("🔄️ Čeká se na dokončení zbývajících operací...").WriteLine().ResetColor();
         }
         await Task.WhenAll(tasks).ConfigureAwait(false);
         ColoredConsole.SetColor(ConsoleColor.Green).WriteLine("✅ Synchronizace FTP serverů dokončena.").WriteLine().ResetColor();
