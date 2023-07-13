@@ -50,10 +50,12 @@ public static partial class AdminerUglyCode
         return file;
     }
 
+    [GeneratedRegex(@"adminer.*?\.php", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 666666)]
+    private static partial Regex AdminerFileNameRegex();
+
     private static bool IsAdminer(string path)
     {
-        return path.EndsWith($"{Path.DirectorySeparatorChar}adminer.php", StringComparison.Ordinal)
-            || path.EndsWith(Path.Join("adminer", "index.php"), StringComparison.Ordinal);
+        return AdminerFileNameRegex().IsMatch(path);
     }
 
     [GeneratedRegex(@"return\s+?mysql_result\((?<result>.+?),(?<row>.+?),(?<field>.+?)\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
