@@ -2,8 +2,8 @@
 
 public static partial class ResultFunction
 {
-    private static string[] _oldResultFuncs = new[] { "mysql_result", "pg_result" };
-    private static string[] _newNumRowsFuncs = new[] { "mysqli_num_rows", "pg_num_rows" };
+    private static string[] _oldResultFuncs = { "mysql_result", "pg_result" };
+    private static string[] _newNumRowsFuncs = { "mysqli_num_rows", "pg_num_rows" };
 
     /// <summary>
     /// mysql_result >>> mysqli_num_rows + odmazat druhy parametr (vetsinou - , 0) + predelat COUNT(*) na *

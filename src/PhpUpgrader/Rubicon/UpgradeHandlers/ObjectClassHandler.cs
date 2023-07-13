@@ -2,11 +2,7 @@
 
 public sealed partial class ObjectClassHandler
 {
-    private static readonly string[] _objectFileNames = new[]
-    {
-        "Object.php",
-        "Object.class.php",
-    };
+    private static readonly string[] _objectFileNames = { "Object.php", "Object.class.php" };
     private readonly bool _containsObjectClass;
 
     public ObjectClassHandler(RubiconUpgrader upgrader)

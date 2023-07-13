@@ -18,7 +18,7 @@ public static partial class AdminerUglyCode
         BackupManager.CreateBackupFile(filePath, upgrader.BaseFolder, upgrader.WebName, modified: true);
         var adminerCacheFile = new FileInfo(filePath.Replace(
             Path.Join(upgrader.BaseFolder, "weby", upgrader.WebName),
-            Path.Join(upgrader.BaseFolder, "weby", _adminer_cache", upgrader.WebName), StringComparison.Ordinal
+            Path.Join(upgrader.BaseFolder, "weby", "_adminer_cache", upgrader.WebName), StringComparison.Ordinal
         ));
         if (adminerCacheFile.Exists)
         {
