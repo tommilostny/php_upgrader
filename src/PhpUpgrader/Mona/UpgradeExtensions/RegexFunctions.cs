@@ -37,9 +37,8 @@ public static partial class RegexFunctions
     private static void UpgradeSplit(FileWrapper file, MatchEvaluator evaluator)
     {
         if (!file.Content.Contains("split"))
-        {
             return;
-        }
+
         var javascript = false;
         var lines = file.Content.Split();
 
@@ -79,12 +78,12 @@ public static partial class RegexFunctions
 
         var pregFunction = oldFunc switch
         {
-            var x when x.SequenceEqual("ereg_replace") => "preg_replace",
-            var x when x.SequenceEqual("split") => "preg_split",
+            var x when x is "ereg_replace" => "preg_replace",
+            var x when x is "split" => "preg_split",
             _ => "preg_match"
         };
         var quote = match.ValueSpan[++bracketIndex];
-        char? ignoreFlag = oldFunc.SequenceEqual("eregi") ? 'i' : null;
+        char? ignoreFlag = oldFunc is "eregi" ? 'i' : null;
 
         var evaluator = new MatchEvaluator(PatternDelimiterEscapeEvaluator);
         var pattern = Regex.Replace(match.Value[++bracketIndex..^1],

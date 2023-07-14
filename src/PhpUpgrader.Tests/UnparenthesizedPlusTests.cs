@@ -26,6 +26,7 @@ public class UnparenthesizedPlusTests : UnitTestWithOutputBase
 
     [Theory]
     [InlineData("for ($pocet_a = 1; $pocet_a <= 191; ++$poceta) {\r\n                $polozka = \"polozka\".$pocet_a;\r\n                $$polozka = $data[$pocet_a+17];\r\n        }\r\n        fputs($fp, $product_id.\"\\n\");")]
+    [InlineData("if ($b->selectCommandPrint()) {\r\n                        echo'<fieldset',($_GET[\"modify\"]?'':' class=\"jsonly\"'),'><legend>Změnit</legend><div>\r\n<input type=\"submit\" value=\"Uložit\"',($_GET[\"modify\"]?'':' title=\"'.'Ctrl+klikněte na políčko, které chcete změnit.'.'\"'),'>\r\n</div></fieldset>\r\n<fieldset><legend>Označené <span id=\"selected\"></span></legend><div>\r\n<input type=\"submit\" name=\"edit\" value=\"Upravit\">\r\n<input type=\"submit\" name=\"clone\" value=\"Klonovat\">\r\n<input type=\"submit\" name=\"delete\" value=\"Smazat\">',confirm(),'</div></fieldset>\r\n';\r\n                    }$hd=$b->dumpFormat();\r\n                    foreach ((array)$_GET[\"columns\"]as$e) {\r\n                        if ($e[\"fun\"]) {\r\n                            unset($hd['sql']);\r\n                            break;\r\n                        }")]
     public void IgnoresNotValid(string content)
     {
         //Arrange

@@ -14,7 +14,7 @@ public static partial class UnparenthesizedPlus
         return file;
     }
 
-    [GeneratedRegex(@"(?<p1>""[^"".]*?\.)(?<inConcat>[^("".\n]*?\+[^)"".\n]*?)(?<p2>\.[^""]*?"")", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    [GeneratedRegex(@"(?<p1>(?<='(?=.*?;).*?)""[^"".\r\n]*?\.)(?<inConcat>[^("".\r\n]*?\+[^)"".\r\n]*?)(?<p2>\.[^""\r\n]*?"")", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex PlusInStringConcatRegex();
 
     private static MatchEvaluator _addParenthesesEval = new
