@@ -143,5 +143,13 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
          "//NASTAVENI PRI VYPNUTEM SLIM\r\n\t\tif (!$ms_beta) {\r\n\t\t\t$sql_dotaz = \"SELECT units FROM store_central WHERE product_id = '\".$row_slim_sklad['product_id'].\"' AND product_spec_id = '\".$row_slim_sklad['product_spec_id'].\"' AND dodavatel_id = '213954795'\";\r\n\t\t\t$result = pg_query($sql_dotaz);$row_result = pg_fetch_assoc($result);\r\n\t\t\t$mnozstvi_central_value = $row_result['units'];\r\n\t\t}"),
         ("//NASTAVENI PRI VYPNUTEM SLIM\n\t\tif (!$ms_beta) {\n\t\t\t$sql_dotaz = \"SELECT units FROM store_central WHERE product_id = '\".$row_slim_sklad['product_id'].\"' AND product_spec_id = '\".$row_slim_sklad['product_spec_id'].\"' AND dodavatel_id = '213954795'\";\n\t\t\t$result = pg_query($sql_dotaz);$row_result = pg_fetch_assoc($result);\n\t\t\t$mnozstvi_central_value = $row_result['units'];\n\t\t",
          "//NASTAVENI PRI VYPNUTEM SLIM\n\t\tif (!$ms_beta) {\n\t\t\t$sql_dotaz = \"SELECT units FROM store_central WHERE product_id = '\".$row_slim_sklad['product_id'].\"' AND product_spec_id = '\".$row_slim_sklad['product_spec_id'].\"' AND dodavatel_id = '213954795'\";\n\t\t\t$result = pg_query($sql_dotaz);$row_result = pg_fetch_assoc($result);\n\t\t\t$mnozstvi_central_value = $row_result['units'];\n\t\t}"),
+        ("setcookie($UserCookie, \"\", time()-3600);",
+         "setcookie(isset($UserCookie) ? $UserCookie : $_SESSION[\"user\"], \"\", time()-3600);"),
+        ("if ($url != \"0\" AND modul != \"obsah\") {",
+         "if ($url != \"0\" AND $modul != \"obsah\") {"),
+        ("<?php $type = pg_fetch_row(pg_query(\"SELECT style_name FROM product JOIN style_info USING(style_id) WHERE product_id = '\".$_GET['idp'].\"' \"))[0] ?>",
+         "<?php if(isset($_GET['idp'])) $type = pg_fetch_row(pg_query(\"SELECT style_name FROM product JOIN style_info USING(style_id) WHERE product_id = '\".$_GET['idp'].\"' \"))[0]; ?>"),
+        ("return $idx1 == $idx2 ? 0 : $idx1 < $idx2 ? -1 : 1;",
+         "return $idx1 == $idx2 ? 0 : ($idx1 < $idx2 ? -1 : 1);"),
     };
 }
