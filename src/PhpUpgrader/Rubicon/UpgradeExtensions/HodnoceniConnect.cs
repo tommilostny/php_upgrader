@@ -10,9 +10,9 @@ public static partial class HodnoceniConnect
     {
         if (AllUpgradableFiles().Any(f => file.Path.EndsWith(f, StringComparison.Ordinal)))
         {
-            var (connVar, dbVar) = HodnoceniConnFiles().Any(f => file.Path.EndsWith(f, StringComparison.Ordinal))
-                                 ? ("hodnoceni_conn", "database_hodnoceni_conn") 
-                                 : ("beta_hod", "dtb_hod");
+            var (connVar, dbVar) = GetConnectAndDbVariables(file);
+            if (connVar is null || dbVar is null)
+                return file;
 
             file.Content.Replace($"mysql_select_db(${dbVar}, ${connVar})", $"mysqli_select_db(${connVar}, ${dbVar})")
                         .Replace($"mysql_errno(${connVar})", $"mysqli_errno(${connVar})")
@@ -36,16 +36,33 @@ public static partial class HodnoceniConnect
         return file;
     }
 
+    private static (string, string) GetConnectAndDbVariables(FileWrapper file)
+    {
+        if (HodnoceniConnFiles().Any(f => file.Path.EndsWith(f, StringComparison.Ordinal)))
+        {
+            return ("hodnoceni_conn", "database_hodnoceni_conn");
+        }
+        if (BetaHodFiles().Any(f => file.Path.EndsWith(f, StringComparison.Ordinal)))
+        {
+            return ("beta_hod", "dtb_hod");
+        }
+        if (MyBetaFiles().Any(f => file.Path.EndsWith(f, StringComparison.Ordinal)))
+        {
+            return ("mybeta", "database_beta");
+        }
+        return (null, null);
+    }
+
     private static IEnumerable<string> AllUpgradableFiles()
     {
         foreach (var file in HodnoceniConnFiles())
-        {
             yield return file;
-        }
+
         foreach (var file in BetaHodFiles())
-        {
             yield return file;
-        }
+
+        foreach (var file in MyBetaFiles())
+            yield return file;
     }
 
     private static IEnumerable<string> HodnoceniConnFiles()
@@ -59,6 +76,11 @@ public static partial class HodnoceniConnect
         yield return Path.Join("pdf", "p_listina.php");
         yield return Path.Join("pdf", "p_listina_u.php");
         yield return Path.Join("rss", "hodnoceni.php");
+    }
+
+    private static IEnumerable<string> MyBetaFiles()
+    {
+        yield return Path.Join("helios", "helios_export.php");
     }
 
     [GeneratedRegex(@"mysqli_query\(\$beta,.+;", RegexOptions.None, matchTimeoutMilliseconds: 66666)]

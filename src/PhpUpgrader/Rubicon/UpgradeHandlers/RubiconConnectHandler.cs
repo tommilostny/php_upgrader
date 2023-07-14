@@ -57,37 +57,43 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         {
             return true;
         }
-        if (!file.Path.Contains(Path.Join(upgrader.WebName, "Connections"), StringComparison.Ordinal))
+        if (file.Path.Contains(Path.Join(upgrader.WebName, "Connections"), StringComparison.Ordinal)
+            || (file.Path.Contains(Path.Join("monamy"), StringComparison.Ordinal)
+                && file.Path.EndsWith(Path.Join("connect", "connection.php"), StringComparison.Ordinal)))
         {
-            return false;
+            var content = file.Content.ToString();
+            var varName = LoadConnectionVariableName(content);
+            if (varName is null) //nemáme název proměnné? skončit.
+            {
+                return false;
+            }
+            //načíst původní dotazy z konce souboru.
+            var mysqliQueries = LoadMysqlQueries(content, varName);
+
+            //uložit si původní hodnoty parametrů
+            var backup = (upgrader.ConnectionFile, upgrader.Database, upgrader.Username, upgrader.Password, upgrader.Hostname);
+            upgrader.ConnectionFile = file.Path.Split(Path.DirectorySeparatorChar)[^1];
+
+            if (string.Equals(upgrader.Hostname, "localhost", StringComparison.Ordinal))
+            {
+                upgrader.Database = upgrader.Username = upgrader.Password = null;
+            }
+            if (file.Content.Contains("rdesign.cybersales.cz") || file.Content.Contains("mcrai2.vshosting.cz"))
+            {
+                upgrader.Hostname = null;
+            }
+            //aktualizovat stejně jako connect pro RS Mona.
+            base.UpgradeConnect(file, upgrader);
+
+            //načíst zálohu hodnot.
+            (upgrader.ConnectionFile, upgrader.Database, upgrader.Username, upgrader.Password, upgrader.Hostname) = backup;
+            (upgrader as MonaUpgrader)?.RenameVar(file.Content, varName);
+
+            //nakonec přidat aktualizované původní dotazy.
+            file.Content.Replace($"mysqli_query(${varName}, \"SET CHARACTER SET utf8\");", mysqliQueries);
+            return true;
         }
-        var content = file.Content.ToString();
-        var varName = LoadConnectionVariableName(content);
-        if (varName is null) //nemáme název proměnné? skončit.
-        {
-            return false;
-        }
-        //načíst původní dotazy z konce souboru.
-        var mysqliQueries = LoadMysqlQueries(content, varName);
-
-        //uložit si původní hodnoty parametrů
-        var backup = (upgrader.ConnectionFile, upgrader.Database, upgrader.Username, upgrader.Password);
-        upgrader.ConnectionFile = file.Path.Split(Path.DirectorySeparatorChar)[^1];
-
-        if (string.Equals(upgrader.Hostname, "localhost", StringComparison.Ordinal))
-        {
-            upgrader.Database = upgrader.Username = upgrader.Password = null;
-        }
-        //aktualizovat stejně jako connect pro RS Mona.
-        base.UpgradeConnect(file, upgrader);
-
-        //načíst zálohu hodnot.
-        (upgrader.ConnectionFile, upgrader.Database, upgrader.Username, upgrader.Password) = backup;
-        (upgrader as MonaUpgrader)?.RenameVar(file.Content, varName);
-
-        //nakonec přidat aktualizované původní dotazy.
-        file.Content.Replace($"mysqli_query(${varName}, \"SET CHARACTER SET utf8\");", mysqliQueries);
-        return true;
+        return false;
     }
 
     private static string? LoadConnectionVariableName(string content)
@@ -281,6 +287,14 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
                 file.Content.Replace("echo \"ERROR\";", "echo \"ERROR\";\nexit();");
             }
             (upgrader as MonaUpgrader).RenameVar(file.Content, "DBLink");
+            return;
+        }
+        if (file.Path.EndsWith("helios_export.php", StringComparison.Ordinal))
+        {
+            file.Content.Replace("@$mybeta = mysql_pconnect($hostname_beta, $username_beta, $password_beta) or die (\"Nelze navázat spojení s databází.\");",
+                                 "$mybeta = mysqli_connect($hostname_beta, $username_beta, $password_beta);")
+                        .Replace("@mysql_Select_DB($database_beta) or die (\"Nenalezena databáze\");",
+                                 "mysqli_select_db($mybeta, $database_beta);\n\nif(mysqli_connect_errno())\n  {\n    printf(\"Nelze navázat spojení s databazí: %s\\n\", mysqli_connect_error());\n    exit();\n  }");
         }
     }
     

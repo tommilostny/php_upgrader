@@ -49,7 +49,7 @@ public partial class MonaConnectHandler : IConnectHandler
         {
             var line = lines[i];
             var lookupStartPosition = 0;
-            var commentStartPosition = line.IndexOf("*/");
+            var commentStartPosition = line.IndexOf("/*");
             if (commentStartPosition != -1)
             {
                 lookupStartPosition = commentStartPosition + 2;
@@ -61,6 +61,7 @@ public partial class MonaConnectHandler : IConnectHandler
                 lookupStartPosition = commentEndPosition + 2;
                 inComment = false;
             }
+            Console.WriteLine($"{commentStartPosition}\t{commentEndPosition}{inComment}\t{line}");
             if (!inComment)
             {
                 var lookupChars = new Lazy<string>(() => line.ToString()[lookupStartPosition..]);

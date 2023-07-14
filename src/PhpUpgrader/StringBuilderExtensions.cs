@@ -142,7 +142,7 @@ internal static class StringBuilderExtensions
             }
             if (++j == value.Length)
             {
-                return i - j;
+                return i - j + 1;
             }
         }
         return -1;

@@ -120,7 +120,7 @@ public static partial class RegexFunctions
     [GeneratedRegex(@"ereg_replace\s?\(\s?\$", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex EregReplaceVarRegex();
     
-    [GeneratedRegex(@"\n[^//]{0,236}ereg[^(;"",]*\(", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    [GeneratedRegex(@"\n[^//]{0,236}(?<!mb_)ereg[^(;"",]*\(", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex UncommentedEregRegex();
     
     [GeneratedRegex(@"\bsplit\s?\('(\\'|[^'])*'", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
