@@ -22,7 +22,7 @@ public static partial class AdminerUglyCode
         ));
         if (adminerCacheFile.Exists)
         {
-            adminerCacheFile.CopyTo(filePath);
+            adminerCacheFile.CopyTo(filePath, overwrite: true);
             return;
         }
         try
