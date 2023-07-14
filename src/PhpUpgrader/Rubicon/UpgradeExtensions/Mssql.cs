@@ -14,8 +14,13 @@ public static class Mssql
     /// 3. Zkopírovat soubor mssql_overwrite.php ze složky important.<br />
     /// 4. Profit.
     /// </remarks>
-    public static FileWrapper UpgradeMssql(this FileWrapper file, RubiconUpgrader upgrader)
+    public static FileWrapper UpgradeMssql(this FileWrapper file)
     {
+        if (file.Content.Contains("$ms_hostname_beta = \"90.182.11.147\";"))
+        {
+            file.Content.Replace("$ms_hostname_beta = \"90.182.11.147\";", "/* $ms_hostname_beta = \"90.182.11.147\";");
+            file.Content.Append("*/?>");
+        }
         return file;
     }
 }

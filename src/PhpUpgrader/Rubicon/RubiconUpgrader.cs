@@ -50,7 +50,8 @@ public sealed class RubiconUpgrader : MonaUpgrader
                     .UpgradePclZipLib()
                     .UpgradeAdminerMysql()
                     .UpgradeNajdiVDb()
-                    .UpgradeUnparenthesizedPlus();
+                    .UpgradeUnparenthesizedPlus()
+                    .UpgradeMssql();
                 return file;
         }
     }
