@@ -153,5 +153,7 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
          "return $idx1 == $idx2 ? 0 : ($idx1 < $idx2 ? -1 : 1);"),
         ("function getmediaurl ($mediaid,$mediastyle,$category)",
          "function getmediaurl($mediaid, $mediastyle, $category = false)"),
+        ("function getmediaurl_3d ($mediaid,$mediastyle,$category)",
+         "function getmediaurl_3d($mediaid, $mediastyle, $category = false)"),
     };
 }
