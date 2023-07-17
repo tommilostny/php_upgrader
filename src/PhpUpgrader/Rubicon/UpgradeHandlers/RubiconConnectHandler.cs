@@ -194,7 +194,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         var pListina = file.Path.EndsWith(Path.Join("pdf", "p_listina.php"), StringComparison.Ordinal)
                      || file.Path.EndsWith(Path.Join("pdf", "p_listina_u.php"), StringComparison.Ordinal);
 
-        foreach (var hn in HostnamesToReplace())
+        foreach (var hn in HostNamesToReplace())
         {
             if (string.Equals(upgrader.Hostname, hn, StringComparison.Ordinal))
             {
@@ -220,7 +220,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
     }
 
     /// <summary> Hodnoty <b>$hostname_beta</b>, které nahradit <see cref="PhpUpgraderBase.Hostname"/>. </summary>
-    private static IEnumerable<string> HostnamesToReplace()
+    private static IEnumerable<string> HostNamesToReplace()
     {
         yield return "93.185.102.228";
         yield return "mcrai.vshosting.cz";
@@ -294,7 +294,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
             file.Content.Replace("@$mybeta = mysql_pconnect($hostname_beta, $username_beta, $password_beta) or die (\"Nelze navázat spojení s databází.\");",
                                  "$mybeta = mysqli_connect($hostname_beta, $username_beta, $password_beta);")
                         .Replace("@mysql_Select_DB($database_beta) or die (\"Nenalezena databáze\");",
-                                 "mysqli_select_db($mybeta, $database_beta);\n\nif(mysqli_connect_errno())\n  {\n    printf(\"Nelze navázat spojení s databazí: %s\\n\", mysqli_connect_error());\n    exit();\n  }");
+                                 "mysqli_select_db($mybeta, $database_beta);\n\nif(mysqli_connect_errno())\n  {\n    printf(\"Nelze navázat spojení s databází: %s\\n\", mysqli_connect_error());\n    exit();\n  }");
         }
     }
     
@@ -310,10 +310,10 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         }
         if (file.Path.EndsWith(Path.Join("rss", "_off", "rss_shop-sport.php"), StringComparison.Ordinal))
         {
-            file.Content.Replace("@$db = mysql_pconnect($hostname_beta, $username_beta, $password_beta) or die (\"Nelze navázat spojení s databazí\");",
+            file.Content.Replace("@$db = mysql_pconnect($hostname_beta, $username_beta, $password_beta) or die (\"Nelze navázat spojení s databází\");",
                                  "$beta = mysqli_connect($hostname_beta, $username_beta, $password_beta);")
                         .Replace("@mysql_Select_DB($database_beta) or die (\"Nenalezena databáze\");",
-                                 "mysqli_select_db($beta, $database_beta);\r\n\r\nif(mysqli_connect_errno())\r\n  {\r\n    printf(\"Nelze navázat spojení s databazí: %s\\n\", mysqli_connect_error());\r\n    exit();\r\n  }");
+                                 "mysqli_select_db($beta, $database_beta);\r\n\r\nif(mysqli_connect_errno())\r\n  {\r\n    printf(\"Nelze navázat spojení s databází: %s\\n\", mysqli_connect_error());\r\n    exit();\r\n  }");
             (upgrader as MonaUpgrader).RenameVar(file.Content, newVarName: "beta", oldVarName: "db");
         }
     }

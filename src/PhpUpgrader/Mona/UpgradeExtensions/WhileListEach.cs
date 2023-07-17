@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace PhpUpgrader.Mona.UpgradeExtensions;
+﻿namespace PhpUpgrader.Mona.UpgradeExtensions;
 
 public static partial class WhileListEach
 {
@@ -104,7 +102,7 @@ public static partial class WhileListEach
         var templatesPath = Path.Join(baseDir, "templates");
         if (baseDir is null || !Directory.Exists(templatesPath))
             return;
-        //najít všechny includy
+        //najít všechny includes
         var includes = IncludeRegex().Matches(content).Select(x => x.Groups["file"].Value).ToArray();
         //TML_URL: složka "templates/{něco}" + soubor "/product/product_prehled_buy.php"
         foreach (var templateDir in Directory.EnumerateDirectories(templatesPath))

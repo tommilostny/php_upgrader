@@ -173,5 +173,11 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("function getmediaurl_3d ($mediaid,$mediastyle,$category)",
          "function getmediaurl_3d($mediaid, $mediastyle, $category = false)"
         ),
+        ("function getGlassDesc($art_no, $language, $table_name = NULL)\r\n{\r\n    if ($table_name == NULL){\r\n        break;",
+         "function getGlassDesc($art_no, $language, $table_name = NULL)\r\n{\r\n    if ($table_name == NULL){\r\n        return;"
+        ),
+        ("function getGlassDesc($art_no, $language, $table_name = NULL)\n{\n    if ($table_name == NULL){\n        break;",
+         "function getGlassDesc($art_no, $language, $table_name = NULL)\n{\n    if ($table_name == NULL){\n        return;"
+        ),
     };
 }
