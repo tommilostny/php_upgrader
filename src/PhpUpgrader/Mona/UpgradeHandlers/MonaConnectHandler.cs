@@ -61,7 +61,6 @@ public partial class MonaConnectHandler : IConnectHandler
                 lookupStartPosition = commentEndPosition + 2;
                 inComment = false;
             }
-            Console.WriteLine($"{commentStartPosition}\t{commentEndPosition}{inComment}\t{line}");
             if (!inComment)
             {
                 var lookupChars = new Lazy<string>(() => line.ToString()[lookupStartPosition..]);

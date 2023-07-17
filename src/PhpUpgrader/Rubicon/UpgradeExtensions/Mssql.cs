@@ -16,10 +16,9 @@ public static class Mssql
     /// </remarks>
     public static FileWrapper UpgradeMssql(this FileWrapper file)
     {
-        if (file.Content.Contains("$ms_hostname_beta = \"90.182.11.147\";"))
+        if (file.Content.Contains("$ms_hostname_beta ="))
         {
-            file.Content.Replace("$ms_hostname_beta = \"90.182.11.147\";", "/* $ms_hostname_beta = \"90.182.11.147\";");
-            file.Content.Append("*/?>");
+            file.Content.Replace("$ms_hostname_beta =", "return;\t$ms_hostname_beta =");
         }
         return file;
     }
