@@ -12,6 +12,7 @@ public sealed class McraiFtp
 
     private readonly string? _path;
     private readonly string? _webName;
+    private readonly long _maxFileSize;
     private readonly string _baseFolder;
     private readonly string _host;
     private readonly LoginParser _login;
@@ -20,6 +21,7 @@ public sealed class McraiFtp
 
     public McraiFtp(string? username, string? password,
                     string? path, string? webName,
+                    long maxFileSize,
                     string baseFolder = DefaultBaseFolder,
                     string host = DefaultHostname1)
     {
@@ -34,12 +36,13 @@ public sealed class McraiFtp
         }
         _path = path;
         _webName = webName;
+        _maxFileSize = maxFileSize;
         _baseFolder = baseFolder;
         _host = host;
     }
 
-    public McraiFtp(string webName, string baseFolder, string host = DefaultHostname1)
-        : this(username: null, password: null, path: null, webName, baseFolder, host)
+    public McraiFtp(string webName, string baseFolder, long maxFileSize, string host = DefaultHostname1)
+        : this(username: null, password: null, path: null, webName, maxFileSize, baseFolder, host)
     {
     }
 
@@ -48,7 +51,8 @@ public sealed class McraiFtp
         await CheckCredsAndRunTask(async () =>
         {
             using var synchronizer = new FtpSynchronizer(RemotePath, _baseFolder, _webName!, _host,
-                                                         upgradeServerHostname, _login.Username!, _login.Password!);
+                                                         upgradeServerHostname, _login.Username!, _login.Password!,
+                                                         _maxFileSize);
             await synchronizer.SynchronizeAsync().ConfigureAwait(false);
         }).ConfigureAwait(false);
     }

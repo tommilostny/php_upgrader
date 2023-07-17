@@ -1,16 +1,19 @@
-﻿namespace FtpSync;
+﻿using System.Globalization;
+
+namespace FtpSync;
 
 internal sealed class FtpSynchronizer : FtpBase
 {
     private const byte _nStreams = 8;
-    private const long _fileSizeLimit = 600_000_000;
+    private readonly long _fileSizeLimit;
 
     private AsyncFtpClient Client2 { get; set; }
 
-    public FtpSynchronizer(string path, string baseFolder, string webName, string server1, string server2, string username, string password)
+    public FtpSynchronizer(string path, string baseFolder, string webName, string server1, string server2, string username, string password, long maxFileSize)
         : base(path, baseFolder, webName, server1, username, password)
     {
         Client2 = new AsyncFtpClient(server2, Client1.Credentials, config: Client1.Config);
+        _fileSizeLimit = maxFileSize;
     }
 
     public override void Dispose()
@@ -53,41 +56,46 @@ internal sealed class FtpSynchronizer : FtpBase
 
     private async Task<ImmutableList<FtpListItem>> GetFileListingAsync(AsyncFtpClient client, bool sort, bool reportBigFiles)
     {
+        var checkLimit = _fileSizeLimit > 0;
         lock (_writeLock)
             ColoredConsole.SetColor(ConsoleColor.DarkYellow).Write(client.Host)
-                .ResetColor().WriteLine($": Získávání informací o souborech {_path}...");
+                .ResetColor()
+                .Write($": Získávání informací o souborech {_path}")
+                .WriteLine(checkLimit && reportBigFiles
+                    ? $" (limit velikosti souboru: {_fileSizeLimit.ToString(CultureInfo.InvariantCulture)} B)..." : "...");
 
         var ftpListItems = await client.GetListing(_path, FtpListOption.Recursive | FtpListOption.Modify).ConfigureAwait(false);
-        var files = ftpListItems.Where(f => f.Type == FtpObjectType.File && f.Size < _fileSizeLimit);
-
-        if (sort) files = files.OrderBy(f => f.FullName, StringComparer.Ordinal);
-
+        var files = ftpListItems.Where(f => f.Type == FtpObjectType.File && (!checkLimit || f.Size < _fileSizeLimit));
+        if (sort)
+        {
+            files = files.OrderBy(f => f.FullName, StringComparer.Ordinal);
+        }
         var filesList = files.ToImmutableList();
         lock (_writeLock)
             ColoredConsole.SetColor(ConsoleColor.Yellow).Write(client.Host)
                 .ResetColor().WriteLine($": Nalezeno celkem {filesList.Count} souborů.");
 
-        if (reportBigFiles)
+        if (checkLimit && reportBigFiles)
         {
             var bigFiles = ftpListItems
                 .Where(f => f.Type == FtpObjectType.File && f.Size >= _fileSizeLimit)
                 .Select(f => (name: f.FullName, size: _ToGigaBytes(f.Size)))
-                .ToImmutableList();
+                .ToArray();
 
-            if (bigFiles.Count > 0) lock (_writeLock)
+            if (bigFiles.Length > 0) lock (_writeLock)
             {
                 ColoredConsole.SetColor(ConsoleColor.Yellow).Write(client.Host)
-                    .ResetColor().WriteLine($": Nalezeno celkem {bigFiles.Count} souborů větších než {_ToGigaBytes(_fileSizeLimit)} GB.");
+                    .ResetColor().WriteLine($": Nalezeno celkem {bigFiles.Length} souborů větších než {_ToGigaBytes(_fileSizeLimit)} GB.");
                 foreach (var (name, size) in bigFiles)
                 {
-                    ColoredConsole.SetColor(ConsoleColor.White).Write($"{size} GB\t")
+                    ColoredConsole.SetColor(ConsoleColor.White).Write($"{size}\tGB\t")
                                   .ResetColor().WriteLine(name);
                 }
             }
         }    
         return filesList;
 
-        static double _ToGigaBytes(long size) => size / 1_000_000_000.0;
+        static double _ToGigaBytes(long size) => size / 1024.0 / 1024.0 / 1024.0;
     }
 
     private async Task SynchronizeFilesAsync(ImmutableList<FtpListItem> files1, ImmutableList<FtpListItem> files2)
@@ -180,7 +188,7 @@ internal sealed class FtpSynchronizer : FtpBase
             {
                 stream.Seek(0, SeekOrigin.Begin);
                 lock (_writeLock)
-                    ColoredConsole.WriteLine($"🔼 Probíhá upload\t{ConsoleColor.DarkGray}{destinationPath}{Symbols.PREVIOUS_COLOR}...");
+                    ColoredConsole.WriteLine($"🔼 Probíhá upload\t{nameof(ConsoleColor.DarkGray)}{destinationPath}{Symbols.PREVIOUS_COLOR}...");
 
                 var status = await destinationClient.UploadStream(stream, destinationPath, createRemoteDir: true).ConfigureAwait(false);
                 if (status.IsSuccess())
@@ -196,7 +204,7 @@ internal sealed class FtpSynchronizer : FtpBase
             if (ex.InnerException?.Message?.Contains("another read", StringComparison.Ordinal) is true)
                 retries++;
             else if (retries == 1) lock (_writeLock)
-                ColoredConsole.WriteLineError($"{ConsoleColor.Red}❌ {sourcePath}: {ex.Message}")
+                ColoredConsole.WriteLineError($"{nameof(ConsoleColor.Red)}❌ {sourcePath}: {ex.Message}")
                     .WriteLineError($"   {ex.InnerException?.Message}").ResetColor();
         }
         if (--retries > 0)
