@@ -1,10 +1,10 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeExtensions;
 
-public static partial class FunkceHomeBasicFunkce_NajdiVDb
+public static partial class NajdiVDb
 {
     public static FileWrapper UpgradeNajdiVDb(this FileWrapper file)
     {
-        if (file.Path.EndsWith(Path.Join("funkce", "home", "basic_funkce.php"), StringComparison.Ordinal))
+        if (file.Content.Contains("function najdi_v_db"))
         {
             var content = file.Content.ToString();
             var updated = VysledekRegex().Replace(content, _wrapInIfEval);
