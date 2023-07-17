@@ -1,6 +1,4 @@
-﻿using System.Globalization;
-
-namespace FtpSync;
+﻿namespace FtpSync;
 
 internal sealed class FtpSynchronizer : FtpBase
 {
