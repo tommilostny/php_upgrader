@@ -151,5 +151,7 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
          "<?php if(isset($_GET['idp'])) $type = pg_fetch_row(pg_query(\"SELECT style_name FROM product JOIN style_info USING(style_id) WHERE product_id = '\".$_GET['idp'].\"' \"))[0]; ?>"),
         ("return $idx1 == $idx2 ? 0 : $idx1 < $idx2 ? -1 : 1;",
          "return $idx1 == $idx2 ? 0 : ($idx1 < $idx2 ? -1 : 1);"),
+        ("function getmediaurl ($mediaid,$mediastyle,$category)",
+         "function getmediaurl($mediaid, $mediastyle, $category = false)"),
     };
 }
