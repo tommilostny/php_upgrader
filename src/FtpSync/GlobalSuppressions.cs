@@ -7,4 +7,3 @@ using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Performance", "MA0052:Replace constant Enum.ToString with nameof", Justification = "ColoredConsole", Scope = "member", Target = "~M:FtpSync.FtpSynchronizer.SynchronizeAsync~System.Threading.Tasks.Task")]
 [assembly: SuppressMessage("Performance", "MA0052:Replace constant Enum.ToString with nameof", Justification = "ColoredConsole", Scope = "member", Target = "~M:FtpSync.FtpBase.ConnectClientAsync(FluentFTP.AsyncFtpClient)~System.Threading.Tasks.Task")]
-[assembly: SuppressMessage("Performance", "MA0052:Replace constant Enum.ToString with nameof", Justification = "ColoredConsole", Scope = "member", Target = "~M:FtpSync.FtpSynchronizer.DownloadAndUploadAsync(FluentFTP.AsyncFtpClient,FluentFTP.AsyncFtpClient,System.String,System.String,System.Int32)~System.Threading.Tasks.Task")]

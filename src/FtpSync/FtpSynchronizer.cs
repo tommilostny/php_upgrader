@@ -186,7 +186,7 @@ internal sealed class FtpSynchronizer : FtpBase
             {
                 stream.Seek(0, SeekOrigin.Begin);
                 lock (_writeLock)
-                    ColoredConsole.WriteLine($"🔼 Probíhá upload\t{nameof(ConsoleColor.DarkGray)}{destinationPath}{Symbols.PREVIOUS_COLOR}...");
+                    ColoredConsole.WriteLine($"🔼 Probíhá upload\t{ConsoleColor.DarkGray}{destinationPath}{Symbols.PREVIOUS_COLOR}...");
 
                 var status = await destinationClient.UploadStream(stream, destinationPath, createRemoteDir: true).ConfigureAwait(false);
                 if (status.IsSuccess())
@@ -202,7 +202,7 @@ internal sealed class FtpSynchronizer : FtpBase
             if (ex.InnerException?.Message?.Contains("another read", StringComparison.Ordinal) is true)
                 retries++;
             else if (retries == 1) lock (_writeLock)
-                ColoredConsole.WriteLineError($"{nameof(ConsoleColor.Red)}❌ {sourcePath}: {ex.Message}")
+                ColoredConsole.WriteLineError($"{ConsoleColor.Red}❌ {sourcePath}: {ex.Message}")
                     .WriteLineError($"   {ex.InnerException?.Message}").ResetColor();
         }
         if (--retries > 0)
