@@ -113,9 +113,17 @@ public static partial class WhileListEach
                 if (File.Exists(path))
                 {
                     var includeFileContent = new StringBuilder(File.ReadAllText(path));
-
                     arrayKeyVal.Upgrade(includeFileContent);
-                    File.WriteAllText(path, includeFileContent.ToString());
+                    do try
+                    {
+                        File.WriteAllText(path, includeFileContent.ToString());
+                        break;
+                    }
+                    catch (IOException)
+                    {
+                        Task.Delay(100).GetAwaiter().GetResult();
+                    }
+                    while (true);
                 }
             }
         }
