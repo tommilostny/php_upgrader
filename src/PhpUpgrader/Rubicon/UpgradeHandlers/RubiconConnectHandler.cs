@@ -147,9 +147,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         var content = file.Content.ToString();
         var evaluator = new MatchEvaluator(_NewCredentialAndComment);
 
-        var updated = SetupConnectRegex().Replace(content, evaluator);
-
-        file.Content.Replace(content, updated)
+        file.Content.Replace(SetupConnectRegex().Replace(content, evaluator))
                     .Replace("////", "//");
 
         if (!usernameLoaded)
@@ -239,13 +237,14 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         {
             var content = file.Content.ToString();
             var evaluator = new MatchEvaluator(_DCMatchEvaluator);
-            var updated = Regex.Replace(content,
-                                        @$"( |\t)*Database::connect\('{oldHost}'.+\);",
-                                        evaluator,
-                                        RegexOptions.None,
-                                        TimeSpan.FromSeconds(4));
-
-            file.Content.Replace(content, updated);
+            file.Content.Replace(
+                Regex.Replace(content,
+                              @$"( |\t)*Database::connect\('{oldHost}'.+\);",
+                              evaluator,
+                              RegexOptions.None,
+                              TimeSpan.FromSeconds(4)
+                )
+            );
         }
 
         string _DCMatchEvaluator(Match match)

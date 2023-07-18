@@ -6,9 +6,12 @@ public static partial class NajdiVDb
     {
         if (file.Content.Contains("function najdi_v_db"))
         {
-            var content = file.Content.ToString();
-            var updated = VysledekRegex().Replace(content, _wrapInIfEval);
-            file.Content.Replace(content, updated);
+            file.Content.Replace(
+                VysledekRegex().Replace(
+                    file.Content.ToString(),
+                    _wrapInIfEval
+                )
+            );
         }
         return file;
     }

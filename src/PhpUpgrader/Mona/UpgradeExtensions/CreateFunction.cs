@@ -7,9 +7,8 @@ public static partial class CreateFunction
         if (file.Content.Contains("create_function"))
         {
             var content = file.Content.ToString();
-            (var updated, _) = UpgradeCreateFunction(content, file.Warnings);
-
-            file.Content.Replace(content, updated);
+            var (updated, _) = UpgradeCreateFunction(content, file.Warnings);
+            file.Content.Replace(updated);
         }
         return file;
     }
@@ -160,11 +159,21 @@ public static partial class CreateFunction
     {
         if (string.Equals(match.Groups["quote"].Value, "\"", StringComparison.Ordinal))
         {
-            var evaluator = new MatchEvaluator(DoubleQuoteStringCodeEvaluator);
-            code = UnescapedCharactersRegex().Replace(code, evaluator);
+            code = UnescapedCharactersRegex().Replace(code, _doubleQuoteStringCodeEvaluator);
         }
         return code;
     }
+
+    private static readonly MatchEvaluator _doubleQuoteStringCodeEvaluator = new(match =>
+    {
+        if (match.Value.Length == 2) //escapovaný znak
+        {
+            return match.Value[1].ToString();
+        }
+        //proměnná, jejíž string reprezentace měla být v jednoduchých uvozovkách
+        //'$var' >> "$var" zajistí, že její hodnota bude v tomto stringu.
+        return match.Value.Replace('\'', '"');
+    });
 
     private static string UpgradeConcats(string code)
     {
@@ -187,17 +196,6 @@ public static partial class CreateFunction
         {
             return $". \"{inside(match)}\" .";
         }
-    }
-
-    private static string DoubleQuoteStringCodeEvaluator(Match match)
-    {
-        if (match.Value.Length == 2) //escapovaný znak
-        {
-            return match.Value[1].ToString();
-        }
-        //proměnná, jejíž string reprezentace měla být v jednoduchých uvozovkách
-        //'$var' >> "$var" zajistí, že její hodnota bude v tomto stringu.
-        return match.Value.Replace('\'', '"');
     }
 
     [GeneratedRegex(@"@?create_function\s?\(\s*'(?<args>.*)'\s?,\s*(?<quote>'|"")(?<code>(.|\n)*?(;|\}|\s))\k<quote>\s*\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]

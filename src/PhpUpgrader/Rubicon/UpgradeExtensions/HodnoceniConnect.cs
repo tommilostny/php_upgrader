@@ -2,6 +2,9 @@
 
 public static partial class HodnoceniConnect
 {
+    private static string? _connVar = null;
+    private static string? _dbVar = null;
+
     /// <summary>
     /// Soubory pdf/p_listina.php, pdf/p_listina.php a rss/hodnoceni.php
     /// obsahují stejný kód využívající mysqli s proměnnou $beta_hod nebo $hodnoceni_conn.
@@ -10,33 +13,30 @@ public static partial class HodnoceniConnect
     {
         if (AllUpgradableFiles().Any(f => file.Path.EndsWith(f, StringComparison.Ordinal)))
         {
-            var (connVar, dbVar) = GetConnectAndDbVariables(file);
-            if (connVar is null || dbVar is null)
-                return file;
-
-            file.Content.Replace($"mysql_select_db(${dbVar}, ${connVar})", $"mysqli_select_db(${connVar}, ${dbVar})")
-                        .Replace($"mysql_errno(${connVar})", $"mysqli_errno(${connVar})")
-                        .Replace($"mysql_error(${connVar})", $"mysqli_error(${connVar})")
-                        .Replace("mysqli_error($beta)", $"mysqli_error(${connVar})");
-
-            var evaluator = new MatchEvaluator(_MysqliQueryEvaluator);
-            var content = file.Content.ToString();
-            var updated = MysqliQueryBetaRegex().Replace(content, evaluator);
-            file.Content.Replace(content, updated);
-
-            string _MysqliQueryEvaluator(Match match)
+            (_connVar, _dbVar) = GetConnectAndDbVariables(file);
+            if (_connVar is not null && _dbVar is not null)
             {
-                return new StringBuilder(match.Value)
-                    .Replace("mysqli_query($beta,", $"mysqli_query(${connVar},")
-                    .Replace($", ${connVar})", ")")
-                    .Replace($",${connVar})", ")")
-                    .ToString();
+                file.Content.Replace($"mysql_select_db(${_dbVar}, ${_connVar})", $"mysqli_select_db(${_connVar}, ${_dbVar})")
+                            .Replace($"mysql_errno(${_connVar})", $"mysqli_errno(${_connVar})")
+                            .Replace($"mysql_error(${_connVar})", $"mysqli_error(${_connVar})")
+                            .Replace("mysqli_error($beta)", $"mysqli_error(${_connVar})")
+                            .Replace(MysqliQueryBetaRegex().Replace(file.Content.ToString(), _mysqliQueryEvaluator));
             }
+            _connVar = _dbVar = null;
         }
         return file;
     }
 
-    private static (string, string) GetConnectAndDbVariables(FileWrapper file)
+    private static readonly MatchEvaluator _mysqliQueryEvaluator = new(match =>
+    {
+        return new StringBuilder(match.Value)
+            .Replace("mysqli_query($beta,", $"mysqli_query(${_connVar},")
+            .Replace($", ${_connVar})", ")")
+            .Replace($",${_connVar})", ")")
+            .ToString();
+    });
+
+    private static (string?, string?) GetConnectAndDbVariables(FileWrapper file)
     {
         if (HodnoceniConnFiles().Any(f => file.Path.EndsWith(f, StringComparison.Ordinal)))
         {

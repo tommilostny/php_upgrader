@@ -9,7 +9,7 @@ public static partial class GetMagicQuotesGpc
     /// </summary>
     public static FileWrapper UpgradeGetMagicQuotesGpc(this FileWrapper file)
     {
-        Lazy<string> contentStr = new(() => file.Content.ToString());
+        Lazy<string> contentStr = new(file.Content.ToString);
         switch (file.Path)
         {
             case var p when p.EndsWith(Path.Join("piwika", "libs", "HTML", "QuickForm2.php"), StringComparison.Ordinal):
@@ -26,22 +26,19 @@ public static partial class GetMagicQuotesGpc
             return file;
         }
         //Zpracování výrazu s ternárním operátorem.
-        var evaluator = new MatchEvaluator(GetMagicQuotesGpcTernaryEvaluator);
-        var updated = GetMagicQuotesTernaryRegex().Replace(contentStr.Value, evaluator);
+        var updated = GetMagicQuotesTernaryRegex().Replace(contentStr.Value, _getMagicQuotesGpcTernaryEvaluator);
         //Pokud výraz s get_magic_quotes_gpc nebyl aktualizován, jedná se pravděpodobně o variantu v if.
         if (!Is_GMQG_Commented(updated))
         {
             //nahradit podmínku v if za if (false) nebo if (true), podle pravdivostní hodnoty volání get_magic_quotes_gpc.
-            evaluator = new MatchEvaluator(GetMagicQuotesGpcIfElseEvaluator);
-            updated = GetMagicQuotesIfRegex().Replace(updated, evaluator);
-
+            updated = GetMagicQuotesIfRegex().Replace(updated, _getMagicQuotesGpcIfElseEvaluator);
             if (!Is_GMQG_Commented(updated))
             {
                 file.Warnings.Add("Nezakomentovaná funkce get_magic_quotes_...");
                 return file;
             }
         }
-        file.Content.Replace(contentStr.Value, updated);
+        file.Content.Replace(updated);
         return file;
     }
 
@@ -50,7 +47,7 @@ public static partial class GetMagicQuotesGpc
         return GetMagicQuotesCommentedRegex().IsMatch(str);
     }
 
-    private static string GetMagicQuotesGpcTernaryEvaluator(Match match)
+    private static readonly MatchEvaluator _getMagicQuotesGpcTernaryEvaluator = new(match =>
     {
         var colonIndex = match.ValueSpan.LastIndexOf(':') + 1;
         var afterColon = match.ValueSpan[colonIndex..];
@@ -70,15 +67,15 @@ public static partial class GetMagicQuotesGpc
             : match.ValueSpan[..colonIndex];
 
         return $"/*{beforeColon}*/{afterColon}";
-    }
+    });
 
-    private static string GetMagicQuotesGpcIfElseEvaluator(Match match)
+    private static readonly MatchEvaluator _getMagicQuotesGpcIfElseEvaluator = new(match =>
     {
         var negation = match.Groups["neg"];
         var booleanValue = negation.Success.ToString().ToLower(CultureInfo.InvariantCulture);
 
         return $"if ({booleanValue} /*{negation}{match.Groups["fn"]}()*/)";
-    }
+    });
 
     [GeneratedRegex(@"\(?!?get_magic_quotes_(gpc|runtime)\(\)\)?\s{0,5}\?\s{0,5}(/\*.*\*/)?\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))\s{0,5}:\s{0,5}(\$\w+(\[('|"")\w+('|"")\])?|(add|strip)slashes\(\$\w+(\[('|"")\w+('|"")\])?\))", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex GetMagicQuotesTernaryRegex();

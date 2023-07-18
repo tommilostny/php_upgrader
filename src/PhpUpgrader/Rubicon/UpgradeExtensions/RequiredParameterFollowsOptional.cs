@@ -9,15 +9,17 @@ public static partial class RequiredParameterFollowsOptional
     {
         if (file.Content.Contains("function"))
         {
-            var evaluator = new MatchEvaluator(StartOptionalParamsToRequired);
-            var content = file.Content.ToString();
-            var updated = FunctionWithParametersRegex().Replace(content, evaluator);
-            file.Content.Replace(content, updated);
+            file.Content.Replace(
+                FunctionWithParametersRegex().Replace(
+                    file.Content.ToString(),
+                    _startOptionalParamsToRequired
+                )
+            );
         }
         return file;
     }
 
-    private static string StartOptionalParamsToRequired(Match match)
+    private static readonly MatchEvaluator _startOptionalParamsToRequired = new(match =>
     {
         IEnumerable<Match> parameters = Regex.Matches(match.Value, @"(\w+?\s+?)?&?\$\w+\s*?(?<defval>=\s*?(((?<strq>""|').*?\k<strq>)|(array\s?\(.*?\))|([^,'""(]*?)))?\s*?(,|\))", RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase | RegexOptions.Compiled, TimeSpan.FromMilliseconds(6666));
         var updatedParameters = new Stack<string>();
@@ -57,7 +59,7 @@ public static partial class RequiredParameterFollowsOptional
         //Sestavení výsledné hlavičky funkce.
         //Začátek až do první závorky + aktualizované parametry uložené v zásobníku.
         return BuildFunctionHeader(match, updatedParameters);
-    }
+    });
 
     private static string BuildFunctionHeader(Match match, Stack<string> parameters)
     {

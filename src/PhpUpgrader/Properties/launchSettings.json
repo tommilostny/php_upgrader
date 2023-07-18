@@ -2,7 +2,7 @@
   "profiles": {
     "PhpUpgrader": {
       "commandName": "Project",
-      "commandLineArgs": "--web-name bily-kralik --rubicon",
+      "commandLineArgs": "--use-backup --ignore-ftp --dont-upload --rubicon --web-name skate-praha",
       "nativeDebugging": true
     }
   }

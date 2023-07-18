@@ -5,15 +5,16 @@ public static partial class DuplicateArrayKeys
     /// <summary> PHPStan: Array has 2 duplicate keys </summary>
     public static FileWrapper UpgradeDuplicateArrayKeys(this FileWrapper file)
     {
-        var content = file.Content.ToString();
-        var evaluator = new MatchEvaluator(ArrayKeyValueEvaluator);
-        var updated = DupKeysArrayRegex().Replace(content, evaluator);
-
-        file.Content.Replace(content, updated);
+        file.Content.Replace(
+            DupKeysArrayRegex().Replace(
+                file.Content.ToString(),
+                _arrayKeyValueEvaluator
+            )
+        );
         return file;
     }
 
-    private static string ArrayKeyValueEvaluator(Match match)
+    private static readonly MatchEvaluator _arrayKeyValueEvaluator = new(match =>
     {
         var keys = new HashSet<string>(StringComparer.Ordinal);
         var kvExpressions = new Stack<string>();
@@ -33,7 +34,7 @@ public static partial class DuplicateArrayKeys
         }
         var bracketIndex = match.ValueSpan.IndexOf('(') + 1;
         return $"{match.ValueSpan[..bracketIndex]}{string.Join(", ", kvExpressions)})";
-    }
+    });
 
     [GeneratedRegex(@"\$(cz_)?osetreni(_url)?\s?=\s?array\((""([^""]|\\""){0,9}""\s?=>\s?""([^""]|\\""){0,9}"",? ?)+\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex DupKeysArrayRegex();

@@ -15,20 +15,22 @@ public static partial class Implode
     {
         if (file.Content.Contains("implode"))
         {
-            var evaluator = new MatchEvaluator(ImplodeParamSwitch);
-            var content = file.Content.ToString();
-            var updated = OldImplodeRegex().Replace(content, evaluator);
-            file.Content.Replace(content, updated);
+            file.Content.Replace(
+                OldImplodeRegex().Replace(
+                    file.Content.ToString(),
+                    _implodeParamSwitchEvaluator
+                )
+            );
         }
         return file;
     }
 
-    private static string ImplodeParamSwitch(Match match)
+    private static readonly MatchEvaluator _implodeParamSwitchEvaluator = new(match =>
     {
         var array = match.Groups["array"];
         var separatorStr = match.Groups["sep"];
         return $"implode({separatorStr}, {array})";
-    }
+    });
 
     [GeneratedRegex(@"implode\s?\(\s*?(?<array>\$\w+)\s*?,\s*?(?<sep>(?<quote>(""|')).*?(?<!\\)\k<quote>)\s*?\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex OldImplodeRegex();

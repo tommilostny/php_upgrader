@@ -8,16 +8,17 @@ public static partial class CurlyBraceIndexing
     /// </summary>
     public static FileWrapper UpgradeCurlyBraceIndexing(this FileWrapper file)
     {
-        var content = file.Content.ToString();
-        var evaluator = new MatchEvaluator(m => CurlyToSquareBracketsIndex(m, content));
-
-        var updated = CurlyBraceAccessRegex().Replace(content, evaluator);
-
-        file.Content.Replace(content, updated);
+        _content = file.Content.ToString();
+        file.Content.Replace(
+            CurlyBraceAccessRegex().Replace(_content, _curlyToSquareBracketEvaluator)
+        );
+        _content = null;
         return file;
     }
 
-    private static string CurlyToSquareBracketsIndex(Match match, string source)
+    private static string? _content = null;
+
+    private static readonly MatchEvaluator _curlyToSquareBracketEvaluator = new(match =>
     {
         var index = match.Groups["index"].Value;
         var array = match.Groups["array"].Value.TrimEnd();
@@ -26,12 +27,12 @@ public static partial class CurlyBraceIndexing
         if (string.IsNullOrWhiteSpace(index)
             || array.EndsWith("->", StringComparison.Ordinal)
             || array.EndsWith("FROM", StringComparison.OrdinalIgnoreCase)
-            || MatchInString(match, source))
+            || MatchInString(match, _content))
         {
             return match.Value;
         }
         return $"{array}[{index}]";
-    }
+    });
 
     private static bool MatchInString(Match match, string source)
     {

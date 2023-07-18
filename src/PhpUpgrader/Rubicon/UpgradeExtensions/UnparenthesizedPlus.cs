@@ -8,9 +8,12 @@ public static partial class UnparenthesizedPlus
     /// </summary>
     public static FileWrapper UpgradeUnparenthesizedPlus(this FileWrapper file)
     {
-        var content = file.Content.ToString();
-        var updated = PlusInStringConcatRegex().Replace(content, _addParenthesesEval);
-        file.Content.Replace(content, updated);
+        file.Content.Replace(
+            PlusInStringConcatRegex().Replace(
+                file.Content.ToString(),
+                _addParenthesesEval
+            )
+        );
         return file;
     }
 

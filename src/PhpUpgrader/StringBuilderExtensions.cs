@@ -46,7 +46,7 @@ internal static class StringBuilderExtensions
     /// do seznamu <seealso cref="StringBuilder"/>ů dle daného oddělovače.
     /// </summary>
     /// <param name="source">Řetězec k rozdělení.</param>
-    /// <param name="delimiter">Oddělovací znak v řezězci.</param>
+    /// <param name="delimiter">Oddělovací znak v řetězci.</param>
     /// <returns>Rozdělený seznam nových instancí <seealso cref="StringBuilder"/>.</returns>
     internal static List<StringBuilder> Split(this StringBuilder source, char delimiter = '\n')
     {
@@ -176,5 +176,15 @@ internal static class StringBuilderExtensions
     internal static StringBuilder Replace(this StringBuilder source, string oldValue, string? newValue, int startIndex)
     {
         return source.Replace(oldValue, newValue, startIndex, count: source.Length - startIndex);
+    }
+
+    /// <summary>
+    /// Změní obsah instance <seealso cref="StringBuilder"/> na daný řetězec.
+    /// </summary>
+    /// <param name="source"> Řetězec, kde se nahrazuje. </param>
+    /// <param name="value"> Hodnota, kterou se nahrazuje. </param>
+    internal static StringBuilder Replace(this StringBuilder source, string value)
+    {
+        return source.Clear().Append(value);
     }
 }

@@ -6,16 +6,16 @@ public static partial class IfEmpty
     /// <remarks> if ($id != "" || $id != null) </remarks>
     public static FileWrapper UpgradeIfEmpty(this FileWrapper file)
     {
-        var evaluator = new MatchEvaluator(IfEmptyMatchEvaluator);
-        var content = file.Content.ToString();
-
-        var updated = AlwaysFalseIfRegex().Replace(content, evaluator);
-
-        file.Content.Replace(content, updated);
+        file.Content.Replace(
+            AlwaysFalseIfRegex().Replace(file.Content.ToString(), _ifEmptyMatchEvaluator)
+        );
         return file;
     }
 
-    private static string IfEmptyMatchEvaluator(Match match)
+    [GeneratedRegex(@"if\s?\(\$\w+\s?!=\s?""""\s?\|\|\s?\$\w+\s?!=\s?null\)", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 66666)]
+    private static partial Regex AlwaysFalseIfRegex();
+
+    private static readonly MatchEvaluator _ifEmptyMatchEvaluator = new(match =>
     {
         var varStartIndex = match.ValueSpan.IndexOf('$');
         var varEndIndex = match.ValueSpan.IndexOf('!') - 1;
@@ -26,8 +26,5 @@ public static partial class IfEmpty
         var varValue2 = match.ValueSpan[varStartIndex..varEndIndex];
 
         return varValue1.SequenceEqual(varValue2) ? $"if (!empty({varValue1}))" : match.Value;
-    }
-
-    [GeneratedRegex(@"if\s?\(\$\w+\s?!=\s?""""\s?\|\|\s?\$\w+\s?!=\s?null\)", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 66666)]
-    private static partial Regex AlwaysFalseIfRegex();
+    });
 }

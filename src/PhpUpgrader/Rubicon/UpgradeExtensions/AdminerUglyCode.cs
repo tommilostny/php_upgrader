@@ -64,59 +64,58 @@ public static partial class AdminerUglyCode
         return file;
     }
 
-    private static void UpgradeMysqlResult(FileWrapper file)
+    private static void UpgradeMysqlResult(FileWrapper file) => file.Content.Replace
+    (
+        ReturnMysqlResultRegex().Replace(
+            file.Content.ToString(),
+            _mysqlResultEvaluator)
+    );
+
+    private static void UpgradeMysqlTwoVarsSwitch(FileWrapper file) => file.Content.Replace
+    (
+        MysqlTwoVarsSwitchRegex().Replace(
+            file.Content.ToString(),
+            _mysqlTwoVarsSwitchEvaluator
+        )
+    );
+
+    private static void UpgradeMysqlFetchField(FileWrapper file) => file.Content.Replace
+    (
+        MysqlFetchFieldRegex().Replace(
+            file.Content.ToString(),
+            _mysqlFetchFieldEvaluator
+        )
+    );
+
+    private static readonly MatchEvaluator _mysqlResultEvaluator = new(match =>
     {
-        var content = file.Content.ToString();
-        var evaluator = new MatchEvaluator(MysqlResultEvaluator);
-        var updated = ReturnMysqlResultRegex().Replace(content, evaluator);
-        file.Content.Replace(content, updated);
+        var result = match.Groups["result"].Value.Trim();
+        var row = match.Groups["row"].Value.Trim();
+        var field = match.Groups["field"].Value.Trim();
+        const string ws = "                ";
 
-        static string MysqlResultEvaluator(Match match)
-        {
-            var result = match.Groups["result"].Value.Trim();
-            var row = match.Groups["row"].Value.Trim();
-            var field = match.Groups["field"].Value.Trim();
-            const string ws = "                ";
+        return $"mysqli_data_seek({result}, {row});\n{ws}mysqli_field_seek({result}, {field});\n{ws}return mysqli_fetch_field({result})";
+    });
 
-            return $"mysqli_data_seek({result}, {row});\n{ws}mysqli_field_seek({result}, {field});\n{ws}return mysqli_fetch_field({result})";
-        }
-    }
-
-    private static void UpgradeMysqlTwoVarsSwitch(FileWrapper file)
+    private static readonly MatchEvaluator _mysqlTwoVarsSwitchEvaluator = new(match =>
     {
-        var content = file.Content.ToString();
-        var evaluator = new MatchEvaluator(MysqlTwoVarsSwitchEvaluator);
-        var updated = MysqlTwoVarsSwitchRegex().Replace(content, evaluator);
-        file.Content.Replace(content, updated);
+        var func = match.Groups["func"].Value.Replace("mysql_", "mysqli_", StringComparison.Ordinal);
+        var var1 = match.Groups["var1"].Value.Trim();
+        var var2 = match.Groups["var2"].Value.Trim();
 
-        static string MysqlTwoVarsSwitchEvaluator(Match match)
-        {
-            var func = match.Groups["func"].Value.Replace("mysql_", "mysqli_", StringComparison.Ordinal);
-            var var1 = match.Groups["var1"].Value.Trim();
-            var var2 = match.Groups["var2"].Value.Trim();
+        return string.Equals(func, "mysqli_unbuffered_query", StringComparison.Ordinal)
+            ? $"mysqli_query({var2}, {var1}, MYSQLI_USE_RESULT)"
+            : $"{func}({var2}, {var1})";
+    });
 
-            return string.Equals(func, "mysqli_unbuffered_query", StringComparison.Ordinal)
-                ? $"mysqli_query({var2}, {var1}, MYSQLI_USE_RESULT)"
-                : $"{func}({var2}, {var1})";
-        }
-    }
-
-    private static void UpgradeMysqlFetchField(FileWrapper file)
+    private static readonly MatchEvaluator _mysqlFetchFieldEvaluator = new(match =>
     {
-        var content = file.Content.ToString();
-        var evaluator = new MatchEvaluator(MysqlFetchFieldEvaluator);
-        var updated = MysqlFetchFieldRegex().Replace(content, evaluator);
-        file.Content.Replace(content, updated);
+        var var1 = match.Groups["var1"].Value.Trim();
+        var invar1 = match.Groups["invar1"].Value.Trim();
+        var invar2 = match.Groups["invar2"].Value.Trim();
 
-        static string MysqlFetchFieldEvaluator(Match match)
-        {
-            var var1 = match.Groups["var1"].Value.Trim();
-            var invar1 = match.Groups["invar1"].Value.Trim();
-            var invar2 = match.Groups["invar2"].Value.Trim();
-
-            return $"mysqli_field_seek({invar1}, {invar2});\n                {var1}=mysqli_fetch_field({invar1});";
-        }
-    }
+        return $"mysqli_field_seek({invar1}, {invar2});\n                {var1}=mysqli_fetch_field({invar1});";
+    });
 
     [GeneratedRegex(@"(?<var1>\$.+?)\s?=\s?mysql_fetch_field\s?\((?<invar1>.+?)\s?,\s?(?<invar2>.+?)\);", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex MysqlFetchFieldRegex();

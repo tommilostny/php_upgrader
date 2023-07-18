@@ -12,9 +12,12 @@ public static partial class ResultFunction
     {
         if (file.Path.EndsWith(Path.Join("funkce", "secure", "login.php"), StringComparison.Ordinal))
         {
-            var content = file.Content.ToString();
-            var updated = LoginMysqlResultRegex().Replace(content, "mysqli_field_seek($LoginRS, 0);\n    $field = mysqli_fetch_field($LoginRS);\n    $loginStrGroup = $field->valid;\n    $loginUserid  = $field->user_id;\n    mysqli_free_result($LoginRS);");
-            file.Content.Replace(content, updated);
+            file.Content.Replace(
+                LoginMysqlResultRegex().Replace(
+                    file.Content.ToString(),
+                    "mysqli_field_seek($LoginRS, 0);\n    $field = mysqli_fetch_field($LoginRS);\n    $loginStrGroup = $field->valid;\n    $loginUserid  = $field->user_id;\n    mysqli_free_result($LoginRS);"
+                )
+            );
         }
         if (_oldResultFuncs.All(f => !file.Content.Contains(f)))
         {

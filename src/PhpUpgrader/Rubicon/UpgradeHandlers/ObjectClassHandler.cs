@@ -24,11 +24,12 @@ public sealed partial class ObjectClassHandler
         {
             if (IsObjectFile(file.Path, out var objectFileName) && file.Content.Contains("class Object"))
             {
-                file.Content.Replace("class Object", "class ObjectBase");
-                var content = file.Content.ToString();
-                var updated = ObjectOldConstructorRegex().Replace(content, "function ObjectBase(");
-
-                file.Content.Replace(content, updated);
+                file.Content.Replace("class Object", "class ObjectBase")
+                            .Replace(
+                                ObjectOldConstructorRegex().Replace(
+                                    file.Content.ToString(),
+                                    "function ObjectBase("
+                ));
                 file.MoveOnSavePath = file.Path.Replace(objectFileName, $"{Path.DirectorySeparatorChar}ObjectBase.php", StringComparison.Ordinal);
             }
             foreach (var of in _objectFileNames)

@@ -14,20 +14,22 @@ public static partial class NullByteInRegex
     {
         if (file.Content.Contains("preg_"))
         {
-            var evaluator = new MatchEvaluator(NullBytesInPatternEvaluator);
-            var content = file.Content.ToString();
-            var updated = NullByteInPatternRegex().Replace(content, evaluator);
-            file.Content.Replace(content, updated);
+            file.Content.Replace(
+                NullByteInPatternRegex().Replace(
+                    file.Content.ToString(),
+                    _nullBytesInPatternEvaluator
+                )
+            );
         }
         return file;
     }
 
-    private static string NullBytesInPatternEvaluator(Match match)
+    private static readonly MatchEvaluator _nullBytesInPatternEvaluator = new(match =>
     {
         var pattern = match.Groups["pattern"];
         var updatedPattern = $"'{pattern.ValueSpan[1..^2]}'";
         return match.Value.Replace(pattern.Value, updatedPattern, StringComparison.Ordinal);
-    }
+    });
 
     [GeneratedRegex(@"preg_.*?(?<pattern>"".*\\((0(?![1-7]){1,3})|(\\x0(?![1-9a-fA-F]){1,2})).*"")\s?,", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex NullByteInPatternRegex();

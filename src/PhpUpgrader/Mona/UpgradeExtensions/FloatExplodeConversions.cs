@@ -7,9 +7,12 @@ public static partial class FloatExplodeConversions
     {
         if (file.Content.Contains("$stranka_end = explode"))
         {
-            var content = file.Content.ToString();
-            var updated = FloatExplodeRegex().Replace(content, "\n$stranka_end = (int)($stranka_pocet / 10);\n$stranka_end = $stranka_end * 10 + 10;");
-            file.Content.Replace(content, updated);
+            file.Content.Replace(
+                FloatExplodeRegex().Replace(
+                    file.Content.ToString(),
+                    "\n$stranka_end = (int)($stranka_pocet / 10);\n$stranka_end = $stranka_end * 10 + 10;"
+                )
+            );
         }
         return file;
     }
