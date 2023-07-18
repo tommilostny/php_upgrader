@@ -110,21 +110,31 @@ public static partial class WhileListEach
             foreach (var includeFile in includes)
             {
                 var path = Path.Join(templateDir, includeFile);
-                if (File.Exists(path))
+                if (!File.Exists(path))
+                    continue;
+
+                StringBuilder? includeFileContent = null;
+                do try
                 {
-                    var includeFileContent = new StringBuilder(File.ReadAllText(path));
-                    arrayKeyVal.Upgrade(includeFileContent);
-                    do try
-                    {
-                        File.WriteAllText(path, includeFileContent.ToString());
-                        break;
-                    }
-                    catch (IOException)
-                    {
-                        Task.Delay(100).GetAwaiter().GetResult();
-                    }
-                    while (true);
+                    includeFileContent = new(File.ReadAllText(path));
                 }
+                catch (IOException)
+                {
+                    Task.Delay(100).GetAwaiter().GetResult();
+                }
+                while (includeFileContent is null);
+                arrayKeyVal.Upgrade(includeFileContent);
+                var written = false;
+                do try
+                {
+                    File.WriteAllText(path, includeFileContent.ToString());
+                    written = true;
+                }
+                catch (IOException)
+                {
+                    Task.Delay(100).GetAwaiter().GetResult();
+                }
+                while (!written);
             }
         }
     }
