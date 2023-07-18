@@ -179,5 +179,11 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("function getGlassDesc($art_no, $language, $table_name = NULL)\n{\n    if ($table_name == NULL){\n        break;",
          "function getGlassDesc($art_no, $language, $table_name = NULL)\n{\n    if ($table_name == NULL){\n        return;"
         ),
+        ("if (isset($_GET['search_value']))  $search_value = $_GET['search_value'];\r\nelse $search_value = '';\r\nif (count($search_value) > 1) $search_value2['value'] = $search_value['value'];\r\nelse $search_value2 = $search_value;",
+         "if (isset($_GET['search_value'])) {\r\n    $search_value = $_GET['search_value'];\r\n    if (count($search_value) > 1) {\r\n        $search_value2['value'] = $search_value['value'];\r\n    } else {\r\n        $search_value2 = $search_value;\r\n    }\r\n} else {\r\n    $search_value2 = $search_value = '';\r\n}"
+        ),
+        ("if (isset($_GET['search_value']))  $search_value = $_GET['search_value'];\nelse $search_value = '';\nif (count($search_value) > 1) $search_value2['value'] = $search_value['value'];\nelse $search_value2 = $search_value;",
+         "if (isset($_GET['search_value'])) {\n    $search_value = $_GET['search_value'];\n    if (count($search_value) > 1) {\n        $search_value2['value'] = $search_value['value'];\n    } else {\n        $search_value2 = $search_value;\n    }\n} else {\n    $search_value2 = $search_value = '';\n}"
+        ),
     };
 }
