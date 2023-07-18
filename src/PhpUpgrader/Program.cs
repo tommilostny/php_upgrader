@@ -115,6 +115,16 @@ static class Program
 
         if (!ignoreConnect)
         {
+            if (db is null || user is null || password is null)
+            {
+                var dbLogins = new DbLoginParser(_baseFolder, _webName);
+                if (dbLogins.Success)
+                {
+                    db = dbLogins.Database;
+                    user = dbLogins.UserName;
+                    password = dbLogins.Password;
+                }
+            }
             upgrader.Database = db;
             upgrader.Username = user;
             upgrader.Password = password;
