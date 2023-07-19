@@ -331,7 +331,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : null;
     }
 
-    [GeneratedRegex(@"\$setup_connect.*= ?"".*"";", RegexOptions.None, matchTimeoutMilliseconds: 66666)]
+    [GeneratedRegex(@"\$setup_connect.*?=\s?(""|').*?(""|');", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex SetupConnectRegex();
     
     [GeneratedRegex(@"mysql_query\("".+""\);", RegexOptions.None, matchTimeoutMilliseconds: 66666)]

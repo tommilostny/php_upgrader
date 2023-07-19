@@ -121,4 +121,4 @@ await PhpUpgrader.Program.Main
     dontUpload: !config.UploadFtp,
     useBackup: config.UseBackup,
     ftpMaxMb: config.MaxFileSizeMB
-);
+).ConfigureAwait(false);
