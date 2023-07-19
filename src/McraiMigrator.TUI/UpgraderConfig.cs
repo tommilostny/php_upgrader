@@ -26,6 +26,12 @@ internal struct UpgraderConfig
 
     public string Host { get; set; } = "localhost";
 
+    public string Database { get; set; } = string.Empty;
+
+    public string UserName { get; set; } = string.Empty;
+
+    public string Password { get; set; } = string.Empty;
+
     public bool RunPhpUpgrade { get; set; } = true;
 
     public static UpgraderConfig Load()

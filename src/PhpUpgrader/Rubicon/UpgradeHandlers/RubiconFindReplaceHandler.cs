@@ -185,5 +185,8 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("if (isset($_GET['search_value']))  $search_value = $_GET['search_value'];\nelse $search_value = '';\nif (count($search_value) > 1) $search_value2['value'] = $search_value['value'];\nelse $search_value2 = $search_value;",
          "if (isset($_GET['search_value'])) {\n    $search_value = $_GET['search_value'];\n    if (count($search_value) > 1) {\n        $search_value2['value'] = $search_value['value'];\n    } else {\n        $search_value2 = $search_value;\n    }\n} else {\n    $search_value2 = $search_value = '';\n}"
         ),
+        ("echo $query_data = \"\tSELECT * from aegisx_produkty_all WHERE language_id = 1",
+         "$query_data = \"\tSELECT * from aegisx_produkty_all WHERE language_id = 1"
+        ),
     };
 }

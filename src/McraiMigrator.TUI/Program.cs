@@ -23,10 +23,14 @@ do
                 $"Rubicon: {config.Rubicon.ToYesNo()}",
                 $"Maximální velikost souboru pro FTP synchronizaci: [white]{config.MaxFileSizeMB} MB[/]",
                 $"Host: [white]{config.Host}[/]",
+                $"Databáze: [white]{config.Database}[/]",
+                $"Uživatel: [white]{config.UserName}[/]",
+                $"Heslo: [white]{config.Password}[/]",
                 $"Výchozí složka: [white]{config.BaseFolder}[/]",
                 $"Spustit PHP upgrade: {config.RunPhpUpgrade.ToYesNo()}",
                 $"Použít zálohu: {config.UseBackup.ToYesNo()}",
-                "[blue]Reset hodnot[/]",
+                "[blue]Reset údajů k databázi[/]",
+                "[blue]Reset všech hodnot[/]",
                 "[red]Ukončit[/]",
             }));
 
@@ -83,6 +87,24 @@ do
         Console.SetCursorPosition(0, Console.CursorTop - 1);
         continue;
     }
+    if (option.StartsWith("Databáze:", StringComparison.Ordinal))
+    {
+        config.Database = AnsiConsole.Ask<string>("Zadejte databázi: ");
+        Console.SetCursorPosition(0, Console.CursorTop - 1);
+        continue;
+    }
+    if (option.StartsWith("Uživatel:", StringComparison.Ordinal))
+    {
+        config.UserName = AnsiConsole.Ask<string>("Zadejte uživatele: ");
+        Console.SetCursorPosition(0, Console.CursorTop - 1);
+        continue;
+    }
+    if (option.StartsWith("Heslo:", StringComparison.Ordinal))
+    {
+        config.Password = AnsiConsole.Ask<string>("Zadejte heslo: ");
+        Console.SetCursorPosition(0, Console.CursorTop - 1);
+        continue;
+    }
     if (option.StartsWith("Spustit PHP upgrade:", StringComparison.Ordinal))
     {
         config.RunPhpUpgrade = !config.RunPhpUpgrade;
@@ -93,9 +115,18 @@ do
         config.UseBackup = !config.UseBackup;
         continue;
     }
-    if (option.StartsWith("[blue]Reset hodnot[/]", StringComparison.Ordinal))
+    if (option.StartsWith("[blue]Reset všech hodnot[/]", StringComparison.Ordinal))
     {
         config = new();
+        config.Save();
+        continue;
+    }
+    if (option.StartsWith("[blue]Reset údajů k databázi[/]", StringComparison.Ordinal))
+    {
+        config.Host = "localhost";
+        config.Database = string.Empty;
+        config.UserName = string.Empty;
+        config.Password = string.Empty;
         config.Save();
         continue;
     }
@@ -114,11 +145,17 @@ Console.WriteLine();
 await PhpUpgrader.Program.Main
 (
     webName: new[] { config.WebName },
+    baseFolder: config.BaseFolder,
     rubicon: config.Rubicon,
     checkFtp: config.SyncFtp,
     ignoreFtp: !config.SyncFtp,
     upload: config.UploadFtp,
     dontUpload: !config.UploadFtp,
     useBackup: config.UseBackup,
-    ftpMaxMb: config.MaxFileSizeMB
-).ConfigureAwait(false);
+    ftpMaxMb: config.MaxFileSizeMB,
+    host: config.Host,
+    db: string.IsNullOrWhiteSpace(config.Database) ? null : config.Database,
+    user: string.IsNullOrWhiteSpace(config.UserName) ? null : config.UserName,
+    password: string.IsNullOrWhiteSpace(config.Password) ? null : config.Password
+)
+.ConfigureAwait(false);
