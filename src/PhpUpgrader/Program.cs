@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader;
 
-static class Program
+public static class Program
 {
     private static string _webName;
     private static string _baseFolder;
@@ -33,12 +33,12 @@ static class Program
     /// <param name="dontUpload"> Neptat se a po aktualizaci soubory nenahrávat. </param>
     /// <param name="dontUpgrade"> Nespouštět PHP upgrader, pouze ostatní nastavené procesy s FTP. </param>
     /// <param name="ftpMaxMb"> Limit velikosti souboru v MB při FTP synchronizaci (0 a menší => vypnuto). </param>
-    static async Task Main(string[] webName, string[]? adminFolders = null, string[]? rootFolders = null,
-                           string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
-                           string host = "localhost", string? beta = null, string connectionFile = "connection.php",
-                           bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false,
-                           bool checkFtp = false, bool ignoreFtp = false, bool upload = false, bool dontUpload = false, bool dontUpgrade = false,
-                           double ftpMaxMb = 500)
+    public static async Task Main(string[] webName, string[]? adminFolders = null, string[]? rootFolders = null,
+                                  string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
+                                  string host = "localhost", string? beta = null, string connectionFile = "connection.php",
+                                  bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false,
+                                  bool checkFtp = false, bool ignoreFtp = false, bool upload = false, bool dontUpload = false, bool dontUpgrade = false,
+                                  double ftpMaxMb = 500)
     {
         if (webName is null or { Length: 0 })
         {

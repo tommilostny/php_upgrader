@@ -452,3 +452,4 @@ $RECYCLE.BIN/
 ## Others
 /src/FtpUpdateChecker/.phplogs
 /src/PhpUpgrader/.phplogs
+/src/McraiMigrator.TUI/McraiMigrator.config.json
