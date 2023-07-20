@@ -99,9 +99,10 @@ public static partial class WhileListEach
 
     private static void ReplaceKeyValInIncludedFiles(ArrayKeyValAsIndexReplace arrayKeyVal, string content, string? baseDir)
     {
-        var templatesPath = Path.Join(baseDir, "templates");
-        if (baseDir is null || !Directory.Exists(templatesPath))
+        string templatesPath;
+        if (baseDir is null || !Directory.Exists(templatesPath = Path.Join(baseDir, "templates")))
             return;
+
         //najít všechny includes
         var includes = IncludeRegex().Matches(content).Select(x => x.Groups["file"].Value).ToArray();
         //TML_URL: složka "templates/{něco}" + soubor "/product/product_prehled_buy.php"

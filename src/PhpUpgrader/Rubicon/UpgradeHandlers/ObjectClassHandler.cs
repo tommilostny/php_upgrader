@@ -49,18 +49,20 @@ public sealed partial class ObjectClassHandler
 
     private static bool LookForObjectPhpFile(RubiconUpgrader upgrader)
     {
-        return RecursiveSearch(Path.Join(upgrader.BaseFolder, "weby", upgrader.WebName));
+        return _RecursiveSearch(upgrader.WebFolder);
 
-        static bool RecursiveSearch(string dir)
+        static bool _RecursiveSearch(string dir)
         {
             foreach (var subdir in Directory.GetDirectories(dir))
             {
-                if (RecursiveSearch(subdir))
+                if (_RecursiveSearch(subdir))
                 {
                     return true;
                 }
             }
-            return Directory.GetFiles(dir, "*.php").Any(f => _objectFileNames.Any(of => f.EndsWith(of, StringComparison.Ordinal)));
+            return Directory.GetFiles(dir, "*.php")
+                .Any(f => _objectFileNames
+                    .Any(of => f.EndsWith(of, StringComparison.Ordinal)));
         }
     }
 

@@ -2,6 +2,8 @@
 
 public static class SitemapSave
 {
+    private static string[]? _afSitemapFiles = null;
+
     /// <summary>
     /// upravit soubor admin/sitemap_save.php cca radek 84
     ///     - pridat podminku „if($query_text_all !== FALSE)“
@@ -13,29 +15,30 @@ public static class SitemapSave
         const string adding = "if($query_text_all !== FALSE)";
         const string addingLine = $"          {adding}\n          {{\n";
 
-        if (!adminFolders.Any(af => file.Path.EndsWith(Path.Join(af, "sitemap_save.php"), StringComparison.Ordinal))
-            || !file.Content.Contains(lookingFor) || file.Content.Contains(adding))
-        {
-            return file;
-        }
-        var sfBracket = false;
-        var lines = file.Content.Split();
+        _afSitemapFiles ??= adminFolders.Select(af => Path.Join(af, "sitemap_save.php")).ToArray();
 
-        for (var i = 0; i < lines.Count; i++)
+        if (_afSitemapFiles.Any(af => file.Path.EndsWith(af, StringComparison.Ordinal))
+            && file.Content.Contains(lookingFor) && !file.Content.Contains(adding))
         {
-            var line = lines[i];
-            if (line.Contains(lookingFor))
+            var sfBracket = false;
+            var lines = file.Content.Split();
+
+            for (var i = 0; i < lines.Count; i++)
             {
-                line.Insert(0, addingLine);
-                sfBracket = true;
+                var line = lines[i];
+                if (line.Contains(lookingFor))
+                {
+                    line.Insert(0, addingLine);
+                    sfBracket = true;
+                }
+                if (line.Contains('}') && sfBracket)
+                {
+                    line.Append(new LineFormat(), $"\n{line}");
+                    sfBracket = false;
+                }
             }
-            if (line.Contains('}') && sfBracket)
-            {
-                line.Append(new LineFormat(), $"\n{line}");
-                sfBracket = false;
-            }
+            lines.JoinInto(file.Content);
         }
-        lines.JoinInto(file.Content);
         return file;
     }
 

@@ -20,6 +20,10 @@ public abstract class PhpUpgraderBase
     /// <summary> Název webu ve složce 'weby'. </summary>
     public string WebName { get; }
 
+    private string? _webFolder = null;
+    /// <summary> Absolutní cesta k složce webu. </summary>
+    public string WebFolder => _webFolder ??= Path.Join(BaseFolder, "weby", WebName);
+
     /// <summary> URL k databázovému serveru. </summary>
     public string? Hostname { get; set; }
 

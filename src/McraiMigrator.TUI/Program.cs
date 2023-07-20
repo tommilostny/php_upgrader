@@ -8,7 +8,8 @@ AnsiConsole.Clear();
 AnsiConsole.Write(new FigletText("McRAI PHP Migration Tool").Centered().Color(Color.GreenYellow));
 AnsiConsole.WriteLine();
 AnsiConsole.Write(new Rule($"(c) Tomáš Milostný, {DateTime.Now.Year}").Centered());
-do
+
+while (runPhpUpgrader is null)
 {
     var option = AnsiConsole.Prompt(
         new SelectionPrompt<string>()
@@ -33,8 +34,6 @@ do
                 "[blue]Reset všech hodnot[/]",
                 "[red]Ukončit[/]",
             }));
-
-    // Act on selected option.
     if (option.StartsWith("[green]Spustit[/]", StringComparison.Ordinal))
     {
         runPhpUpgrader = true;
@@ -124,16 +123,12 @@ do
     if (option.StartsWith("[blue]Reset údajů k databázi[/]", StringComparison.Ordinal))
     {
         config.Host = "localhost";
-        config.Database = string.Empty;
-        config.UserName = string.Empty;
-        config.Password = string.Empty;
+        config.Database = config.UserName = config.Password = string.Empty;
         config.Save();
         continue;
     }
     runPhpUpgrader = false;
 }
-while (runPhpUpgrader is null);
-
 config.Save();
 
 if (runPhpUpgrader is false)
@@ -141,7 +136,7 @@ if (runPhpUpgrader is false)
     AnsiConsole.Clear();
     return;
 }
-Console.WriteLine();
+AnsiConsole.WriteLine();
 await PhpUpgrader.Program.Main
 (
     webName: new[] { config.WebName },

@@ -2,6 +2,8 @@
 
 public static class ArrayMissingKeyValue
 {
+    private static readonly string _main2Php = Path.Join("rubicon", "modules", "search", "main2.php");
+
     /// <summary>
     /// Syntaktická chyba nalezena na webu hokejova-vyzbroj v souboru <b>rubicon/modules/search/main2.php</b>.
     /// Při inicializaci pole chybí hodnota pro klíč "darek_zdarma_info".
@@ -17,7 +19,7 @@ public static class ArrayMissingKeyValue
     /// </remarks>
     public static FileWrapper UpgradeArrayMissingKeyValue(this FileWrapper file)
     {
-        if (file.Path.EndsWith(Path.Join("rubicon", "modules", "search", "main2.php"), StringComparison.Ordinal))
+        if (file.Path.EndsWith(_main2Php, StringComparison.Ordinal))
         {
             var lines = file.Content.Split();
             foreach (var line in lines)

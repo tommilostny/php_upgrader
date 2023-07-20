@@ -2,15 +2,16 @@
 
 public static partial class ResultFunction
 {
-    private static string[] _oldResultFuncs = { "mysql_result", "pg_result" };
-    private static string[] _newNumRowsFuncs = { "mysqli_num_rows", "pg_num_rows" };
+    private static readonly string[] _oldResultFuncs = { "mysql_result", "pg_result" };
+    private static readonly string[] _newNumRowsFuncs = { "mysqli_num_rows", "pg_num_rows" };
+    private static readonly string _secureLoginPhp = Path.Join("funkce", "secure", "login.php");
 
     /// <summary>
     /// mysql_result >>> mysqli_num_rows + odmazat druhy parametr (vetsinou - , 0) + predelat COUNT(*) na *
     /// </summary>
     public static FileWrapper UpgradeResultFunction(this FileWrapper file, MonaUpgrader upgrader)
     {
-        if (file.Path.EndsWith(Path.Join("funkce", "secure", "login.php"), StringComparison.Ordinal))
+        if (file.Path.EndsWith(_secureLoginPhp, StringComparison.Ordinal))
         {
             file.Content.Replace(
                 LoginMysqlResultRegex().Replace(

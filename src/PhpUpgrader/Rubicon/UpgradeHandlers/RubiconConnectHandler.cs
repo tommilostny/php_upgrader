@@ -5,6 +5,19 @@ namespace PhpUpgrader.Rubicon.UpgradeHandlers;
 
 public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
 {
+    private static string? _setupPhp = null;
+    private static string? _connectionsDir = null;
+
+    private static readonly string _monamyDir = $"{Path.DirectorySeparatorChar}monamy{Path.DirectorySeparatorChar}";
+    private static readonly string _connectionPhp = Path.Join("connect", "connection.php");
+
+    private static readonly string _betaPhp = Path.Join("Connections", "beta.php");
+    private static readonly string _pListinaPhp = Path.Join("pdf", "p_listina.php");
+    private static readonly string _pListinaUPhp = Path.Join("pdf", "p_listina_u.php");
+
+    private static readonly string _coreModulePhp = Path.Join("core", "modules", "core", "module.php");
+    private static readonly string _rssShopSportPhp = Path.Join("rss", "_off", "rss_shop-sport.php");
+
     /// <summary> Aktualizace souborů připojení systému Rubicon. </summary>
     public override void UpgradeConnect(FileWrapper file, PhpUpgraderBase upgrader)
     {
@@ -57,9 +70,9 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         {
             return true;
         }
-        if (file.Path.Contains(Path.Join(upgrader.WebName, "Connections"), StringComparison.Ordinal)
-            || (file.Path.Contains(Path.Join("monamy"), StringComparison.Ordinal)
-                && file.Path.EndsWith(Path.Join("connect", "connection.php"), StringComparison.Ordinal)))
+        if (file.Path.Contains(_connectionsDir ??= Path.Join(upgrader.WebName, "Connections"), StringComparison.Ordinal)
+            || (file.Path.Contains(_monamyDir, StringComparison.Ordinal)
+                && file.Path.EndsWith(_connectionPhp, StringComparison.Ordinal)))
         {
             var content = file.Content.ToString();
             var varName = LoadConnectionVariableName(content);
@@ -132,7 +145,8 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
     /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
     public static void UpgradeSetup(FileWrapper file, PhpUpgraderBase upgrader)
     {
-        if (!file.Path.EndsWith(Path.Join(upgrader.WebName, "setup.php"), StringComparison.Ordinal))
+        _setupPhp ??= Path.Join(upgrader.WebName, "setup.php");
+        if (!file.Path.EndsWith(_setupPhp, StringComparison.Ordinal))
         {
             return;
         }
@@ -186,11 +200,11 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
     /// <summary> Aktualizace hostname z mcrai1 na <see cref="PhpUpgraderBase.Hostname"/>. </summary>
     public static void UpgradeHostname(FileWrapper file, PhpUpgraderBase upgrader)
     {
-        var connBeta = file.Path.EndsWith(Path.Join("Connections", "beta.php"), StringComparison.Ordinal)
-                    || file.Path.EndsWith("setup.php", StringComparison.Ordinal);
+        var connBeta = file.Path.EndsWith(_betaPhp, StringComparison.Ordinal)
+                    || file.Path.EndsWith(_setupPhp, StringComparison.Ordinal);
         var moneyXmlInclude = file.Path.EndsWith("MONEY_XML_INCLUDE.php", StringComparison.Ordinal);
-        var pListina = file.Path.EndsWith(Path.Join("pdf", "p_listina.php"), StringComparison.Ordinal)
-                     || file.Path.EndsWith(Path.Join("pdf", "p_listina_u.php"), StringComparison.Ordinal);
+        var pListina = file.Path.EndsWith(_pListinaPhp, StringComparison.Ordinal)
+                     || file.Path.EndsWith(_pListinaUPhp, StringComparison.Ordinal);
 
         foreach (var hn in HostNamesToReplace())
         {
@@ -299,7 +313,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
     
     public static void UpgradeRubiconModulesDB(FileWrapper file, PhpUpgraderBase upgrader)
     {
-        if (file.Path.EndsWith(Path.Join("core", "modules", "core", "module.php"), StringComparison.Ordinal))
+        if (file.Path.EndsWith(_coreModulePhp, StringComparison.Ordinal))
         {
             file.Content.Replace("mysql_pconnect($rubicon_db->mysql_hostname, $rubicon_db->mysql_username, $rubicon_db->mysql_password)",
                                  "mysqli_connect($rubicon_db->mysql_hostname, $rubicon_db->mysql_username, $rubicon_db->mysql_password)")
@@ -307,7 +321,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
                                  "mysqli_select_db($its_connect, $rubicon_db->mysql_database)");
             return;
         }
-        if (file.Path.EndsWith(Path.Join("rss", "_off", "rss_shop-sport.php"), StringComparison.Ordinal))
+        if (file.Path.EndsWith(_rssShopSportPhp, StringComparison.Ordinal))
         {
             file.Content.Replace("@$db = mysql_pconnect($hostname_beta, $username_beta, $password_beta) or die (\"Nelze navázat spojení s databází\");",
                                  "$beta = mysqli_connect($hostname_beta, $username_beta, $password_beta);")

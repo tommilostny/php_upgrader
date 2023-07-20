@@ -9,8 +9,8 @@ public partial class MonaUpgrader : PhpUpgraderBase
     /// <summary> Složky obsahující administraci RS Mona (null => 1 složka 'admin') </summary>
     public string[] AdminFolders
     {
-        get => _adminFolders ??= new string[] { "admin" };
-        set => _adminFolders = value ?? new string[] { "admin" };
+        get => _adminFolders ??= new[] { "admin" };
+        set => _adminFolders = value ?? new[] { "admin" };
     }
     private string[] _adminFolders;
 
@@ -79,7 +79,7 @@ public partial class MonaUpgrader : PhpUpgraderBase
             .UpgradeRegexFunctions()
             .UpgradeIfEmpty()
             .UpgradeGetMagicQuotesGpc()
-            .UpgradeWhileListEach(Path.Join(BaseFolder, "weby", WebName))
+            .UpgradeWhileListEach(WebFolder)
             .UpgradeCreateFunction()
             .UpgradeImplode()
             .UpgradeCurlyBraceIndexing();

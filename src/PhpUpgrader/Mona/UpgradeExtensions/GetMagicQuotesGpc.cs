@@ -4,6 +4,9 @@ namespace PhpUpgrader.Mona.UpgradeExtensions;
 
 public static partial class GetMagicQuotesGpc
 {
+    private static readonly string _quickform2Php = Path.Join("piwika", "libs", "HTML", "QuickForm2.php");
+    private static readonly string _coreCommonPhp = Path.Join("piwika", "core", "Common.php");
+
     /// <summary>
     /// Function get_magic_quotes_gpc() is deprecated and won't be supported in future versions of PHP.
     /// </summary>
@@ -12,11 +15,11 @@ public static partial class GetMagicQuotesGpc
         Lazy<string> contentStr = new(file.Content.ToString);
         switch (file.Path)
         {
-            case var p when p.EndsWith(Path.Join("piwika", "libs", "HTML", "QuickForm2.php"), StringComparison.Ordinal):
+            case var p when p.EndsWith(_quickform2Php, StringComparison.Ordinal):
                 file.Content.Replace("$method, get_magic_quotes_gpc()", "$method /*, get_magic_quotes_gpc()*/");
                 break;
 
-            case var p when p.EndsWith(Path.Join("piwika", "core", "Common.php"), StringComparison.Ordinal):
+            case var p when p.EndsWith(_coreCommonPhp, StringComparison.Ordinal):
                 file.Content.Replace("&& get_magic_quotes_gpc()", "&& /*get_magic_quotes_gpc()*/ false");
                 break;
         }

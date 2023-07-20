@@ -2,9 +2,11 @@
 
 public static class LibDbMysql
 {
+    private static readonly string _libDbMySqlPhp = Path.Join("lib", "db", "mysql.inc.php");
+
     public static FileWrapper UpgradeLibDbMysql(this FileWrapper file)
     {
-        if (file.Path.EndsWith(Path.Join("lib", "db", "mysql.inc.php"), StringComparison.Ordinal))
+        if (file.Path.EndsWith(_libDbMySqlPhp, StringComparison.Ordinal))
         {
             //zakomentovat blok if else kolem mysqli_connect/mysql_pconnect
             //(vždycky se bude používat mysqli_connect).

@@ -2,10 +2,17 @@
 
 public static class OldUnparsableAlmostEmptyFile
 {
+    private static readonly (string file, string eofCode)[] _knownOccurences = new[]
+    {
+        (Path.Join("money", "old", "Compare_XML.php"),
+         "public XMLDiff\\File::diff ( string  , string $to ) : string"
+        ),
+    };
+
     /// <summary> "money/old/Compare_XML.php" je téměř prázdný a obsahuje kód, který nedává smysl. </summary>
     public static FileWrapper UpgradeOldUnparsableAlmostEmptyFile(this FileWrapper file)
     {
-        foreach (var (path, code) in KnownOccurences())
+        foreach (var (path, code) in _knownOccurences)
         {
             if (file.Path.EndsWith(path, StringComparison.Ordinal))
             {
@@ -22,10 +29,5 @@ public static class OldUnparsableAlmostEmptyFile
             }
         }
         return file;
-    }
-
-    private static IEnumerable<(string file, string eofCode)> KnownOccurences()
-    {
-        yield return (Path.Join("money", "old", "Compare_XML.php"), "public XMLDiff\\File::diff ( string  , string $to ) : string");
     }
 }

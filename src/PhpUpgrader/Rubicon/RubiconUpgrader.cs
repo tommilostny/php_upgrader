@@ -22,6 +22,9 @@ public sealed class RubiconUpgrader : MonaUpgrader
     /// <returns> Upravený soubor. </returns>
     protected override FileWrapper? UpgradeProcedure(string filePath)
     {
+        if (this.UpgradeMpdf(filePath))
+            return null;
+
         this.UpgradeAdminerUglyCode(filePath);
 
         switch (base.UpgradeProcedure(filePath))
@@ -52,7 +55,7 @@ public sealed class RubiconUpgrader : MonaUpgrader
                     .UpgradeNajdiVDb()
                     .UpgradeUnparenthesizedPlus()
                     .UpgradeMssql()
-                    .UpgradeMpdf()
+                    .UpgradeMpdfFunctions()
                     .UpgradeMissingCurlyBracket();
                 return file;
         }

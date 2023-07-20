@@ -2,6 +2,9 @@
 
 public static class CloseIndex
 {
+    private static string? _rootIndexPhp = null;
+    private static string? _templateIndexPhp = null;
+
     /// <summary> Přidá mysqli_close nebo pg_close na konec soubor index.php. </summary>
     public static FileWrapper UpgradeCloseIndex(this FileWrapper file, MonaUpgrader upgrader)
     {
@@ -19,8 +22,11 @@ public static class CloseIndex
 
     private static bool IsRootIndexFile(string path, MonaUpgrader upgrader)
     {
-        return (path.EndsWith(Path.Join(upgrader.WebName, "index.php"), StringComparison.Ordinal)
-            && !path.EndsWith(Path.Join("templates", upgrader.WebName, "index.php"), StringComparison.Ordinal))
+        _rootIndexPhp ??= Path.Join(upgrader.WebName, "index.php");
+        _templateIndexPhp ??= Path.Join("templates", upgrader.WebName, "index.php");
+
+        return (path.EndsWith(_rootIndexPhp, StringComparison.Ordinal)
+            && !path.EndsWith(_templateIndexPhp, StringComparison.Ordinal))
             || upgrader.OtherRootFolders?.Any(rf =>
             {
                 return path.EndsWith(Path.Join(upgrader.WebName, rf, "index.php"), StringComparison.Ordinal)

@@ -3,6 +3,7 @@
 public static class Strankovani
 {
     private const string _pdFunc = "function predchozi_dalsi";
+    private static readonly string _strankovaniPhp = Path.Join("funkce", "strankovani.php");
 
     /// <summary>
     /// upravit soubor funkce/strankovani.php
@@ -12,7 +13,7 @@ public static class Strankovani
     {
         switch (file)
         {
-            case { Path: var p } when !p.Contains(Path.Join("funkce", "strankovani.php"), StringComparison.Ordinal):
+            case { Path: var p } when !p.EndsWith(_strankovaniPhp, StringComparison.Ordinal):
             case { Content: var c } when !c.Contains(_pdFunc):
                 return file;
         }

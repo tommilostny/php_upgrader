@@ -2,6 +2,9 @@
 
 public static class PiwikaLibsPearRaiseError
 {
+    private static readonly string _pearPhp = Path.Join("piwika", "libs", "PEAR.php");
+    private static readonly string _tarPhp = Path.Join("piwika", "libs", "Archive_Tar", "Tar.php");
+
     /// <summary>
     /// V souboru piwika/libs/PEAR.php projít třídu PEAR
     /// a aktualizovat její (statickou?) metodu &amp;raiseError,
@@ -10,8 +13,8 @@ public static class PiwikaLibsPearRaiseError
     /// </summary>
     public static FileWrapper UpgradePiwikaLibsPearRaiseError(this FileWrapper file)
     {
-        var isPear = file.Path.EndsWith(Path.Join("piwika", "libs", "PEAR.php"), StringComparison.Ordinal);
-        var isTar = file.Path.EndsWith(Path.Join("piwika", "libs", "Archive_Tar", "Tar.php"), StringComparison.Ordinal);
+        var isPear = file.Path.EndsWith(_pearPhp, StringComparison.Ordinal);
+        var isTar = file.Path.EndsWith(_tarPhp, StringComparison.Ordinal);
         if (isPear || isTar)
         {
             file.Content.Replace("PEAR::raiseError()", "PEAR::raiseError(null)")

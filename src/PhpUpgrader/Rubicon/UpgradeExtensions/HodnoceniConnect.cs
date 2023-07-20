@@ -5,6 +5,24 @@ public static partial class HodnoceniConnect
     private static string? _connVar = null;
     private static string? _dbVar = null;
 
+    private static readonly string[] _hodnoceniConnFiles = new[]
+    {
+        Path.Join("rss", "update_to_mysql.php"),
+        Path.Join("rubicon", "modules", "category", "menu.php"),
+    };
+
+    private static readonly string[] _betaHodFiles = new[]
+    {
+        Path.Join("pdf", "p_listina.php"),
+        Path.Join("pdf", "p_listina_u.php"),
+        Path.Join("rss", "hodnoceni.php"),
+    };
+
+    private static readonly string[] _myBetaFiles = new[]
+    {
+        Path.Join("helios", "helios_export.php"),
+    };
+
     /// <summary>
     /// Soubory pdf/p_listina.php, pdf/p_listina.php a rss/hodnoceni.php
     /// obsahují stejný kód využívající mysqli s proměnnou $beta_hod nebo $hodnoceni_conn.
@@ -38,15 +56,15 @@ public static partial class HodnoceniConnect
 
     private static (string?, string?) GetConnectAndDbVariables(FileWrapper file)
     {
-        if (HodnoceniConnFiles().Any(f => file.Path.EndsWith(f, StringComparison.Ordinal)))
+        if (_hodnoceniConnFiles.Any(f => file.Path.EndsWith(f, StringComparison.Ordinal)))
         {
             return ("hodnoceni_conn", "database_hodnoceni_conn");
         }
-        if (BetaHodFiles().Any(f => file.Path.EndsWith(f, StringComparison.Ordinal)))
+        if (_betaHodFiles.Any(f => file.Path.EndsWith(f, StringComparison.Ordinal)))
         {
             return ("beta_hod", "dtb_hod");
         }
-        if (MyBetaFiles().Any(f => file.Path.EndsWith(f, StringComparison.Ordinal)))
+        if (_myBetaFiles.Any(f => file.Path.EndsWith(f, StringComparison.Ordinal)))
         {
             return ("mybeta", "database_beta");
         }
@@ -55,32 +73,14 @@ public static partial class HodnoceniConnect
 
     private static IEnumerable<string> AllUpgradableFiles()
     {
-        foreach (var file in HodnoceniConnFiles())
+        foreach (var file in _hodnoceniConnFiles)
             yield return file;
 
-        foreach (var file in BetaHodFiles())
+        foreach (var file in _betaHodFiles)
             yield return file;
 
-        foreach (var file in MyBetaFiles())
+        foreach (var file in _myBetaFiles)
             yield return file;
-    }
-
-    private static IEnumerable<string> HodnoceniConnFiles()
-    {
-        yield return Path.Join("rss", "update_to_mysql.php");
-        yield return Path.Join("rubicon", "modules", "category", "menu.php");
-    }
-
-    private static IEnumerable<string> BetaHodFiles()
-    {
-        yield return Path.Join("pdf", "p_listina.php");
-        yield return Path.Join("pdf", "p_listina_u.php");
-        yield return Path.Join("rss", "hodnoceni.php");
-    }
-
-    private static IEnumerable<string> MyBetaFiles()
-    {
-        yield return Path.Join("helios", "helios_export.php");
     }
 
     [GeneratedRegex(@"mysqli_query\(\$beta,.+;", RegexOptions.None, matchTimeoutMilliseconds: 66666)]

@@ -2,6 +2,10 @@
 
 public static partial class RegexFunctions
 {
+    private static readonly string _signedRequestPhp = Path.Join("facebook", "src", "Facebook", "SignedRequest.php");
+    private static readonly string _qrSplitPhp = Path.Join("funkce", "qrkod", "qrsplit.php");
+    private static readonly string _phpQrCodePhp = Path.Join("funkce", "qrkod", "phpqrcode.php");
+
     /// <summary>
     /// - funkci ereg nebo ereg_replace doplnit do prvního parametru delimetr na začátek a nakonec (if(ereg('.+@.+..+', $retezec))
     /// // puvodni, jiz nefunkcni >>> if(preg_match('#.+@.+..+#', $retezec)) // upravene - delimiter zvolen #)
@@ -57,9 +61,9 @@ public static partial class RegexFunctions
         }
         lines.JoinInto(file.Content);
 
-        if (!file.Path.EndsWith(Path.Join("facebook", "src", "Facebook", "SignedRequest.php"), StringComparison.Ordinal)
-            && !file.Path.EndsWith(Path.Join("funkce", "qrkod", "qrsplit.php"), StringComparison.Ordinal)
-            && !file.Path.EndsWith(Path.Join("funkce", "qrkod", "phpqrcode.php"), StringComparison.Ordinal)
+        if (!file.Path.EndsWith(_signedRequestPhp, StringComparison.Ordinal)
+            && !file.Path.EndsWith(_qrSplitPhp, StringComparison.Ordinal)
+            && !file.Path.EndsWith(_phpQrCodePhp, StringComparison.Ordinal)
             && UnmodifiedSplitRegex().IsMatch(file.Content.ToString()))
         {
             file.Warnings.Add("Nemodifikovaná funkce split!");
