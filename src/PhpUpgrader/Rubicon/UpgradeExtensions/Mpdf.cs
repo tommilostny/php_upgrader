@@ -11,12 +11,12 @@ public static class Mpdf
         if (filePath.EndsWith(_mpdfSourcePath, StringComparison.Ordinal)
             || filePath.EndsWith(_mpdfPath, StringComparison.Ordinal))
         {
-            var file = new FileWrapper(filePath, content: null);
-            var newMpdfPath = Path.Join(upgrader.BaseFolder, "important", "mpdf.php");
-
             BackupManager.CreateBackupFile(filePath, upgrader.BaseFolder, upgrader.WebName, modified: true);
-            File.Copy(newMpdfPath, filePath, overwrite: true);
 
+            var newMpdfPath = Path.Join(upgrader.BaseFolder, "important", "mpdf.php");
+            File.WriteAllText(filePath, File.ReadAllText(newMpdfPath));
+
+            var file = new FileWrapper(filePath, content: null);
             upgrader.ModifiedFiles.Add(file.Path);
             file.PrintStatus(modified: true);
             return true;
