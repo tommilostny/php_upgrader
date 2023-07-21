@@ -177,8 +177,6 @@ public static partial class CreateFunction
 
     private static string UpgradeConcats(string code)
     {
-        var inside = (Match m) => m.Groups["inside"].Value.Trim();
-
         var evaluator = new MatchEvaluator(m => _ConcatStringVariant1(m, code));
         code = ConcatRegex1().Replace(code, evaluator);
 
@@ -186,16 +184,12 @@ public static partial class CreateFunction
         code = ConcatRegex2().Replace(code, evaluator);
         return code;
 
+        static string _Inside(Match match) => match.Groups["inside"].Value.Trim();
         // ' . . '
-        string _ConcatStringVariant1(Match match, string content)
-        {
-            return content[match.Index - 1] == '"' ? $"\".{inside(match)}.\"" : $". {inside(match)} .";
-        }
+        static string _ConcatStringVariant1(Match match, string content)
+            => content[match.Index - 1] == '"' ? $"\".{_Inside(match)}.\"" : $". {_Inside(match)} .";
         // . ' ' .
-        string _ConcatStringVariant2(Match match)
-        {
-            return $". \"{inside(match)}\" .";
-        }
+        static string _ConcatStringVariant2(Match match) => $". \"{_Inside(match)}\" .";
     }
 
     [GeneratedRegex(@"@?create_function\s?\(\s*'(?<args>.*)'\s?,\s*(?<quote>'|"")(?<code>(.|\n)*?(;|\}|\s))\k<quote>\s*\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]

@@ -5,4 +5,4 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Performance", "MA0110:Use the Regex source generator", Justification = "Some internal limitation warning.", Scope = "member", Target = "~M:PhpUpgrader.Rubicon.UpgradeExtensions.RequiredParameterFollowsOptional.StartOptionalParamsToRequired(System.Text.RegularExpressions.Match)~System.String")]
+[assembly: SuppressMessage("Performance", "MA0110:Use the Regex source generator", Justification = "Some internal limitation warning.", Scope = "member", Target = "~F:PhpUpgrader.Rubicon.UpgradeExtensions.RequiredParameterFollowsOptional._startOptionalParamsToRequired")]
