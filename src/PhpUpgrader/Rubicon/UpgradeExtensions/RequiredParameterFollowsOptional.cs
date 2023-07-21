@@ -21,12 +21,7 @@ public static partial class RequiredParameterFollowsOptional
 
     private static readonly MatchEvaluator _startOptionalParamsToRequired = new(match =>
     {
-        IEnumerable<Match> parameters = Regex
-            .Matches(match.Value,
-                     @"(\w+?\s+?)?&?\$\w+\s*?(?<defval>=\s*?(((?<strq>""|').*?\k<strq>)|(array\s?\(.*?\))|([^,'""(]*?)))?\s*?(,|\))",
-                     RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase | RegexOptions.Compiled,
-                     TimeSpan.FromMilliseconds(6666)
-        );
+        IEnumerable<Match> parameters = ParametersRegex().Matches(match.Value);
         var updatedParameters = new Stack<string>();
         byte state = 0;
         //Procházíme parametry v opačném pořadí (volitelné parametry z konce přeskočit, jelikož je to povolené chování),
@@ -94,4 +89,7 @@ public static partial class RequiredParameterFollowsOptional
     
     [GeneratedRegex(@"\s{2,}", RegexOptions.None, matchTimeoutMilliseconds: 66666)]
     private static partial Regex UnnecessarySpacesRegex();
+
+    [GeneratedRegex(@"(\w+?\s+?)?&?\$\w+\s*?(?<defval>=\s*?(((?<strq>""|').*?\k<strq>)|([aA][rR]{2}[aA][yY]\s?\(.*?\))|([^,'""(]*?)))?\s*?(,|\))", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 6666)]
+    private static partial Regex ParametersRegex();
 }

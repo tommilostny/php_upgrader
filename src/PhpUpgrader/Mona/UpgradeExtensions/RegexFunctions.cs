@@ -56,7 +56,7 @@ public static partial class RegexFunctions
                 updated = SplitDoubleQuoteStrRegex().Replace(updated, _pregMatchEvaluator);
                 updated = SplitVarRegex().Replace(updated, _splitWithVarDelimiterEvaluator);
 
-                line.Replace(lineStr, updated);
+                line.Replace(updated);
             }
         }
         lines.JoinInto(file.Content);

@@ -22,9 +22,7 @@ public static partial class ScriptLanguagePhp
             if (line.Contains(_oldScriptTagStart, StringComparison.OrdinalIgnoreCase))
             {
                 var lineStr = line.ToString();
-                var updated = OldScriptTagRegex().Replace(lineStr, "<?php ");
-
-                line.Replace(lineStr, updated);
+                line.Replace(OldScriptTagRegex().Replace(lineStr, "<?php "));
                 insidePhpScriptTag = true;
             }
             if (insidePhpScriptTag && line.Contains(_oldScriptTagEnd))
