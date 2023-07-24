@@ -323,7 +323,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         }
         if (file.Path.EndsWith(_rssShopSportPhp, StringComparison.Ordinal))
         {
-            file.Content.Replace("@$db = mysql_pconnect($hostname_beta, $username_beta, $password_beta) or die (\"Nelze navázat spojení s databází\");",
+            file.Content.Replace("@$db = mysql_pconnect($hostname_beta, $username_beta, $password_beta) or die (\"Nelze navázat spojení s databazí\");",
                                  "$beta = mysqli_connect($hostname_beta, $username_beta, $password_beta);")
                         .Replace("@mysql_Select_DB($database_beta) or die (\"Nenalezena databáze\");",
                                  "mysqli_select_db($beta, $database_beta);\r\n\r\nif(mysqli_connect_errno())\r\n  {\r\n    printf(\"Nelze navázat spojení s databází: %s\\n\", mysqli_connect_error());\r\n    exit();\r\n  }");
@@ -338,7 +338,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         public string Format(string? format, object? arg, IFormatProvider? formatProvider) => arg switch
         {
             null => null,
-            string var and { Length: > 0 } => (_startChars ??= new char[] { '$', '\"', '\'' }).Any(c => var[0] == c) ? var : '$' + var,
+            string var and { Length: > 0 } => (_startChars ??= new[] { '$', '\"', '\'' }).Any(c => var[0] == c) ? var : '$' + var,
             var other => other.ToString()
         };
 
