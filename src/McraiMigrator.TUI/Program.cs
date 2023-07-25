@@ -151,6 +151,7 @@ await PhpUpgrader.Program.Main
     host: config.Host,
     db: string.IsNullOrWhiteSpace(config.Database) ? null : config.Database,
     user: string.IsNullOrWhiteSpace(config.UserName) ? null : config.UserName,
-    password: string.IsNullOrWhiteSpace(config.Password) ? null : config.Password
+    password: string.IsNullOrWhiteSpace(config.Password) ? null : config.Password,
+    dontUpgrade: !config.RunPhpUpgrade
 )
 .ConfigureAwait(false);

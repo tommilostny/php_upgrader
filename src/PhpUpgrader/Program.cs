@@ -47,8 +47,9 @@ public static class Program
             Console.ResetColor();
             return;
         }
+        var startTime = DateTime.Now;
         _baseFolder = baseFolder;
-        for (int i = 0; i < webName.Length; i++)
+        for (var i = 0; i < webName.Length; i++)
         {
             _webName = webName[i];
             _lazyFtp = new(() => new McraiFtp(_webName, _baseFolder, Convert.ToInt64(ftpMaxMb * 1024 * 1024)));
@@ -63,19 +64,19 @@ public static class Program
                 // Kontrola nově upravených souborů na původním serveru (mcrai1) a jejich případné stažení.
                 await CheckForUpdatesAndDownloadFromFtpAsync(checkFtp, ignoreFtp).ConfigureAwait(false);
 
-                if (!dontUpgrade)
-                {
-                    //2. fáze: Aktualizace celé složky webu
-                    // (případně i načtení souborů ze zálohy, pokud toto není spuštěno poprvé).
-                    RunUpgrade(upgrader, useBackup, ignoreBackup, workDir);
-                    PrintUpgradeResults(upgrader);
+                if (dontUpgrade)
+                    continue;
+                //2. fáze: Aktualizace celé složky webu
+                // (případně i načtení souborů ze zálohy, pokud toto není spuštěno poprvé).
+                RunUpgrade(upgrader, useBackup, ignoreBackup, workDir);
+                PrintUpgradeResults(upgrader);
 
-                    //3. fáze: (pokud je vyžadováno)
-                    // Nahrání veškerých aktualizovaných souborů na nový server.
-                    await UploadToFtpAsync(upgrader, upload, dontUpload).ConfigureAwait(false);
-                }
+                //3. fáze: (pokud je vyžadováno)
+                // Nahrání veškerých aktualizovaných souborů na nový server.
+                await UploadToFtpAsync(upgrader, upload, dontUpload).ConfigureAwait(false);
             }
         }
+        Console.WriteLine($"Celkový čas: {DateTime.Now - startTime}");
     }
 
     static async Task<(PhpUpgraderBase, string workDir)?> LoadPhpUpgraderAsync(bool rubicon, string[] adminFolders, string[] rootFolders, string beta, string connectionFile, bool ignoreConnect, string db, string user, string password, string host)
