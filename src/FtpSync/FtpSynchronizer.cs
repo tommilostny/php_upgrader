@@ -25,12 +25,12 @@ internal sealed class FtpSynchronizer : FtpBase
         await ConnectClientAsync(Client1).ConfigureAwait(false);
         await ConnectClientAsync(Client2).ConfigureAwait(false);
 
-        ImmutableList<FtpListItem>? files1 = null;
-        ImmutableList<FtpListItem>? files2 = null;
+        ImmutableArray<FtpListItem>? files1 = null;
+        ImmutableDictionary<string, DateTime>? files2 = null;
         var tasks = new List<Func<Task>>
         {
-            async () => files1 = await GetFileListingAsync(Client1, sort: false, reportBigFiles: true).ConfigureAwait(false),
-            async () => files2 = await GetFileListingAsync(Client2, sort: true, reportBigFiles: false).ConfigureAwait(false),
+            async () => files1 = await GetFileListing1Async().ConfigureAwait(false),
+            async () => files2 = await GetFileListing2Async().ConfigureAwait(false),
         };
         try
         {
@@ -48,32 +48,56 @@ internal sealed class FtpSynchronizer : FtpBase
         }
         if (files1 is not null && files2 is not null)
         {
-            await SynchronizeFilesAsync(files1, files2).ConfigureAwait(false);
+            await SynchronizeFilesAsync(files1.Value, files2).ConfigureAwait(false);
         }
     }
 
-    private async Task<ImmutableList<FtpListItem>> GetFileListingAsync(AsyncFtpClient client, bool sort, bool reportBigFiles)
+    private async Task<IEnumerable<FtpListItem>> EnumerateServerFilesAsync(AsyncFtpClient client)
     {
-        var checkLimit = _fileSizeLimit > 0;
+        return (await client.GetListing(_path, FtpListOption.Recursive | FtpListOption.Modify).ConfigureAwait(false))
+            .Where(f => f.Type == FtpObjectType.File);
+    }
+
+    private void PrintListingStartMessage(string hostname, bool checkLimit)
+    {
         lock (_writeLock)
-            ColoredConsole.SetColor(ConsoleColor.DarkYellow).Write(client.Host)
+            ColoredConsole.SetColor(ConsoleColor.DarkYellow)
+                .Write(hostname)
                 .ResetColor()
                 .Write($": Získávání informací o souborech {_path}")
-                .WriteLine(checkLimit && reportBigFiles
-                    ? $" (limit velikosti souboru: {_fileSizeLimit.ToString(CultureInfo.InvariantCulture)} B)..." : "...");
+                .WriteLine(checkLimit ? $" (limit velikosti souboru: {_fileSizeLimit.ToString(CultureInfo.InvariantCulture)} B)..." : "...");
+    }
 
-        var ftpListItems = await client.GetListing(_path, FtpListOption.Recursive | FtpListOption.Modify).ConfigureAwait(false);
-        var files = ftpListItems.Where(f => f.Type == FtpObjectType.File && (!checkLimit || f.Size < _fileSizeLimit));
-        if (sort)
-        {
-            files = files.OrderBy(f => f.FullName, StringComparer.Ordinal);
-        }
-        var filesList = files.ToImmutableList();
+    private void PrintListingEndMessage(string hostname, int filesCount)
+    {
         lock (_writeLock)
-            ColoredConsole.SetColor(ConsoleColor.Yellow).Write(client.Host)
-                .ResetColor().WriteLine($": Nalezeno celkem {filesList.Count} souborů.");
+            ColoredConsole.SetColor(ConsoleColor.Yellow).Write(hostname)
+                .ResetColor().WriteLine($": Nalezeno celkem {filesCount} souborů.");
+    }
 
-        if (checkLimit && reportBigFiles)
+    private async Task<ImmutableDictionary<string, DateTime>> GetFileListing2Async()
+    {
+        PrintListingStartMessage(Client2.Host, checkLimit: false);
+
+        var files = await EnumerateServerFilesAsync(Client2).ConfigureAwait(false);
+        var dict = files.ToImmutableDictionary(f => f.FullName, f => f.Modified);
+
+        PrintListingEndMessage(Client2.Host, dict.Count);
+        return dict;
+    }
+
+    private async Task<ImmutableArray<FtpListItem>> GetFileListing1Async()
+    {
+        var checkLimit = _fileSizeLimit > 0;
+        PrintListingStartMessage(Client1.Host, checkLimit);
+
+        var ftpListItems = await EnumerateServerFilesAsync(Client1).ConfigureAwait(false);
+        var files = ftpListItems
+            .Where(f => !checkLimit || f.Size < _fileSizeLimit)
+            .ToImmutableArray();
+
+        PrintListingEndMessage(Client1.Host, files.Length);
+        if (checkLimit)
         {
             var bigFiles = ftpListItems
                 .Where(f => f.Type == FtpObjectType.File && f.Size >= _fileSizeLimit)
@@ -82,40 +106,41 @@ internal sealed class FtpSynchronizer : FtpBase
 
             if (bigFiles.Length > 0) lock (_writeLock)
             {
-                ColoredConsole.SetColor(ConsoleColor.Yellow).Write(client.Host)
+                ColoredConsole.SetColor(ConsoleColor.Yellow).Write(Client1.Host)
                     .ResetColor().WriteLine($": Nalezeno celkem {bigFiles.Length} souborů větších než {_ToGigaBytes(_fileSizeLimit)} GB.");
                 foreach (var (name, size) in bigFiles)
                 {
-                    ColoredConsole.SetColor(ConsoleColor.White).Write($"{size}\tGB\t")
-                                  .ResetColor().WriteLine(name);
+                    ColoredConsole.SetColor(ConsoleColor.White)
+                        .Write($"{size}\tGB\t")
+                        .ResetColor().WriteLine(name);
                 }
             }
         }    
-        return filesList;
+        return files;
 
         static double _ToGigaBytes(long size) => size / 1024.0 / 1024.0 / 1024.0;
     }
 
-    private async Task SynchronizeFilesAsync(ImmutableList<FtpListItem> files1, ImmutableList<FtpListItem> files2)
+    private async Task SynchronizeFilesAsync(ImmutableArray<FtpListItem> files1, ImmutableDictionary<string, DateTime> files2)
     {
         ColoredConsole.SetColor(ConsoleColor.Cyan)
             .WriteLine($"🔄️Probíhá synchronizace souborů mezi {Client1.Host} a {Client2.Host}...")
             .ResetColor();
 
         // Inicializace více klientů pro paralelní streaming.
-        var dcs = new ConcurrentQueue<AsyncFtpClient>();
-        var ucs = new ConcurrentQueue<AsyncFtpClient>();
-        dcs.Enqueue(Client1);
-        ucs.Enqueue(Client2);
+        var downClients = new ConcurrentQueue<AsyncFtpClient>();
+        var upClients = new ConcurrentQueue<AsyncFtpClient>();
+        downClients.Enqueue(Client1);
+        upClients.Enqueue(Client2);
         for (byte i = 1; i < _nStreams; i++)
         {
             var dc = new AsyncFtpClient(Client1.Host, Client1.Credentials, config: Client1.Config);
             await dc.Connect().ConfigureAwait(false);
-            dcs.Enqueue(dc);
+            downClients.Enqueue(dc);
 
             var uc = new AsyncFtpClient(Client2.Host, Client2.Credentials, config: Client2.Config);
             await uc.Connect().ConfigureAwait(false);
-            ucs.Enqueue(uc);
+            upClients.Enqueue(uc);
         }
 
         // Spouštění synchronizačních tasků nad klienty ve frontě (je přidělen prvnímu volnému, jinak se čeká na navrácení do fronty).
@@ -123,17 +148,17 @@ internal sealed class FtpSynchronizer : FtpBase
         var comparer = new FtpFileComparer();
         foreach (var file1 in files1)
         {
-            var i = files2.BinarySearch(file1, comparer);
-            if (i < 0 || i > files2.Count || file1.Modified > files2[i].Modified)
+            var exists = files2.TryGetValue(file1.FullName, out var modifiedOnServer2);
+            if (!exists || file1.Modified > modifiedOnServer2)
             {
                 AsyncFtpClient? cl1, cl2;
-                while (!dcs.TryDequeue(out cl1)) await Task.Yield();
-                while (!ucs.TryDequeue(out cl2)) await Task.Yield();
+                while (!downClients.TryDequeue(out cl1)) await Task.Yield();
+                while (!upClients.TryDequeue(out cl2)) await Task.Yield();
 
-                tasks.Add(DownloadAndUploadAsync(cl1, cl2, file1.FullName, file1.FullName, dcs, ucs));
+                tasks.Add(DownloadAndUploadAsync(cl1, cl2, file1.FullName, file1.FullName, downClients, upClients));
             }
         }
-        await Task.Delay(100).ConfigureAwait(false);
+        await Task.Delay(500).ConfigureAwait(false);
         if (tasks.Exists(t => !t.IsCompleted)) lock (_writeLock)
         {
             ColoredConsole.SetColor(ConsoleColor.White).WriteLine("🔄️Čeká se na dokončení posledních operací...").ResetColor();
@@ -142,11 +167,11 @@ internal sealed class FtpSynchronizer : FtpBase
         ColoredConsole.SetColor(ConsoleColor.Green).WriteLine("✅ Synchronizace FTP serverů dokončena.").WriteLine().ResetColor();
 
         // Odpojení přidaných paralelních klientů po dokončení synchronizace.
-        while (dcs.TryDequeue(out var dc))
+        while (downClients.TryDequeue(out var dc))
             if (dc != Client1)
                 dc.Dispose();
 
-        while (ucs.TryDequeue(out var uc))
+        while (upClients.TryDequeue(out var uc))
             if (uc != Client2)
                 uc.Dispose();
     }
