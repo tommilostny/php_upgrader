@@ -176,7 +176,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         {
             file.Warnings.Add("setup.php - nenačtený název databáze.");
         }
-        file.Warnings.Add("setup.php - zkontrolovat připojení k databázi..");
+        file.Warnings.Add("setup.php - zkontrolovat připojení k databázi.");
 
         string _NewCredentialAndComment(Match match)
         {
@@ -186,15 +186,18 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
             }
             var eqIndex = match.ValueSpan.IndexOf('=');
             var varName = match.ValueSpan[..eqIndex].Trim();
-            var credential = varName switch
-            {
-                var vn when vn.EndsWith("username", StringComparison.Ordinal) && (usernameLoaded = true) => upgrader.Username,
-                var vn when vn.EndsWith("password", StringComparison.Ordinal) && (passwordLoaded = true) => upgrader.Password,
-                var vn when vn.EndsWith("db", StringComparison.Ordinal) && (databaseLoaded = true) => upgrader.Database,
-                _ => null
-            };
+
+            var credential = _LoadCred(varName, "username", "$username_beta", ref usernameLoaded, upgrader.Username)
+                ?? _LoadCred(varName, "password", "$password_beta", ref passwordLoaded, upgrader.Password)
+                ?? _LoadCred(varName, "db", "$database_beta", ref databaseLoaded, upgrader.Database);
+
             return credential is null ? match.Value : $"//{match.Value}\n{varName} = '{credential}';";
         }
+
+        static string? _LoadCred(ReadOnlySpan<char> varName, ReadOnlySpan<char> varEnd, ReadOnlySpan<char> betaName, ref bool loaded, string credValue)
+            => !loaded && (varName.EndsWith(varEnd, StringComparison.Ordinal) || varName.Equals(betaName, StringComparison.Ordinal)) && (loaded = true)
+                ? credValue
+                : null;
     }
 
     /// <summary> Aktualizace hostname z mcrai1 na <see cref="PhpUpgraderBase.Hostname"/>. </summary>
@@ -345,7 +348,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : null;
     }
 
-    [GeneratedRegex(@"\$setup_connect.*?=\s?(""|').*?(""|');", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    [GeneratedRegex(@"\$(setup_connect|\w+?_beta).*?=\s?(""|').*?(""|');", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex SetupConnectRegex();
     
     [GeneratedRegex(@"mysql_query\("".+""\);", RegexOptions.None, matchTimeoutMilliseconds: 66666)]
