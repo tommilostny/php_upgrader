@@ -18,7 +18,7 @@ public static partial class SetyFormImplodes
                 .Replace("if (count($_POST['obsluha'] > 0)) {",
                          "if (isset($_POST['obsluha']) && count($_POST['obsluha'] > 0)) {")
                 .Replace(".\"', '\".$cena_od.\"', '\".$cena_do.\"', '\".",
-                         ".\"', \".(empty($cena_od) ? 'NULL' : $cena_od).\", \".(empty($cena_od) ? 'NULL' : $cena_do).\", '\".");
+                         ".\"', \".(empty($cena_od) ? 'NULL' : $cena_od).\", \".(empty($cena_do) ? 'NULL' : $cena_do).\", '\".");
         }
         return file;
     }
