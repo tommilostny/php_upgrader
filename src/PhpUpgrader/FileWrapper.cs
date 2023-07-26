@@ -59,9 +59,16 @@ public sealed class FileWrapper
 
         if (modified) //Nezapisovat, pokud neproběhly žádné změny.
         {
-            //Zapsat změny.
-            File.WriteAllText(Path, Content.ToString());
-
+            do try //Zapsat změny.
+            {
+                File.WriteAllText(Path, Content.ToString());
+                break;
+            }
+            catch (IOException)
+            {
+                Task.Delay(100).GetAwaiter().GetResult();
+            }
+            while (true);
             if (MoveOnSavePath is not null) //Přesunout soubor, pokud je potřeba změnit jméno.
             {
                 File.Copy(Path, MoveOnSavePath, overwrite: true);
