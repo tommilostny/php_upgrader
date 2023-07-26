@@ -14,13 +14,11 @@ public static partial class SetyFormImplodes
             file.Content.CopyTo(startIndex, area, count);
             var areaStr = area.ToString();
 
-            file.Content.Replace(
-                areaStr,
-                ImplodeRegex().Replace(
-                    areaStr,
-                    _wrapInTernaryEval
-                )
-            );
+            file.Content.Replace(areaStr, ImplodeRegex().Replace(areaStr, _wrapInTernaryEval))
+                .Replace("if (count($_POST['obsluha'] > 0)) {",
+                         "if (isset($_POST['obsluha']) && count($_POST['obsluha'] > 0)) {")
+                .Replace(".\"', '\".$cena_od.\"', '\".$cena_do.\"', '\".",
+                         ".\"', \".(empty($cena_od) ? 'NULL' : $cena_od).\", \".(empty($cena_od) ? 'NULL' : $cena_do).\", '\".");
         }
         return file;
     }
