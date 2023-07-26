@@ -57,7 +57,8 @@ public sealed class RubiconUpgrader : MonaUpgrader
                     .UpgradeMssql()
                     .UpgradeMpdfFunctions()
                     .UpgradeMissingCurlyBracket()
-                    .UpgradeUnexpectedEOF();
+                    .UpgradeUnexpectedEOF()
+                    .UpgradeSetyFormImplodes();
                 return file;
         }
     }

@@ -1,12 +1,12 @@
 ﻿namespace PhpUpgrader.Mona.UpgradeExtensions;
 
-public static class CloseIndex
+public static class Index
 {
     private static string? _rootIndexPhp = null;
     private static string? _templateIndexPhp = null;
 
     /// <summary> Přidá mysqli_close nebo pg_close na konec soubor index.php. </summary>
-    public static FileWrapper UpgradeCloseIndex(this FileWrapper file, MonaUpgrader upgrader)
+    public static FileWrapper UpgradeIndex(this FileWrapper file, MonaUpgrader upgrader)
     {
         if (IsRootIndexFile(file.Path, upgrader))
         {
@@ -15,6 +15,11 @@ public static class CloseIndex
             {
                 file.Content.Append(HasClosingPhpTag(file) ? "\n<?php " : "\n")
                     .Append(new CloseFunctionFormat(), $"{closeArg}($beta); ?>");
+            }
+            if (file.Content.Contains("include \"smerovani.php\";")
+                && !File.Exists(Path.Join(new FileInfo(file.Path).Directory.FullName, "smerovani.php")))
+            {
+                file.Content.Replace("include \"smerovani.php\";", "//include \"smerovani.php\";");
             }
         }
         return file;

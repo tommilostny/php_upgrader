@@ -62,7 +62,7 @@ public partial class MonaUpgrader : PhpUpgraderBase
                 FindReplaceHandler.UpgradeFindReplace(file);
                 file.UpgradeResultFunction(this)
                     .UpgradeMysqliQueries(this)
-                    .UpgradeCloseIndex(this)
+                    .UpgradeIndex(this)
                     .UpgradeAnketa()
                     .UpgradeClanekVypis()
                     .UpgradeChdir(AdminFolders)

@@ -28,6 +28,6 @@ public static partial class NajdiVDb
         var var2 = match.Groups["var2"].Value;
         var result = match.Groups["result"].Value;
 
-        return $"{s}{line1}\n{s}if ({var1} === false) {{\n{s}\treturn \"\";\n{s}}}\n{s}{line2}\n{s}if ({var2} === false) {{\n{s}\treturn \"\";\n{s}}}\n{s}{result}";
+        return $"{s}if (substr($query, -4) === \"= ''\") {{\n{s}\treturn '';\n{s}}}\n{s}{line1}\n{s}if ({var1} === false) {{\n{s}\treturn '';\n{s}}}\n{s}{line2}\n{s}if ({var2} === false) {{\n{s}\treturn '';\n{s}}}\n{s}{result}";
     });
 }

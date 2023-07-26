@@ -13,7 +13,7 @@ public class CloseFunctionTests : UnitTestWithOutputBase
         var file = new FileWrapper("index.php", "<?php\n\n/* Some PHP code */\n\n?>");
 
         //Act
-        file.UpgradeCloseIndex(new MonaUpgraderFixture());
+        file.UpgradeIndex(new MonaUpgraderFixture());
 
         //Assert
         var updated = file.Content.ToString();
@@ -29,7 +29,7 @@ public class CloseFunctionTests : UnitTestWithOutputBase
         var file = new FileWrapper("index.php", "<?php\n\n/* Some PHP code */\n\n?>");
 
         //Act
-        file.UpgradeCloseIndex(new RubiconUpgrader(null, null));
+        file.UpgradeIndex(new RubiconUpgrader(null, null));
 
         //Assert
         var updated = file.Content.ToString();
