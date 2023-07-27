@@ -10,10 +10,7 @@ public static class Program
     /// RS Mona a Rubicon PHP upgrader z verze 5 na verzi 7 (vytvořeno pro McRAI).
     /// Autor: Tomáš Milostný
     /// </summary>
-    /// <param name="webName">
-    /// Název webu ve složce 'weby' (nesmí chybět).
-    /// Lze zadat víckrát pro upravení více složek webů (lze použít např. i v případě kdy jeden web je ve více složkách na serveru).
-    /// </param>
+    /// <param name="webName"> Název webu ve složce 'weby' (nesmí chybět). </param>
     /// <param name="adminFolders"> Složky obsahující administraci RS Mona (default prázdné: 1 složka admin). </param>
     /// <param name="rootFolders"> Další "root" složky obsahující index.php, do kterého vložit mysqli_close na konec. </param>
     /// <param name="baseFolder"> Absolutní cesta základní složky, kde jsou složky 'weby' a 'important'. </param>
@@ -33,7 +30,7 @@ public static class Program
     /// <param name="dontUpload"> Neptat se a po aktualizaci soubory nenahrávat. </param>
     /// <param name="dontUpgrade"> Nespouštět PHP upgrader, pouze ostatní nastavené procesy s FTP. </param>
     /// <param name="ftpMaxMb"> Limit velikosti souboru v MB při FTP synchronizaci (0 a menší => vypnuto). </param>
-    public static async Task Main(string[] webName, string[]? adminFolders = null, string[]? rootFolders = null,
+    public static async Task Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
                                   string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
                                   string host = "localhost", string? beta = null, string connectionFile = "connection.php",
                                   bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false,
@@ -49,23 +46,20 @@ public static class Program
         }
         var startTime = DateTime.Now;
         _baseFolder = baseFolder;
-        for (var i = 0; i < webName.Length; i++)
+        _webName = webName;
+        _lazyFtp = new(() => new McraiFtp(_webName, _baseFolder, Convert.ToInt64(ftpMaxMb * 1024 * 1024)));
+
+        //0. fáze: příprava PHP upgraderu (kontrola zadaných argumentů)
+        // Může nastat případ, kdy složka webu neexistuje. Uživatel je tázán, zda se pokusit stáhnout z FTP mcrai1.
+        var uw = await LoadPhpUpgraderAsync(rubicon, adminFolders, rootFolders, beta,
+                                            connectionFile, ignoreConnect, db, user, password, host).ConfigureAwait(false);
+        if (uw is not null and var (upgrader, workDir)) //PHP upgrader se povedlo inicializovat.
         {
-            _webName = webName[i];
-            _lazyFtp = new(() => new McraiFtp(_webName, _baseFolder, Convert.ToInt64(ftpMaxMb * 1024 * 1024)));
-
-            //0. fáze: příprava PHP upgraderu (kontrola zadaných argumentů)
-            // Může nastat případ, kdy složka webu neexistuje. Uživatel je tázán, zda se pokusit stáhnout z FTP mcrai1.
-            var uw = await LoadPhpUpgraderAsync(rubicon, adminFolders, rootFolders, beta,
-                                                connectionFile, ignoreConnect, db, user, password, host).ConfigureAwait(false);
-            if (uw is not null and var (upgrader, workDir)) //PHP upgrader se povedlo inicializovat.
+            //1. fáze: (pokud je vyžadováno)
+            // Kontrola nově upravených souborů na původním serveru (mcrai1) a jejich případné stažení.
+            await CheckForUpdatesAndDownloadFromFtpAsync(checkFtp, ignoreFtp).ConfigureAwait(false);
+            if (!dontUpgrade)
             {
-                //1. fáze: (pokud je vyžadováno)
-                // Kontrola nově upravených souborů na původním serveru (mcrai1) a jejich případné stažení.
-                await CheckForUpdatesAndDownloadFromFtpAsync(checkFtp, ignoreFtp).ConfigureAwait(false);
-
-                if (dontUpgrade)
-                    continue;
                 //2. fáze: Aktualizace celé složky webu
                 // (případně i načtení souborů ze zálohy, pokud toto není spuštěno poprvé).
                 RunUpgrade(upgrader, useBackup, ignoreBackup, workDir);

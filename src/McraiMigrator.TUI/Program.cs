@@ -139,7 +139,7 @@ if (runPhpUpgrader is false)
 AnsiConsole.WriteLine();
 await PhpUpgrader.Program.Main
 (
-    webName: new[] { config.WebName },
+    webName: config.WebName,
     baseFolder: config.BaseFolder,
     rubicon: config.Rubicon,
     checkFtp: config.SyncFtp,
