@@ -1,6 +1,4 @@
-﻿using InterpolatedColorConsole;
-
-namespace PhpUpgrader.Mona.UpgradeExtensions;
+﻿namespace PhpUpgrader.Mona.UpgradeExtensions;
 
 public static partial class WhileListEach
 {
@@ -8,16 +6,15 @@ public static partial class WhileListEach
     /// Funkce <b>each</b> je zastaralá (v PHP 8 navíc odstraněna).
     /// <code>reset($polozky); while(list($key, $val) = each($polozky))</code> je nevalidní kód.
     /// </summary>
-    public static FileWrapper UpgradeWhileListEach(this FileWrapper file, string? workingDirectory)
+    public static FileWrapper UpgradeWhileListEach(this FileWrapper file, PhpUpgraderBase? upgrader)
     {
-        Match m;
         var content = file.Content.ToString();
         var initialContent = content;
-
+        Match m;
         while ((m = ResetWhileListEachRegex().Match(content)).Success)
         {
             //nahradit while(list(...)=each(...)) >> foreach(...)
-            var updated = WhileListEachToForeach(m, out var lookForEndWhile, out var arrayKeyvalAsIndexReplace, content, workingDirectory);
+            var updated = WhileListEachToForeach(m, out var lookForEndWhile, out var arrayKeyvalAsIndexReplace, content, upgrader);
             var updatedSB = new StringBuilder(content).Replace(m.Value, updated, m.Index, m.Value.Length + 1);
 
             //byl while ve formátu "while(...):"? hledat příslušný endwhile; a nahradit endforeach;.
@@ -38,7 +35,7 @@ public static partial class WhileListEach
         return file;
     }
 
-    private static string WhileListEachToForeach(Match match, out bool lookForEndWhile, out ArrayKeyValAsIndexReplace? arrayKeyVal, string content, string? baseDir)
+    private static string WhileListEachToForeach(Match match, out bool lookForEndWhile, out ArrayKeyValAsIndexReplace? arrayKeyVal, string content, PhpUpgraderBase? upgrader)
     {
         var array = match.Groups["array2"].Value;
         var keyVal = match.Groups["keyval"];
@@ -82,7 +79,7 @@ public static partial class WhileListEach
             //volání funkce list má jeden parametr, převést pouze na "as $keyvalue".
             case (true, false):
                 arrayKeyVal = new ArrayKeyValAsIndexReplace(array, keyVal.Value);
-                ReplaceKeyValInIncludedFiles(arrayKeyVal, content, baseDir);
+                ReplaceKeyValInIncludedFiles(arrayKeyVal, content, upgrader);
                 return $"{inBetween}foreach ({array} as {keyVal}){colon}";
 
             //jestli se proměnná používá i jinak než index, nahradit pouze s array_keys (pak jsou to indexy do pole).
@@ -99,20 +96,20 @@ public static partial class WhileListEach
         }
     }
 
-    private static void ReplaceKeyValInIncludedFiles(ArrayKeyValAsIndexReplace arrayKeyVal, string content, string? baseDir)
+    private static void ReplaceKeyValInIncludedFiles(ArrayKeyValAsIndexReplace arrayKeyVal, string content, PhpUpgraderBase? upgrader)
     {
-        if (baseDir is null)
+        if (upgrader is null)
             return;
 
         var includes = IncludeRegex().Matches(content);
 
         //TML_URL: složka "templates/{něco}" + soubor "/product/product_prehled_buy.php"
-        foreach (var templateDir in Directory.EnumerateDirectories(Path.Join(baseDir, "templates")))
+        foreach (var templateDir in Directory.EnumerateDirectories(Path.Join(upgrader.WebFolder, "templates")))
         {
             _UpdateIncludeFiles(includes.Where(p => p.Value.Contains("TML_URL", StringComparison.Ordinal)), templateDir);
         }
         //nalezen include "rubicon/modules/card...", který také používá proměnnou z foreach.
-        var rubiconDir = Path.Join(baseDir, "rubicon");
+        var rubiconDir = Path.Join(upgrader.WebFolder, "rubicon");
         _UpdateIncludeFiles(includes.Where(p => p.Value.Contains("rubicon/", StringComparison.Ordinal)), rubiconDir);
 
         void _UpdateIncludeFiles(IEnumerable<Match> includeMatches, string dir)
@@ -123,28 +120,31 @@ public static partial class WhileListEach
                 if (!File.Exists(path))
                     continue;
 
-                StringBuilder? includeFileContent = null;
-                do try
-                    {
-                        includeFileContent = new(File.ReadAllText(path));
-                    }
-                    catch (IOException)
-                    {
-                        Task.Delay(100).GetAwaiter().GetResult();
-                    }
-                while (includeFileContent is null);
+                var includeFileContent = new StringBuilder();
+                do do try
+                        {
+                            var content = File.ReadAllText(path);
+                            includeFileContent.Clear().Append(content);
+                            break;
+                        }
+                        catch (IOException)
+                        {
+                            Task.Delay(100).GetAwaiter().GetResult();
+                        }
+                    while (true);
+                while (false); //LOL
+                BackupManager.CreateBackupFile(path, upgrader.BaseFolder, upgrader.WebName, modified: true);
                 arrayKeyVal.Upgrade(includeFileContent);
-                var written = false;
                 do try
                     {
                         File.WriteAllText(path, includeFileContent.ToString());
-                        written = true;
+                        break;
                     }
                     catch (IOException)
                     {
                         Task.Delay(100).GetAwaiter().GetResult();
                     }
-                while (!written);
+                while (true);
             }
         }
     }
