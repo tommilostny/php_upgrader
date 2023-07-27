@@ -102,15 +102,18 @@ public static partial class WhileListEach
             return;
 
         var includes = IncludeRegex().Matches(content);
-
-        //TML_URL: složka "templates/{něco}" + soubor "/product/product_prehled_buy.php"
-        foreach (var templateDir in Directory.EnumerateDirectories(Path.Join(upgrader.WebFolder, "templates")))
+        var templatesPath = Path.Join(upgrader.WebFolder, "templates");
+        if (Directory.Exists(templatesPath))
         {
-            _UpdateIncludeFiles(includes.Where(p => p.Value.Contains("TML_URL", StringComparison.Ordinal)), templateDir);
+            //TML_URL: složka "templates/{něco}" + soubor "/product/product_prehled_buy.php"
+            foreach (var templateDir in Directory.EnumerateDirectories(templatesPath))
+            {
+                _UpdateIncludeFiles(includes.Where(p => p.Value.Contains("TML_URL", StringComparison.Ordinal)), templateDir);
+            }
         }
         //nalezen include "rubicon/modules/card...", který také používá proměnnou z foreach.
-        var rubiconDir = Path.Join(upgrader.WebFolder, "rubicon");
-        _UpdateIncludeFiles(includes.Where(p => p.Value.Contains("rubicon/", StringComparison.Ordinal)), rubiconDir);
+        var rubiconPath = Path.Join(upgrader.WebFolder, "rubicon");
+        _UpdateIncludeFiles(includes.Where(p => p.Value.Contains("rubicon/", StringComparison.Ordinal)), rubiconPath);
 
         void _UpdateIncludeFiles(IEnumerable<Match> includeMatches, string dir)
         {
