@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Mona.UpgradeExtensions;
+﻿using InterpolatedColorConsole;
+
+namespace PhpUpgrader.Mona.UpgradeExtensions;
 
 public static partial class WhileListEach
 {
@@ -99,42 +101,49 @@ public static partial class WhileListEach
 
     private static void ReplaceKeyValInIncludedFiles(ArrayKeyValAsIndexReplace arrayKeyVal, string content, string? baseDir)
     {
-        string templatesPath;
-        if (baseDir is null || !Directory.Exists(templatesPath = Path.Join(baseDir, "templates")))
+        if (baseDir is null)
             return;
 
-        //najít všechny includes
-        var includes = IncludeRegex().Matches(content).Select(x => x.Groups["file"].Value).ToArray();
+        var includes = IncludeRegex().Matches(content);
+
         //TML_URL: složka "templates/{něco}" + soubor "/product/product_prehled_buy.php"
-        foreach (var templateDir in Directory.EnumerateDirectories(templatesPath))
+        foreach (var templateDir in Directory.EnumerateDirectories(Path.Join(baseDir, "templates")))
         {
-            foreach (var includeFile in includes)
+            _UpdateIncludeFiles(includes.Where(p => p.Value.Contains("TML_URL", StringComparison.Ordinal)), templateDir);
+        }
+        //nalezen include "rubicon/modules/card...", který také používá proměnnou z foreach.
+        var rubiconDir = Path.Join(baseDir, "rubicon");
+        _UpdateIncludeFiles(includes.Where(p => p.Value.Contains("rubicon/", StringComparison.Ordinal)), rubiconDir);
+
+        void _UpdateIncludeFiles(IEnumerable<Match> includeMatches, string dir)
+        {
+            foreach (var match in includeMatches)
             {
-                var path = Path.Join(templateDir, includeFile);
+                var path = Path.Join(dir, match.Groups["file"].Value);
                 if (!File.Exists(path))
                     continue;
 
                 StringBuilder? includeFileContent = null;
                 do try
-                {
-                    includeFileContent = new(File.ReadAllText(path));
-                }
-                catch (IOException)
-                {
-                    Task.Delay(100).GetAwaiter().GetResult();
-                }
+                    {
+                        includeFileContent = new(File.ReadAllText(path));
+                    }
+                    catch (IOException)
+                    {
+                        Task.Delay(100).GetAwaiter().GetResult();
+                    }
                 while (includeFileContent is null);
                 arrayKeyVal.Upgrade(includeFileContent);
                 var written = false;
                 do try
-                {
-                    File.WriteAllText(path, includeFileContent.ToString());
-                    written = true;
-                }
-                catch (IOException)
-                {
-                    Task.Delay(100).GetAwaiter().GetResult();
-                }
+                    {
+                        File.WriteAllText(path, includeFileContent.ToString());
+                        written = true;
+                    }
+                    catch (IOException)
+                    {
+                        Task.Delay(100).GetAwaiter().GetResult();
+                    }
                 while (!written);
             }
         }
@@ -188,7 +197,7 @@ public static partial class WhileListEach
     [GeneratedRegex(@"(?<!list\s?\(\s?,\s?|as\s|[""[]|(list|reset)\s?\(\s?)\$\w+(?![[""'\]\w])", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex NotIndexVarRegex();
 
-    [GeneratedRegex(@"include TML_URL\s?\.\s?(""|')(?<file>.+?)(""|')", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    [GeneratedRegex(@"include ((TML_URL\s?\.\s?[""'])|[""']rubicon)(?<file>.+?)(""|')", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex IncludeRegex();
 
     [GeneratedRegex(@"(?<array>\$\w+?)\[""(?<keyval>\$\w+?)""\]", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 666666)]
