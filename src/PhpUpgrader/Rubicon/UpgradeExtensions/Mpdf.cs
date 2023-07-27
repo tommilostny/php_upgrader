@@ -14,6 +14,10 @@ public static class Mpdf
             BackupManager.CreateBackupFile(filePath, upgrader.BaseFolder, upgrader.WebName, modified: true);
 
             var newMpdfPath = Path.Join(upgrader.BaseFolder, "important", "mpdf.php");
+            if (!File.Exists(newMpdfPath))
+            {
+                newMpdfPath = Path.Join(upgrader.BaseFolder, "important", "mpdf.txt");
+            }
             File.WriteAllText(filePath, File.ReadAllText(newMpdfPath));
 
             var file = new FileWrapper(filePath, content: null);
