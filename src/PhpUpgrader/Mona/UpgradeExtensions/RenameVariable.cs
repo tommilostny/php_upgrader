@@ -40,7 +40,7 @@ public static class RenameVariable
     /// <summary> Přejmenovat proměnnou $beta v souboru. </summary>
     public static FileWrapper RenameBeta(this FileWrapper file, MonaUpgrader upgrader)
     {
-        upgrader.RenameVar(file.Content);
+        upgrader.RenameVar(file.Content, newVarName: upgrader.WebName.Equals("vestavne-spotrebice-rubicon", StringComparison.Ordinal) ? "pazitka" : null);
         return file;
     }
 
