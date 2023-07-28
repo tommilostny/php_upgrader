@@ -72,7 +72,8 @@ public partial class MonaUpgrader : PhpUpgraderBase
                     .UpgradeSitemapSave(AdminFolders)
                     .UpgradeGlobalBeta()
                     .RenameBeta(this)
-                    .UpgradeFloatExplodeConversions();
+                    .UpgradeFloatExplodeConversions()
+                    .UpgradeUndefinedConstAccess();
                 break;
         }
         file.UpgradeUnlink()

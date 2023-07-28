@@ -200,5 +200,26 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("if (count($MENU_CTG) == 0",
          "if ($MENU_CTG === null || count($MENU_CTG) == 0"
         ),
+        ("foreach($VARIANTY[\"$idp\"] as $varianta) {",
+         "if (isset($VARIANTY[\"$idp\"])) foreach($VARIANTY[\"$idp\"] as $varianta) {"
+        ),
+        ("count($VARIANTY[\"$idp\"]) >",
+         "isset($VARIANTY[\"$idp\"]) && count($VARIANTY[\"$idp\"]) >"
+        ),
+        ("count($VARIANTY[\"$idp\"]) <",
+         "isset($VARIANTY[\"$idp\"]) && count($VARIANTY[\"$idp\"]) <"
+        ),
+        ("count($VARIANTY[\"$idp\"]) ==",
+         "isset($VARIANTY[\"$idp\"]) && count($VARIANTY[\"$idp\"]) =="
+        ),
+        ("count($VARIANTY[\"$idp\"]) !",
+         "isset($VARIANTY[\"$idp\"]) && count($VARIANTY[\"$idp\"]) !"
+        ),
+        ("$category_id = najdi_v_db(\"shop_category\",\"seo_url\",$page_url,\"category_id\");//prevod name na id\r\n\t$menu_q = \"SELECT * FROM shop_category WHERE shop_id_up = '\".$category_id.\"'\";\r\n\t$menu_d = pg_query($menu_q);\r\n\t$pocet_menu = pg_num_rows($menu_d);\r\n\t$MENU_CTG = array();\r\n\twhile($menu_r = pg_fetch_assoc($menu_d)) {\r\n\t\t$MENU_CTG[] = $menu_r['category_id'];\t\t\r\n\t}",
+         "$category_id = najdi_v_db(\"shop_category\",\"seo_url\",$page_url,\"category_id\");//prevod name na id\r\n\tif (!empty($category_id)) {\r\n\t\t$menu_q = \"SELECT * FROM shop_category WHERE shop_id_up = '\".$category_id.\"'\";\r\n\t\t$menu_d = pg_query($menu_q);\r\n\t\t$pocet_menu = pg_num_rows($menu_d);\r\n\t\t$MENU_CTG = array();\r\n\t\twhile($menu_r = pg_fetch_assoc($menu_d)) {\r\n\t\t\t$MENU_CTG[] = $menu_r['category_id'];\t\t\r\n\t\t}\r\n\t}"
+        ),
+        ("$category_id = najdi_v_db(\"shop_category\",\"seo_url\",$page_url,\"category_id\");//prevod name na id\n\t$menu_q = \"SELECT * FROM shop_category WHERE shop_id_up = '\".$category_id.\"'\";\n\t$menu_d = pg_query($menu_q);\n\t$pocet_menu = pg_num_rows($menu_d);\n\t$MENU_CTG = array();\n\twhile($menu_r = pg_fetch_assoc($menu_d)) {\n\t\t$MENU_CTG[] = $menu_r['category_id'];\t\t\n\t}",
+         "$category_id = najdi_v_db(\"shop_category\",\"seo_url\",$page_url,\"category_id\");//prevod name na id\n\tif (!empty($category_id)) {\n\t\t$menu_q = \"SELECT * FROM shop_category WHERE shop_id_up = '\".$category_id.\"'\";\n\t\t$menu_d = pg_query($menu_q);\n\t\t$pocet_menu = pg_num_rows($menu_d);\n\t\t$MENU_CTG = array();\n\t\twhile($menu_r = pg_fetch_assoc($menu_d)) {\n\t\t\t$MENU_CTG[] = $menu_r['category_id'];\t\t\n\t\t}\n\t}"
+        ),
     };
 }

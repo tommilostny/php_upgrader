@@ -52,7 +52,7 @@ public static class Program
         //0. fáze: příprava PHP upgraderu (kontrola zadaných argumentů)
         // Může nastat případ, kdy složka webu neexistuje. Uživatel je tázán, zda se pokusit stáhnout z FTP mcrai1.
         var uw = await LoadPhpUpgraderAsync(rubicon, adminFolders, rootFolders, beta,
-                                            connectionFile, ignoreConnect, db, user, password, host).ConfigureAwait(false);
+                                            connectionFile, ignoreConnect, db, user, password, host, dontUpgrade).ConfigureAwait(false);
         if (uw is not null and var (upgrader, workDir)) //PHP upgrader se povedlo inicializovat.
         {
             //1. fáze: (pokud je vyžadováno)
@@ -73,7 +73,7 @@ public static class Program
         Console.WriteLine($"Celkový čas: {DateTime.Now - startTime}");
     }
 
-    static async Task<(PhpUpgraderBase, string workDir)?> LoadPhpUpgraderAsync(bool rubicon, string[] adminFolders, string[] rootFolders, string beta, string connectionFile, bool ignoreConnect, string db, string user, string password, string host)
+    static async Task<(PhpUpgraderBase, string workDir)?> LoadPhpUpgraderAsync(bool rubicon, string[] adminFolders, string[] rootFolders, string beta, string connectionFile, bool ignoreConnect, string db, string user, string password, string host, bool dontUpgrade)
     {
         var workDir = Path.Join(_baseFolder, "weby", _webName);
         if (_webName == string.Empty)
@@ -87,7 +87,7 @@ public static class Program
             Directory.Delete(workDir);
         }
         //Pokusit se stáhnout soubory, pokud složka neexistuje (aka děláme nový web poprvé).
-        if (!Directory.Exists(workDir))
+        if (!dontUpgrade && !Directory.Exists(workDir))
         {
             Console.WriteLine($"Složka {workDir} neexistuje. Načítám údaje z ftp_logins.txt a stahuji z FTP {McraiFtp.DefaultHostname1}.");
             try
@@ -98,6 +98,10 @@ public static class Program
             {
                 return null;
             }
+        }
+        if (dontUpgrade)
+        {
+            return (null, workDir);
         }
         //Složka webu k aktualizaci existuje, vytvořit PHP upgrader.
         var upgrader = !rubicon ? new MonaUpgrader(_baseFolder, _webName)
