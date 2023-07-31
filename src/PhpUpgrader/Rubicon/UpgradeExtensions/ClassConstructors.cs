@@ -74,8 +74,11 @@ public static partial class ClassConstructors
                                     TimeSpan.FromSeconds(4));
             if (match.Success)
             {
-                var @params = LoadParameters(match.Value);
-                var key = ParametersKey(@params);
+                var @params = LoadParameters(match.ValueSpan);
+                Span<char> keySpan = stackalloc char[@params.Length];
+                ParametersKey(@params, ref keySpan);
+
+                var key = keySpan.ToString();
 
                 if (match.Value.StartsWith("__construct", StringComparison.Ordinal))
                 {
@@ -88,16 +91,28 @@ public static partial class ClassConstructors
         return result;
     }
 
-    private static string LoadParameters(string functionMatch)
+    private static ReadOnlySpan<char> LoadParameters(in ReadOnlySpan<char> functionMatch)
     {
-        var paramsStartIndex = functionMatch.IndexOf('(', StringComparison.Ordinal) + 1;
+        var paramsStartIndex = functionMatch.IndexOf('(') + 1;
         var paramsEndIndex = functionMatch.LastIndexOf(')');
         return functionMatch[paramsStartIndex..paramsEndIndex];
     }
 
-    private static string ParametersKey(string parameters)
+    private static void ParametersKey(in ReadOnlySpan<char> parameters, ref Span<char> resultKeys)
     {
-        return parameters.Replace(" ", string.Empty, StringComparison.Ordinal);
+        //return parameters.Replace(" ", string.Empty, StringComparison.Ordinal);
+        for (var (i, j) = (0, 0); i < parameters.Length; i++)
+        {
+            if (!char.IsWhiteSpace(parameters[i]))
+            {
+                resultKeys[j++] = parameters[i];
+            }
+        }
+        var nullIndex = resultKeys.IndexOf('\0');
+        if (nullIndex != -1)
+        {
+            resultKeys = resultKeys[..nullIndex];
+        }
     }
 
     internal static void GoThroughClass(string content, int startIndex, Action<int> onFunctionFindAction)
@@ -117,7 +132,7 @@ public static partial class ClassConstructors
             }
             if (i < content.Length - 2)
             {
-                var twoCharSlice = $"{currentChar}{content[i + 1]}";
+                var twoCharSlice = content.AsSpan().Slice(i, 2);
                 if (CommentCheck(twoCharSlice, ref inBlockComment, ref i, "/*")
                     || CommentCheck(twoCharSlice, ref inBlockComment, ref i, "*/", matchValue: false)
                     || inBlockComment
@@ -190,55 +205,82 @@ public static partial class ClassConstructors
         if (match.Success)
         {
             //ano, jedná se o starý konstruktor. Pokud neexistuje jeho aktualizovaná varianta __construct, doplň.
-            var @params = LoadParameters(match.Value);
-            if (!constructors[ParametersKey(@params)])
+            var @params = LoadParameters(match.ValueSpan);
+            Span<char> keySpan = stackalloc char[@params.Length];
+            ParametersKey(@params, ref keySpan);
+
+            string? key = null;
+            foreach (var param in constructors.Keys)
             {
-                var oldConstructor = $"{className}({@params})";
-                higherHalf = $"__construct{higherHalf.AsSpan(className.Length)}";
+                if (keySpan.SequenceEqual(param.AsSpan()))
+                {
+                    key = param;
+                    break;
+                }
+            }
+            if (key is not null && !constructors[key])
+            {
+                var whitespace = PublicFunctionSpacesRegex().Match(lowerHalf).Groups["spaces"].ValueSpan;
+                var higherHalfSpan = higherHalf.AsSpan(className.Length);
 
-                var whitespace = PublicFunctionSpacesRegex().Match(lowerHalf).Groups["spaces"]
-                    .Value;
-
-                var compatibilityConstructorBuilder = new StringBuilder(oldConstructor)
-                    .AppendLine()
-                    .Append(whitespace)
-                    .Append('{')
-                    .AppendLine()
-                    .Append(whitespace)
-                    .Append(whitespace)
-                    .AppendLine(new ParametersWithoutDefaultValuesFormat(), $"self::__construct({@params});")
-                    .Append(whitespace)
-                    .Append('}')
-                    .AppendLine()
-                    .AppendLine();
-
-                contentStr = $"{lowerHalf}{compatibilityConstructorBuilder}    public function {higherHalf}";
+                contentStr = AddCompatibilityConstructor(lowerHalf, higherHalfSpan, className, @params, whitespace);
             }
         }
     }
 
-    private class ParametersWithoutDefaultValuesFormat : IFormatProvider, ICustomFormatter
+    private static string AddCompatibilityConstructor(in ReadOnlySpan<char> lowerHalf, in ReadOnlySpan<char> higherHalf, in ReadOnlySpan<char> className, in ReadOnlySpan<char> @params, in ReadOnlySpan<char> whitespace)
     {
-        public string Format(string? format, object? arg, IFormatProvider? formatProvider)
-        {
-            if (arg is not null and string paramsString)
-            {
-                var sb = new StringBuilder(paramsString);
-                var @params = sb.Split(',');
-                for (var i = 0; i < @params.Count; i++)
-                {
-                    var param = @params[i];
-                    var name = param.Split('=')[0].Replace(" ", string.Empty).Replace("&", string.Empty);
-                    param.Clear();
-                    param.Append(name);
-                }
-                @params.JoinInto(sb, ", ");
-                return sb.ToString();
-            }
-            return null;
-        }
+        using var ccb = ZString.CreateStringBuilder();
+        ccb.Append(lowerHalf);
+        ccb.Append(className);
+        ccb.Append('(');
+        ccb.Append(@params);
+        ccb.Append(')');
+        ccb.AppendLine();
+        ccb.Append(whitespace);
+        ccb.Append('{');
+        ccb.AppendLine();
+        ccb.Append(whitespace);
+        ccb.Append(whitespace);
 
-        public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : null;
+        ccb.Append("self::__construct(");
+        var loadingVar = true;
+        var lastCommaIndex = @params.LastIndexOf(',');
+        for (var i = 0; i < @params.Length; i++)
+        {
+            var currentChar = @params[i];
+            if (loadingVar && (!char.IsWhiteSpace(currentChar) || @params[i - 1] == ','))
+            {
+                if (currentChar == '=')
+                {
+                    if (lastCommaIndex != -1 && i <= lastCommaIndex)
+                    {
+                        ccb.Append(',');
+                        ccb.Append(' ');
+                    }
+                    loadingVar = false;
+                    continue;
+                }
+                if (currentChar != '&')
+                {
+                    ccb.Append(currentChar);
+                }
+            }
+            if (!loadingVar && currentChar == '$')
+            {
+                loadingVar = true;
+                i--;
+            }
+        }
+        ccb.Append(");");
+        ccb.AppendLine();
+        ccb.Append(whitespace);
+        ccb.Append('}');
+        ccb.AppendLine();
+        ccb.AppendLine();
+        ccb.Append("    public function __construct");
+        ccb.Append(higherHalf);
+        return ccb.ToString();
     }
 
     [GeneratedRegex(@"class\s.+\s*\{", RegexOptions.Multiline, matchTimeoutMilliseconds: 66666)]

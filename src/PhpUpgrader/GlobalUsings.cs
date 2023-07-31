@@ -1,4 +1,5 @@
-﻿global using FtpSync;
+﻿global using Cysharp.Text;
+global using FtpSync;
 global using PhpUpgrader;
 global using PhpUpgrader.Mona;
 global using PhpUpgrader.Rubicon;
