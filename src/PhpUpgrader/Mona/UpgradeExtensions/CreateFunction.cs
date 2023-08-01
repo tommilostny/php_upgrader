@@ -17,9 +17,11 @@ public static partial class CreateFunction
     {
         var args = Array.Empty<string>(); //parametry výsledné anonymní funkce.
 
-        var evaluator = new MatchEvaluator(m => CreateFunctionToAnonymousFunction(m, content, warningsCollection, lineOffset, out args));
-        var updated = CreateFunctionRegex().Replace(content, evaluator);
-
+        var updated = CreateFunctionRegex()
+            .Replace(
+                content,
+                m => CreateFunctionToAnonymousFunction(m, content, warningsCollection, lineOffset, out args)
+        );
         return (updated, args);
     }
 
@@ -177,17 +179,14 @@ public static partial class CreateFunction
 
     private static string UpgradeConcats(string code)
     {
-        var evaluator = new MatchEvaluator(m => _ConcatStringVariant1(m, code));
-        code = ConcatRegex1().Replace(code, evaluator);
-
-        evaluator = new MatchEvaluator(_ConcatStringVariant2);
-        code = ConcatRegex2().Replace(code, evaluator);
+        code = ConcatRegex1().Replace(code, _ConcatStringVariant1);
+        code = ConcatRegex2().Replace(code, _ConcatStringVariant2);
         return code;
 
         static string _Inside(Match match) => match.Groups["inside"].Value.Trim();
         // ' . . '
-        static string _ConcatStringVariant1(Match match, string content)
-            => content[match.Index - 1] == '"' ? $"\".{_Inside(match)}.\"" : $". {_Inside(match)} .";
+        string _ConcatStringVariant1(Match match)
+            => code[match.Index - 1] == '"' ? $"\".{_Inside(match)}.\"" : $". {_Inside(match)} .";
         // . ' ' .
         static string _ConcatStringVariant2(Match match) => $". \"{_Inside(match)}\" .";
     }

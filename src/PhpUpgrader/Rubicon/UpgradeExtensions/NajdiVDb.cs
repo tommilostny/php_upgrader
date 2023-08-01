@@ -21,10 +21,14 @@ public static partial class NajdiVDb
 
     private static MatchEvaluator _wrapInIfEval = new(match =>
     {
+        var var1 = match.Groups["var1"].Value;
+        if (match.Value.Contains($"if (!empty({var1}))", StringComparison.Ordinal))
+        {
+            return match.Value;
+        }
         var s = match.Groups["indent"].Value;
         var line1 = match.Groups["line1"].Value;
         var line2 = match.Groups["line2"].Value;
-        var var1 = match.Groups["var1"].Value;
         var var2 = match.Groups["var2"].Value;
         var result = match.Groups["result"].Value;
 

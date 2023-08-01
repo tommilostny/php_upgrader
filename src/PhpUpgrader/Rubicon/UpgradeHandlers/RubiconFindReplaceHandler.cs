@@ -61,9 +61,6 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("emptiable(strip_tags($obj->category_name.', '.$obj->style_name)), $title)",
          "emptiable(strip_tags($obj->category_name.', '.$obj->style_name), $title))"
         ),
-        (@"preg_match(""^$atom+(\\.$atom+)*@($domain?\\.)+$domain\$"", $email)",
-         @"preg_match("";^$atom+(\\.$atom+)*@($domain?\\.)+$domain\$;"", $email)"
-        ),
         ("preg_match(\"ID\", $nazev)",
          "preg_match('~ID~', $nazev)"
         ),
@@ -226,6 +223,18 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ),
         ("class McBalikovna\n{\n\n    private $source_xml = 'http://napostu.ceskaposta.cz/vystupy/balikovny.xml';\n    private $domain = 1;\n    private $hostname = null;\n    private $username = null;\n    private $password = null;\n    private $database = null;\n    private $connport = null;\n\n    public function __construct($domain = 1, $hostname, $username, $password, $database, $connport)",
          "class McBalikovna\n{\n\n    private $source_xml = 'http://napostu.ceskaposta.cz/vystupy/balikovny.xml';\n    private $domain = 1;\n    private $hostname = null;\n    private $username = null;\n    private $password = null;\n    private $database = null;\n    private $connport = null;\n\n    public function __construct($domain = 1, $hostname = null, $username = null, $password = null, $database = null, $connport = null)"
+        ),
+        ("public function GetData($SearchString, $id) {\r\n        $data = [];\r\n\r\n        if (!empty($SearchString)) {\r\n            $search = ' WHERE '.$SearchString;\r\n        }\r\n\r\n        if (!empty($id) && is_numeric($id)) {\r\n            $search = ' WHERE id = ?';\r\n            $data = [$id];\r\n        }",
+         "public function GetData($SearchString = null, $id = null) {\r\n        $data = [];\r\n\r\n        if (!empty($SearchString)) {\r\n            $search = ' WHERE '.$SearchString;\r\n        }\r\n\r\n        if (!empty($id) && is_numeric($id)) {\r\n            $search = ' WHERE id = ?';\r\n            $data = [$id];\r\n        }"
+        ),
+        ("public function GetData($SearchString, $id) {\n        $data = [];\n\n        if (!empty($SearchString)) {\n            $search = ' WHERE '.$SearchString;\n        }\n\n        if (!empty($id) && is_numeric($id)) {\n            $search = ' WHERE id = ?';\n            $data = [$id];\n        }",
+         "public function GetData($SearchString = null, $id = null) {\n        $data = [];\n\n        if (!empty($SearchString)) {\n            $search = ' WHERE '.$SearchString;\n        }\n\n        if (!empty($id) && is_numeric($id)) {\n            $search = ' WHERE id = ?';\n            $data = [$id];\n        }"
+        ),
+        ("//}\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t}\r\n\t}\r\n} else {\r\n  fputs($fp,\"XML ma nulovou velikost\\n\");\r\n}\r\nfclose($fp);",
+         "//}\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t}\r\n\t}\r\nelse {\r\n  fputs($fp,\"XML ma nulovou velikost\\n\");\r\n}\r\nfclose($fp);"
+        ),
+        ("//}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n} else {\n  fputs($fp,\"XML ma nulovou velikost\\n\");\n}\nfclose($fp);",
+         "//}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\nelse {\n  fputs($fp,\"XML ma nulovou velikost\\n\");\n}\nfclose($fp);"
         ),
     };
 }

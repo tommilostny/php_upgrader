@@ -86,6 +86,6 @@ public static partial class GetMagicQuotesGpc
     [GeneratedRegex(@"if\s?\(\s?(?<neg>!)?\s?(?<fn>get_magic_quotes_(gpc|runtime))\(\)\s?\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex GetMagicQuotesIfRegex();
 
-    [GeneratedRegex(@"/\*.{0,6}get_magic_quotes_(gpc|runtime)\(\)(\n|.){0,236}\*/", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    [GeneratedRegex(@"\/\*((.|\n)(?!\*\/))*?get_magic_quotes_(gpc|runtime)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex GetMagicQuotesCommentedRegex();
 }

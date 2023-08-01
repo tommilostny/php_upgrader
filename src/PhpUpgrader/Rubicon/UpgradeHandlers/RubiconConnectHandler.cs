@@ -29,6 +29,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         UpgradeHostname(file, upgrader);
         UpgradeOldDbConnect(file, upgrader);
         UpgradeRubiconModulesDB(file, upgrader);
+        UpgradeDefines(file, upgrader);
     }
 
     public static void UpgradeMysqlConnect(FileWrapper file)
@@ -159,9 +160,8 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         }
         bool usernameLoaded = false, passwordLoaded = false, databaseLoaded = false;
         var content = file.Content.ToString();
-        var evaluator = new MatchEvaluator(_NewCredentialAndComment);
 
-        file.Content.Replace(SetupConnectRegex().Replace(content, evaluator))
+        file.Content.Replace(SetupConnectRegex().Replace(content, _NewCredentialAndComment))
                     .Replace("////", "//");
 
         if (!usernameLoaded)
@@ -253,11 +253,10 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         if (file.Content.Contains(lookingFor) && !file.Content.Contains(commented))
         {
             var content = file.Content.ToString();
-            var evaluator = new MatchEvaluator(_DCMatchEvaluator);
             file.Content.Replace(
                 Regex.Replace(content,
                               @$"( |\t)*Database::connect\('{oldHost}'.+\);",
-                              evaluator,
+                              _DCMatchEvaluator,
                               RegexOptions.None,
                               TimeSpan.FromSeconds(4)
                 )
@@ -334,6 +333,36 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         }
     }
 
+    /// <summary>
+    /// // ===== Direct DB connection =====
+    /// define('db_host', '********');
+    /// define('db_user', '********');
+    /// define('db_pass', '********');
+    /// define('db_name', '********');
+    /// </summary>
+    private static void UpgradeDefines(FileWrapper file, PhpUpgraderBase upgrader)
+    {
+        file.Content.Replace(
+            DefineDbVarRegex().Replace(
+                file.Content.ToString(),
+                _DefineEvaluator
+            )
+        );
+        string _DefineEvaluator(Match match)
+        {
+            var varPart = match.Groups["var"].Value;
+            var cred = varPart switch
+            {
+                "host" => upgrader.Hostname,
+                "user" => upgrader.Username,
+                "pass" => upgrader.Password,
+                "name" => upgrader.Database,
+                _ => null
+            };
+            return cred is null ? match.Value : $"define('db_{varPart}', '{cred}');";
+        }
+    }
+
     private class MysqliQueryParamsFormat : IFormatProvider, ICustomFormatter
     {
         private char[]? _startChars;
@@ -356,4 +385,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
     
     [GeneratedRegex(@"\$(hostname|database|username|password)_(?<beta>\w+)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex ConnectVarRegex();
+
+    [GeneratedRegex(@"define\s?\(\s?(?<quote>['""])db_(?<var>\w+?)\k<quote>.+?;", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    private static partial Regex DefineDbVarRegex();
 }

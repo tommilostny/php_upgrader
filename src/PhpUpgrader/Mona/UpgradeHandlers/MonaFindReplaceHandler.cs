@@ -32,8 +32,6 @@ public class MonaFindReplaceHandler : IFindReplaceHandler
         ( "MySQL_Query (", "mysqli_query($beta, " ),
         ( ", $beta)", ")" ),
         ( ",$beta)", ")" ),
-        ( "eregi(", "preg_match(" ),
-        ( "eregi (", "preg_match(" ),
         ( "preg_match('^<tr(.*){0,}</tr>$'", "preg_match('/^<tr(.*){0,}< \\/tr>$/'" ),
         ( "mysql_data_seek", "mysqli_data_seek" ),
         ( "mysql_real_escape_string", "mysqli_real_escape_string" ),

@@ -85,20 +85,21 @@ public static partial class RegexFunctions
         };
         var quote = match.ValueSpan[++bracketIndex];
         char? ignoreFlag = oldFunc is "eregi" ? 'i' : null;
+        var delimiter = match.Value.Contains("$atom", StringComparison.Ordinal) ? ';' : _delimiter;
 
         var pattern = Regex.Replace(match.Value[++bracketIndex..^1],
-                                    $@"(^{_delimiter})|([^\\]{_delimiter})",
-                                    _patternDelimiterEscapeEvaluator,
+                                    $@"(^{delimiter})|([^\\]{delimiter})",
+                                    _PatternDelimiterEscapeEvaluator,
                                     RegexOptions.None,
                                     TimeSpan.FromSeconds(4));
 
-        return $"{pregFunction}({quote}{_delimiter}{pattern}{_delimiter}{ignoreFlag}{quote}";
-    });
+        return $"{pregFunction}({quote}{delimiter}{pattern}{delimiter}{ignoreFlag}{quote}";
 
-    private static readonly MatchEvaluator _patternDelimiterEscapeEvaluator = new(match =>
-    {
-        var index = match.Value.StartsWith(_delimiter) ? 0 : 1;
-        return match.Value.Insert(index, @"\");
+        string _PatternDelimiterEscapeEvaluator(Match match)
+        {
+            var index = match.Value.StartsWith(delimiter) ? 0 : 1;
+            return match.Value.Insert(index, @"\\");
+        }
     });
 
     private static readonly MatchEvaluator _splitWithVarDelimiterEvaluator = new(match =>
