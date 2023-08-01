@@ -12,21 +12,16 @@ internal sealed class FtpUploader : FtpBase
         await ConnectClientAsync(Client1).ConfigureAwait(false);
 
         ColoredConsole.SetColor(ConsoleColor.Cyan)
-            .WriteLine($"🔄️Probíhá kontrola existence adresářů na {Client1.Host}...")
-            .ResetColor();
-
-        var localFolder = Path.Join(_baseFolder, "weby", _webName);
-        await CreateNonExistantDirectoriesAsync(localFolder, localFolder).ConfigureAwait(false);
-
-        ColoredConsole.SetColor(ConsoleColor.Cyan)
             .WriteLine($"🔄️Probíhá nahrávání upravených PHP souborů na {Client1.Host}...")
             .ResetColor();
 
-        await Client1.UploadDirectory(localFolder,
-                                      remoteFolder: _path,
-                                      existsMode: FtpRemoteExists.Overwrite,
-                                      rules: PhpRules,
-                                      progress: new FtpProgressReport(FO.Upload)).ConfigureAwait(false);
+        var localFolder = Path.Join(_baseFolder, "weby", _webName);
+        var clients = await InitClientsQueueAsync(Client1).ConfigureAwait(false);
+        var tasks = new List<Task>();
+        await UploadPhpsRecursivelyAsync(clients, localFolder, tasks).ConfigureAwait(false);
+        
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+        CleanupClientsQueue(clients, Client1);
 
         ColoredConsole.SetColor(ConsoleColor.Green)
             .WriteLine($"✅ Nahrávání upravených PHP souborů na {Client1.Host} dokončeno.")
@@ -34,17 +29,30 @@ internal sealed class FtpUploader : FtpBase
             .ResetColor();
     }
 
-    private async Task CreateNonExistantDirectoriesAsync(string localFolder, string baseToRemove)
+    private async Task UploadPhpsRecursivelyAsync(ConcurrentQueue<AsyncFtpClient> clients, string localFolder, List<Task> tasks)
     {
         foreach (var dir in Directory.EnumerateDirectories(localFolder))
         {
-            var remoteDir = $"{_path}{dir[baseToRemove.Length..].Replace('\\', '/')}";
-            if (!await Client1.DirectoryExists(remoteDir).ConfigureAwait(false))
+            await UploadPhpsRecursivelyAsync(clients, dir, tasks).ConfigureAwait(false);
+        }
+        foreach (var file in Directory.EnumerateFiles(localFolder))
+        {
+            if (file.EndsWith(".php", StringComparison.Ordinal))
             {
-                Console.WriteLine($"📁 Vytvářím chybějící adresář {remoteDir}...");
-                await Client1.CreateDirectory(remoteDir).ConfigureAwait(false);
+                var client = await ExtractClientAsync(clients).ConfigureAwait(false);
+                tasks.Add(_Upload(file, client));
             }
-            await CreateNonExistantDirectoriesAsync(dir, baseToRemove).ConfigureAwait(false);
+        }
+
+        async Task _Upload(string localPath, AsyncFtpClient client)
+        {
+            var remotePath = $"{_path}{localPath[(_baseFolder.Length + 6 + _webName.Length)..].Replace('\\', '/')}";
+            lock (_writeLock)
+            {
+                ColoredConsole.WriteLine($"🔼 Probíhá upload\t{ConsoleColor.DarkGray}{remotePath}{Symbols.PREVIOUS_COLOR}...");
+            }
+            await client.UploadFile(localPath, remotePath, createRemoteDir: true).ConfigureAwait(false);
+            clients.Enqueue(client);
         }
     }
 }

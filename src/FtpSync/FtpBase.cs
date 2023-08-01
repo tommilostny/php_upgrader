@@ -1,7 +1,10 @@
-﻿namespace FtpSync;
+﻿using System.Net.Sockets;
+
+namespace FtpSync;
 
 internal abstract class FtpBase : IDisposable
 {
+    protected const byte _nStreams = 8;
     protected const int _defaultRetries = 3;
     protected readonly object _writeLock = new();
     protected static readonly Random _random = new();
@@ -44,36 +47,36 @@ internal abstract class FtpBase : IDisposable
             ColoredConsole.WriteLine($"{ConsoleColor.DarkYellow}{client.Credentials.UserName}@{client.Host}{Symbols.PREVIOUS_COLOR}: připojeno.");
     }
 
-    private sealed class PhpFtpRule : FtpRule
+    protected static async Task<ConcurrentQueue<AsyncFtpClient>> InitClientsQueueAsync(AsyncFtpClient first)
     {
-        public override bool IsAllowed(FtpListItem result)
+        var clients = new ConcurrentQueue<AsyncFtpClient>();
+        clients.Enqueue(first);
+        for (byte i = 1; i < _nStreams; i++)
         {
-            return result.Name.EndsWith(".php", StringComparison.OrdinalIgnoreCase);
+            var dc = new AsyncFtpClient(first.Host, first.Credentials, config: first.Config);
+            await dc.Connect().ConfigureAwait(false);
+            clients.Enqueue(dc);
         }
+        return clients;
     }
-        
-    internal enum FtpOp { Upload , Download }
 
-    protected sealed class FtpProgressReport : IProgress<FtpProgress>
+    protected static async Task<AsyncFtpClient> ExtractClientAsync(ConcurrentQueue<AsyncFtpClient> clients)
     {
-        private readonly string? _lineStartStr;
-        private readonly FO _operation;
-        private string _prevPath = string.Empty;
+        AsyncFtpClient? cl;
+        while (!clients.TryDequeue(out cl)) await Task.Yield();
+        return cl;
+    }
 
-        public FtpProgressReport(FO operation)
-        {
-            _operation = operation;
-            _lineStartStr = _operation == FO.Upload ? "\r🔼 Probíhá upload\t" : "\r🔽 Probíhá download\t";
-        }
+    protected static async Task<(AsyncFtpClient, AsyncFtpClient)> ExtractClientsAsync(ConcurrentQueue<AsyncFtpClient> clients1, ConcurrentQueue<AsyncFtpClient> clients2) =>
+    (
+        await ExtractClientAsync(clients1).ConfigureAwait(false),
+        await ExtractClientAsync(clients2).ConfigureAwait(false)
+    );
 
-        public void Report(FtpProgress value)
-        {
-            var path = _operation == FO.Download ? value.RemotePath : value.LocalPath;
-            if (!string.Equals(_prevPath, path, StringComparison.Ordinal))
-            {
-                _prevPath = path;
-                ColoredConsole.Write(_lineStartStr).SetColor(ConsoleColor.DarkGray).Write(path).ResetColor().WriteLine("...");
-            }
-        }
+    protected static void CleanupClientsQueue(ConcurrentQueue<AsyncFtpClient> clients, AsyncFtpClient first)
+    {
+        while (clients.TryDequeue(out var dc))
+            if (dc != first)
+                dc.Dispose();
     }
 }

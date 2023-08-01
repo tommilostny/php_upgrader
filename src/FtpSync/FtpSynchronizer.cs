@@ -2,7 +2,6 @@
 
 internal sealed class FtpSynchronizer : FtpBase
 {
-    private const byte _nStreams = 8;
     private readonly long _fileSizeLimit;
 
     private AsyncFtpClient Client2 { get; set; }
@@ -128,20 +127,8 @@ internal sealed class FtpSynchronizer : FtpBase
             .ResetColor();
 
         // Inicializace více klientů pro paralelní streaming.
-        var downClients = new ConcurrentQueue<AsyncFtpClient>();
-        var upClients = new ConcurrentQueue<AsyncFtpClient>();
-        downClients.Enqueue(Client1);
-        upClients.Enqueue(Client2);
-        for (byte i = 1; i < _nStreams; i++)
-        {
-            var dc = new AsyncFtpClient(Client1.Host, Client1.Credentials, config: Client1.Config);
-            await dc.Connect().ConfigureAwait(false);
-            downClients.Enqueue(dc);
-
-            var uc = new AsyncFtpClient(Client2.Host, Client2.Credentials, config: Client2.Config);
-            await uc.Connect().ConfigureAwait(false);
-            upClients.Enqueue(uc);
-        }
+        var downClients = await InitClientsQueueAsync(Client1).ConfigureAwait(false);
+        var upClients = await InitClientsQueueAsync(Client2).ConfigureAwait(false);
 
         // Spouštění synchronizačních tasků nad klienty ve frontě (je přidělen prvnímu volnému, jinak se čeká na navrácení do fronty).
         var tasks = new List<Task>();
@@ -151,10 +138,7 @@ internal sealed class FtpSynchronizer : FtpBase
             var exists = files2.TryGetValue(file1.FullName, out var modifiedOnServer2);
             if (!exists || file1.Modified > modifiedOnServer2)
             {
-                AsyncFtpClient? cl1, cl2;
-                while (!downClients.TryDequeue(out cl1)) await Task.Yield();
-                while (!upClients.TryDequeue(out cl2)) await Task.Yield();
-
+                var (cl1, cl2) = await ExtractClientsAsync(downClients, upClients).ConfigureAwait(false);
                 tasks.Add(DownloadAndUploadAsync(cl1, cl2, file1.FullName, file1.FullName, downClients, upClients));
             }
         }
@@ -164,16 +148,12 @@ internal sealed class FtpSynchronizer : FtpBase
             ColoredConsole.SetColor(ConsoleColor.White).WriteLine("🔄️Čeká se na dokončení posledních operací...").ResetColor();
         }
         await Task.WhenAll(tasks).ConfigureAwait(false);
-        ColoredConsole.SetColor(ConsoleColor.Green).WriteLine("✅ Synchronizace FTP serverů dokončena.").WriteLine().ResetColor();
 
         // Odpojení přidaných paralelních klientů po dokončení synchronizace.
-        while (downClients.TryDequeue(out var dc))
-            if (dc != Client1)
-                dc.Dispose();
+        CleanupClientsQueue(downClients, Client1);
+        CleanupClientsQueue(upClients, Client2);
 
-        while (upClients.TryDequeue(out var uc))
-            if (uc != Client2)
-                uc.Dispose();
+        ColoredConsole.SetColor(ConsoleColor.Green).WriteLine("✅ Synchronizace FTP serverů dokončena.").WriteLine().ResetColor();
     }
 
     private async Task DownloadAndUploadAsync(AsyncFtpClient sourceClient,

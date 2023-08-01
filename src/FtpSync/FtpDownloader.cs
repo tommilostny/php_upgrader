@@ -24,7 +24,7 @@ internal sealed class FtpDownloader : FtpBase
                                         remoteFolder: _path,
                                         existsMode: FtpLocalExists.Overwrite,
                                         rules: PhpRules,
-                                        progress: new FtpProgressReport(FO.Download)).ConfigureAwait(false);
+                                        progress: new FtpProgressReport(FtpOp.Download)).ConfigureAwait(false);
 
         var realPath = Path.Join(_baseFolder, "weby", _webName);
         Directory.Move(temporaryPath, realPath);
