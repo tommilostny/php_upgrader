@@ -82,15 +82,11 @@ public sealed class FileWrapper
     {
         PrintFile(Path, modified ? ModifiedSymbol : UnmodifiedSymbol);
         Console.WriteLine();
-
-        if (modified) //Výpis varování k souboru, pouze pokud je soubor nějak upraven.
+        foreach (var warning in Warnings)
         {
-            foreach (var warning in Warnings)
-            {
-                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.Error.WriteLine($"   ⌊{WarningSymbol} {warning}");
-                Console.ResetColor();
-            }
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.Error.WriteLine($"   ⌊{WarningSymbol} {warning}");
+            Console.ResetColor();
         }
     }
 
