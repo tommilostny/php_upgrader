@@ -203,6 +203,6 @@ public static partial class WhileListEach
     [GeneratedRegex(@"include ((TML_URL\s?\.\s?[""'])|[""']rubicon)(?<file>.+?)(""|')", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex IncludeRegex();
 
-    [GeneratedRegex(@"(?<array>\$\w+?)\[""(?<keyval>\$\w+?)""\]", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 666666)]
+    [GeneratedRegex(@"(?<array>\$\w+?)\[""?(?<keyval>\$\w+?)""?\]", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 666666)]
     private static partial Regex ArrayAccessRegex();
 }
