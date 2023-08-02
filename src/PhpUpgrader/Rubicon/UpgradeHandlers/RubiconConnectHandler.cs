@@ -6,6 +6,9 @@ namespace PhpUpgrader.Rubicon.UpgradeHandlers;
 public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnectHandler
 {
     private static string? _setupPhp = null;
+    private static string? _setup500Php = null;
+    private static string? _rubiconConfCoreConfigurePhp = null;
+    private static string? _rubiconApiPhp = null;
     private static string? _connectionsDir = null;
 
     private static readonly string _monamyDir = $"{Path.DirectorySeparatorChar}monamy{Path.DirectorySeparatorChar}";
@@ -143,40 +146,51 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         return mysqliQueries.ToString();
     }
 
+    private static void InitSetupVars(string path, string webName, out bool isRubiconCoreConfigure, out bool isRubiconApi)
+    {
+        _setupPhp ??= Path.Join(webName, "setup.php");
+        _setup500Php ??= Path.Join(webName, "setup_500.php");
+        _rubiconConfCoreConfigurePhp ??= Path.Join("conf", "core_configure.php");
+        _rubiconApiPhp ??= Path.Join("classes", "RubiconAPI.class.php");
+
+        isRubiconCoreConfigure = path.EndsWith(_rubiconConfCoreConfigurePhp, StringComparison.Ordinal);
+        isRubiconApi = path.EndsWith(_rubiconApiPhp, StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
     public static void UpgradeSetup(FileWrapper file, PhpUpgraderBase upgrader)
     {
-        _setupPhp ??= Path.Join(upgrader.WebName, "setup.php");
-        if (!file.Path.EndsWith(_setupPhp, StringComparison.Ordinal))
-        {
+        InitSetupVars(file.Path, upgrader.WebName, out var isRubiconCoreConfigure, out var isRubiconApi);
+
+        if (!isRubiconCoreConfigure && !isRubiconApi
+            && !file.Path.EndsWith(_setupPhp, StringComparison.Ordinal)
+            && !file.Path.EndsWith(_setup500Php, StringComparison.Ordinal)
+            && !file.Path.EndsWith("cat_url.php", StringComparison.Ordinal)
+            && !file.Path.EndsWith("cat_fix.php", StringComparison.Ordinal))
             return;
-        }
+
         file.Content.Replace("$_SERVER[HTTP_HOST]", "$_SERVER['HTTP_HOST']");
 
         if (upgrader.Database is null || upgrader.Username is null || upgrader.Password is null
-            || file.Content.Contains($"password = '{upgrader.Password}';"))
-        {
+            || file.Content.Contains($"password = '{upgrader.Password}';")
+            || file.Content.Contains($"password_beta = \"{upgrader.Password}\";"))
             return;
-        }
-        bool usernameLoaded = false, passwordLoaded = false, databaseLoaded = false;
+
+        bool usernameLoaded = false, passwordLoaded = false, databaseLoaded = false, hostnameLoaded = false;
         var content = file.Content.ToString();
 
         file.Content.Replace(SetupConnectRegex().Replace(content, _NewCredentialAndComment))
                     .Replace("////", "//");
 
         if (!usernameLoaded)
-        {
-            file.Warnings.Add("setup.php - nenačtené přihlašovací jméno.");
-        }
+            file.Warnings.Add("setup - nenačtené přihlašovací jméno.");
         if (!passwordLoaded)
-        {
-            file.Warnings.Add("setup.php - nenačtené heslo.");
-        }
+            file.Warnings.Add("setup - nenačtené heslo.");
         if (!databaseLoaded)
-        {
-            file.Warnings.Add("setup.php - nenačtený název databáze.");
-        }
-        file.Warnings.Add("setup.php - zkontrolovat připojení k databázi.");
+            file.Warnings.Add("setup - nenačtený název databáze.");
+        if (isRubiconCoreConfigure && !hostnameLoaded)
+            file.Warnings.Add("setup - nenačtená adresa databázového serveru.");
+        file.Warnings.Add("setup - zkontrolovat připojení k databázi.");
 
         string _NewCredentialAndComment(Match match)
         {
@@ -189,9 +203,15 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
 
             var credential = _LoadCred(varName, "username", "$username_beta", ref usernameLoaded, upgrader.Username)
                 ?? _LoadCred(varName, "password", "$password_beta", ref passwordLoaded, upgrader.Password)
-                ?? _LoadCred(varName, "db", "$database_beta", ref databaseLoaded, upgrader.Database);
-
-            return credential is null ? match.Value : $"//{match.Value}\n{varName} = '{credential}';";
+                ?? _LoadCred(varName, "db", "$database_beta", ref databaseLoaded, upgrader.Database)
+                ?? _LoadCred(varName, "database", "", ref databaseLoaded, upgrader.Database);
+ 
+            if ((isRubiconCoreConfigure || isRubiconApi) && credential is null)
+            {
+                credential = _LoadCred(varName, "hostname", "$hostname_beta", ref hostnameLoaded, upgrader.Hostname);
+            }
+            var spaces = isRubiconApi ? "        " : string.Empty;
+            return credential is null ? match.Value : $"//{match.Value}\n{spaces}{varName} = '{credential}';";
         }
 
         static string? _LoadCred(ReadOnlySpan<char> varName, ReadOnlySpan<char> varEnd, ReadOnlySpan<char> betaName, ref bool loaded, string credValue)
@@ -377,7 +397,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : null;
     }
 
-    [GeneratedRegex(@"\$(setup_connect|\w+?_beta).*?=\s?(""|').*?(""|');", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    [GeneratedRegex(@"(?<!\/(\/.*?|\*((.|\n)(?!\*\/))*?))\$(connect_|database|username|password|hostname|rubicon_db->pgsql_|setup_connect|\w+?_beta).*?=\s?[""'].*?[""'];", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex SetupConnectRegex();
     
     [GeneratedRegex(@"mysql_query\("".+""\);", RegexOptions.None, matchTimeoutMilliseconds: 66666)]
