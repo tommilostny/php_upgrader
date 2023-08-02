@@ -1,6 +1,4 @@
-﻿using System.Net.Sockets;
-
-namespace FtpSync;
+﻿namespace FtpSync;
 
 internal abstract class FtpBase : IDisposable
 {

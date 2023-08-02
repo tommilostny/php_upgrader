@@ -51,7 +51,7 @@ internal sealed class FtpUploader : FtpBase
             {
                 ColoredConsole.WriteLine($"🔼 Probíhá upload\t{ConsoleColor.DarkGray}{remotePath}{Symbols.PREVIOUS_COLOR}...");
             }
-            await client.UploadFile(localPath, remotePath, createRemoteDir: true).ConfigureAwait(false);
+            await client.UploadFile(localPath, remotePath, createRemoteDir: true, existsMode: FtpRemoteExists.Overwrite).ConfigureAwait(false);
             clients.Enqueue(client);
         }
     }
