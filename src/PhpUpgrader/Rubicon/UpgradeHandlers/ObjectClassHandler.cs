@@ -22,7 +22,7 @@ public sealed partial class ObjectClassHandler
     {
         if (_containsObjectClass)
         {
-            if (IsObjectFile(file.Path) && file.Content.Contains("class Object"))
+            if (IsObjectFile(file.Path, out var objectFileName) && file.Content.Contains("class Object"))
             {
                 file.Content.Replace("class Object", "class ObjectBase")
                             .Replace(
@@ -30,6 +30,14 @@ public sealed partial class ObjectClassHandler
                                     file.Content.ToString(),
                                     "function ObjectBase("
                 ));
+                file.MoveOnSavePath = file.Path.Replace(objectFileName, $"{Path.DirectorySeparatorChar}ObjectBase.php", StringComparison.Ordinal);
+            }
+            foreach (var of in _objectFileNames)
+            {
+                file.Content.Replace($@"\{of}'", @"\ObjectBase.php'")
+                            .Replace($@"/{of}'", @"/ObjectBase.php'")
+                            .Replace($@"\{of}\""", @"\ObjectBase.php""")
+                            .Replace($@"/{of}\""", @"/ObjectBase.php""");
             }
             file.Content.Replace("extends Object", "extends ObjectBase")
                         .Replace("@param Object", "@param ObjectBase")
@@ -58,15 +66,17 @@ public sealed partial class ObjectClassHandler
         }
     }
 
-    private static bool IsObjectFile(string path)
+    private static bool IsObjectFile(string path, out string? objectFileName)
     {
         foreach (var of in _objectFileNames)
         {
             if (path.EndsWith($"{Path.DirectorySeparatorChar}{of}", StringComparison.Ordinal))
             {
+                objectFileName = of;
                 return true;
             }
         }
+        objectFileName = null;
         return false;
     }
 
