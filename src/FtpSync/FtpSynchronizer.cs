@@ -50,7 +50,7 @@ internal sealed class FtpSynchronizer : FtpBase
             await SynchronizeFilesAsync(files1.Value, files2).ConfigureAwait(false);
         }
     }
-
+    
     private async Task<IEnumerable<FtpListItem>> EnumerateServerFilesAsync(AsyncFtpClient client)
     {
         return (await client.GetListing(_path, FtpListOption.Recursive | FtpListOption.Modify).ConfigureAwait(false))
@@ -144,14 +144,17 @@ internal sealed class FtpSynchronizer : FtpBase
         }
         await Task.Delay(500).ConfigureAwait(false);
         if (tasks.Exists(t => !t.IsCompleted)) lock (_writeLock)
-        {
-            ColoredConsole.SetColor(ConsoleColor.White).WriteLine("🔄️Čeká se na dokončení posledních operací...").ResetColor();
-        }
+            {
+                ColoredConsole.SetColor(ConsoleColor.White).WriteLine("🔄️Čeká se na dokončení posledních operací...").ResetColor();
+            }
         await Task.WhenAll(tasks).ConfigureAwait(false);
 
         // Odpojení přidaných paralelních klientů po dokončení synchronizace.
         CleanupClientsQueue(downClients, Client1);
         CleanupClientsQueue(upClients, Client2);
+
+        // Smazání souborů, které nejsou na serveru 1 (jsou na serveru 2 navíc).
+        await DeleteRedundantFilesAsync(files1, files2).ConfigureAwait(false);
 
         ColoredConsole.SetColor(ConsoleColor.Green).WriteLine("✅ Synchronizace FTP serverů dokončena.").WriteLine().ResetColor();
     }
@@ -175,7 +178,7 @@ internal sealed class FtpSynchronizer : FtpBase
         {
             returnQueue2.Enqueue(destinationClient);
 
-            await HandlePhpFileAsync(sourceClient, sourcePath).ConfigureAwait(false);
+            await HandlePhpFileAsync(sourceClient, sourcePath, PhpHandleMode.Download).ConfigureAwait(false);
             lock (_writeLock)
                 ColoredConsole.Write("🔽 Download dokončen\t")
                     .SetColor(ConsoleColor.DarkGreen)
@@ -221,7 +224,7 @@ internal sealed class FtpSynchronizer : FtpBase
         returnQueue2.Enqueue(destinationClient);
     }
 
-    private async Task HandlePhpFileAsync(AsyncFtpClient sourceClient, string sourcePath)
+    private async Task HandlePhpFileAsync(AsyncFtpClient sourceClient, string sourcePath, PhpHandleMode handleMode)
     {
         //Na serveru je nový nebo upravený PHP soubor.
         //Cesta tohoto souboru jako lokální cesta na disku.
@@ -230,13 +233,27 @@ internal sealed class FtpSynchronizer : FtpBase
         localPath = Path.Join(localBase, localPath);
         var localFileInfo = new FileInfo(localPath);
 
-        if (!localFileInfo!.Directory!.Exists)
+        //Stažení souboru nebo smazání dle zvoleného módu.
+        var deleteBackupFile = false;
+        switch (handleMode)
         {
-            localFileInfo.Directory.Create();
+            case PhpHandleMode.Download:
+                if (!localFileInfo!.Directory!.Exists)
+                    localFileInfo.Directory.Create();
+
+                var fs = await sourceClient
+                    .DownloadFile(localFileInfo.FullName, sourcePath, FtpLocalExists.Overwrite)
+                    .ConfigureAwait(false);
+                deleteBackupFile = fs.IsSuccess();
+                break;
+
+            case PhpHandleMode.DeleteLocal:
+                if (localFileInfo.Exists)
+                    localFileInfo.Delete();
+                deleteBackupFile = true;
+                break;
         }
-        //Stažení souboru
-        var status = await sourceClient.DownloadFile(localFileInfo.FullName, sourcePath, FtpLocalExists.Overwrite).ConfigureAwait(false);
-        if (status.IsSuccess())
+        if (deleteBackupFile)
         {
             //Pokud nenastala při stažení chyba, smazat zálohu souboru, pokud existuje
             //(byla stažena novější verze, také neupravená (odpovídá stavu na serveru mcrai1)).
@@ -246,8 +263,37 @@ internal sealed class FtpSynchronizer : FtpBase
         }
     }
 
+    private async Task DeleteRedundantFilesAsync(ImmutableArray<FtpListItem> files1, ImmutableDictionary<string, DateTime> files2)
+    {
+        var filesNotOnServer1 = files2.Keys.Where(f =>
+        {
+            foreach (var file in files1)
+            {
+                if (file.FullName.Equals(f, StringComparison.Ordinal))
+                    return false;
+            }
+            return true;
+        });
+        foreach (var file in filesNotOnServer1)
+        {
+            ColoredConsole.SetColor(ConsoleColor.Yellow)
+                .Write($"⚠️ {file}")
+                .ResetColor()
+                .Write($" není na serveru {Client1.Host}.")
+                .SetColor(ConsoleColor.Red)
+                .WriteLine($" Bude z {Client2.Host} smazán.")
+                .ResetColor();
+            await Client2.DeleteFile(file).ConfigureAwait(false);
+
+            if (file.EndsWith(".php", StringComparison.Ordinal))
+                await HandlePhpFileAsync(Client2, file, PhpHandleMode.DeleteLocal).ConfigureAwait(false);
+        }
+    }
+
     private sealed class FtpFileComparer : IComparer<FtpListItem>
     {
         public int Compare(FtpListItem? x, FtpListItem? y) => string.CompareOrdinal(x?.FullName, y?.FullName);
     }
+
+    private enum PhpHandleMode { Download, DeleteLocal }
 }
