@@ -2,9 +2,9 @@
 
 public class MonaFindReplaceHandler : IFindReplaceHandler
 {
-    public virtual ISet<(string find, string replace)> Replacements => _replacements;
+    public virtual ICollection<(string find, string replace)> Replacements => _replacements;
 
-    protected readonly ISet<(string, string)> _replacements = new HashSet<(string, string)>()
+    protected readonly IList<(string, string)> _replacements = new List<(string, string)>()
     {
         ( "=& new", "= new" ),
         ( "mysql_num_rows", "mysqli_num_rows" ),

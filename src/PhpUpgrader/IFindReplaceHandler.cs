@@ -3,7 +3,7 @@
 public interface IFindReplaceHandler
 {
     /// <summary> Co a čím to nahradit. </summary>
-    ISet<(string find, string replace)> Replacements { get; }
+    ICollection<(string find, string replace)> Replacements { get; }
 
     /// <summary>
     /// predelat soubory nahrazenim viz. >>> část Hledat >>> Nahradit
