@@ -265,6 +265,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
                                      $"//$api = new RubiconAPI($_REQUEST['url'], '{hn}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');\n\t$api = new RubiconAPI($_REQUEST['url'], '{upgrader.Hostname}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');");
             }
             UpgradeDatabaseConnectCall(file, upgrader, hn, upgrader.Hostname);
+            file.Content.Replace($"\"host\"      => \"{hn}\",", $"\"host\"      => \"{upgrader.Hostname}\",");
         }
     }
 
