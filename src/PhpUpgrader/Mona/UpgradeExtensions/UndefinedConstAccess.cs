@@ -2,12 +2,9 @@
 
 public static partial class UndefinedConstAccess
 {
-    private static readonly string _aegisxDetailB = Path.Join("aegisx", "detail_b.php");
-
     public static FileWrapper UpgradeUndefinedConstAccess(this FileWrapper file)
     {
-        if (!file.Path.EndsWith(_aegisxDetailB, StringComparison.OrdinalIgnoreCase)
-            && UndefinedConstAccessRegex().IsMatch(file.Content.ToString()))
+        if (UndefinedConstAccessRegex().IsMatch(file.Content.ToString()))
         {
             file.Content.Replace(
                 UndefinedConstAccessRegex()
@@ -50,19 +47,33 @@ public static partial class UndefinedConstAccess
     private static void FixInvalidUseInString(FileWrapper file)
     {
         var stringStartIndex = -1;
+        var isPhp = false;
+        var inLineComment = false;
+        var inBlockComment = false;
+
         for (var i = 0; i < file.Content.Length; i++)
         {
-            if (file.Content[i] != '"')
-            {
+            if (IsInPhp(file.Content, ref i, ref isPhp) == ReturnState.Continue)
                 continue;
-            }
-            if (stringStartIndex == -1)
+
+            if (isPhp && (stringStartIndex != -1 || IsInComment(file.Content, ref i, ref inLineComment, ref inBlockComment) == ReturnState.Ok))
             {
-                stringStartIndex = i + 1;
-                continue;
+                var isQuote = file.Content[i] == '"';
+                if (!isQuote || (i > 0 && file.Content[i - 1] == '\\' && isQuote))
+                {
+                    continue;
+                }
+                if (isQuote)
+                {
+                    if (stringStartIndex == -1)
+                    {
+                        stringStartIndex = i + 1;
+                        continue;
+                    }
+                    i = _ReplaceInvalidUseInString(i);
+                    stringStartIndex = -1;
+                }
             }
-            i = _ReplaceInvalidUseInString(i);
-            stringStartIndex = -1;
         }
         int _ReplaceInvalidUseInString(in int stringEndIndex)
         {
@@ -73,7 +84,9 @@ public static partial class UndefinedConstAccess
             if (stringCharsSpan.Contains('['))
             {
                 var stringChars = stringCharsSpan.ToString();
+
                 var updated = InvalidUseInStringRegex().Replace(stringChars, m => $"\".{m.Value}.\"");
+
                 file.Content.Replace(stringChars, updated, stringStartIndex, updated.Length);
                 return stringStartIndex + updated.Length;
             }
@@ -81,6 +94,65 @@ public static partial class UndefinedConstAccess
         }
     }
 
-    [GeneratedRegex(@"(?<!{|\s?\.\s?|(<\?php(.(?!\?>))*?))\$\w+?\['.+?'\](?!}|\s?\.\s?)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 55555)]
+    private static ReturnState IsInPhp(StringBuilder content, ref int i, ref bool isPhp)
+    {
+        if (!isPhp && i < content.Length - 5)
+        {
+            isPhp = content[i] == '<' && content[i + 1] == '?'
+                && ((content[i + 2] == 'p' && content[i + 3] == 'h' && content[i + 4] == 'p')
+                    || (content[i + 2] == 'P' && content[i + 3] == 'H' && content[i + 4] == 'P'));
+            if (isPhp)
+            {
+                i += 4;
+                return ReturnState.Continue;
+            }
+        }
+        if (isPhp && i < content.Length - 2)
+        {
+            isPhp = !(content[i] == '?' && content[i + 1] == '>');
+            if (!isPhp)
+            {
+                i += 1;
+                return ReturnState.Continue;
+            }
+        }
+        return ReturnState.Ok;
+    }
+
+    private static ReturnState IsInComment(StringBuilder content, ref int i, ref bool inLineComment, ref bool inBlockComment)
+    {
+        if (!inLineComment && !inBlockComment && content[i] == '/' && i + 1 < content.Length)
+        {
+            if (content[i + 1] == '/')
+            {
+                inLineComment = true;
+                return ReturnState.Continue;
+            }
+            if (content[i + 1] == '*')
+            {
+                inBlockComment = true;
+                return ReturnState.Continue;
+            }
+        }
+        if (inLineComment && content[i] == '\n')
+        {
+            inLineComment = false;
+            return ReturnState.Continue;
+        }
+        if (inBlockComment && content[i] == '*' && i + 1 < content.Length && content[i + 1] == '/')
+        {
+            inBlockComment = false;
+            i++;
+            return ReturnState.Continue;
+        }
+        return !inLineComment && !inBlockComment ? ReturnState.Ok : ReturnState.Continue;
+    }
+
+    [GeneratedRegex(@"(?<!{|\s?\.\s?|(<\?[pP][hH][pP](.(?!\?>))*?))\$\w+?\['.+?'\](?!}|\s?\.\s?)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 55555)]
     private static partial Regex InvalidUseInStringRegex();
+
+    private enum ReturnState
+    {
+        Ok, Continue,
+    }
 }
