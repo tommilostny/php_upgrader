@@ -61,6 +61,7 @@ public partial class MonaUpgrader : PhpUpgraderBase
                 ConnectHandler.UpgradeConnect(file, this);
                 FindReplaceHandler.UpgradeFindReplace(file);
                 file.UpgradeResultFunction(this)
+                    .UpgradeUndefinedConstAccess()
                     .UpgradeMysqliQueries(this)
                     .UpgradeIndex(this)
                     .UpgradeAnketa()
@@ -72,8 +73,7 @@ public partial class MonaUpgrader : PhpUpgraderBase
                     .UpgradeSitemapSave(AdminFolders)
                     .UpgradeGlobalBeta()
                     .RenameBeta(this)
-                    .UpgradeFloatExplodeConversions()
-                    .UpgradeUndefinedConstAccess();
+                    .UpgradeFloatExplodeConversions();
                 break;
         }
         file.UpgradeUnlink()

@@ -28,7 +28,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         {
             UpgradeMysqlConnect(file);
         }
-        UpgradeSetup(file, upgrader);
+        UpgradeSetup(file, upgrader as RubiconUpgrader);
         UpgradeHostname(file, upgrader);
         UpgradeOldDbConnect(file, upgrader);
         UpgradeRubiconModulesDB(file, upgrader);
@@ -157,23 +157,17 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         isRubiconApi = path.EndsWith(_rubiconApiPhp, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
-    public static void UpgradeSetup(FileWrapper file, PhpUpgraderBase upgrader)
+    private static void FillInDbCredentials(FileWrapper file, RubiconUpgrader upgrader, bool isRubiconCoreConfigure, bool isRubiconApi, bool containsDevDb)
     {
-        InitSetupVars(file.Path, upgrader.WebName, out var isRubiconCoreConfigure, out var isRubiconApi);
-
-        if (!isRubiconCoreConfigure && !isRubiconApi
-            && !file.Path.EndsWith(_setupPhp, StringComparison.Ordinal)
-            && !file.Path.EndsWith(_setup500Php, StringComparison.Ordinal)
-            && !file.Path.EndsWith("cat_url.php", StringComparison.Ordinal)
-            && !file.Path.EndsWith("cat_fix.php", StringComparison.Ordinal))
-            return;
+        var database = containsDevDb ? upgrader.DevDatabase : upgrader.Database;
+        var username = containsDevDb ? upgrader.DevUsername : upgrader.Username;
+        var password = containsDevDb ? upgrader.DevPassword : upgrader.Password;
 
         file.Content.Replace("$_SERVER[HTTP_HOST]", "$_SERVER['HTTP_HOST']");
 
-        if (upgrader.Database is null || upgrader.Username is null || upgrader.Password is null
-            || file.Content.Contains($"password = '{upgrader.Password}';")
-            || file.Content.Contains($"password_beta = \"{upgrader.Password}\";"))
+        if (database is null || username is null || password is null
+            || file.Content.Contains($"password = '{password}';")
+            || file.Content.Contains($"password_beta = \"{password}\";"))
             return;
 
         bool usernameLoaded = false, passwordLoaded = false, databaseLoaded = false, hostnameLoaded = false;
@@ -201,12 +195,12 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
             var eqIndex = match.ValueSpan.IndexOf('=');
             var varName = match.ValueSpan[..eqIndex].Trim();
 
-            var credential = _LoadCred(varName, "username", "$username_beta", ref usernameLoaded, upgrader.Username)
-                ?? _LoadCred(varName, "password", "$password_beta", ref passwordLoaded, upgrader.Password)
-                ?? _LoadCred(varName, "db", "$database_beta", ref databaseLoaded, upgrader.Database)
-                ?? _LoadCred(varName, "database", "", ref databaseLoaded, upgrader.Database);
- 
-            if ((isRubiconCoreConfigure || isRubiconApi) && credential is null)
+            var credential = _LoadCred(varName, "username", "$username_beta", ref usernameLoaded, username)
+                ?? _LoadCred(varName, "password", "$password_beta", ref passwordLoaded, password)
+                ?? _LoadCred(varName, "db", "$database_beta", ref databaseLoaded, database)
+                ?? _LoadCred(varName, "database", string.Empty, ref databaseLoaded, database);
+
+            if ((isRubiconCoreConfigure || isRubiconApi || containsDevDb) && credential is null)
             {
                 credential = _LoadCred(varName, "hostname", "$hostname_beta", ref hostnameLoaded, upgrader.Hostname);
             }
@@ -215,9 +209,29 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         }
 
         static string? _LoadCred(ReadOnlySpan<char> varName, ReadOnlySpan<char> varEnd, ReadOnlySpan<char> betaName, ref bool loaded, string credValue)
-            => !loaded && (varName.EndsWith(varEnd, StringComparison.Ordinal) || varName.Equals(betaName, StringComparison.Ordinal)) && (loaded = true)
-                ? credValue
-                : null;
+            => !loaded
+                && (varName.EndsWith(varEnd, StringComparison.Ordinal)
+                    || (betaName.Length > 0 && varName.StartsWith(betaName, StringComparison.Ordinal)))
+                && (loaded = true)
+                    ? credValue
+                    : null;
+    }
+
+    /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
+    public static void UpgradeSetup(FileWrapper file, RubiconUpgrader upgrader)
+    {
+        InitSetupVars(file.Path, upgrader.WebName, out var isRubiconCoreConfigure, out var isRubiconApi);
+        var containsDevDb = file.Content.Contains("= \"rubicon_6_dev_");
+
+        if (!containsDevDb && !isRubiconCoreConfigure && !isRubiconApi
+            && !file.Path.EndsWith(_setupPhp, StringComparison.Ordinal)
+            && !file.Path.EndsWith(_setup500Php, StringComparison.Ordinal)
+            && !file.Path.EndsWith("cat_url.php", StringComparison.Ordinal)
+            && !file.Path.EndsWith("cat_fix.php", StringComparison.Ordinal)
+            && !file.Path.EndsWith("a_store_pohoda.php", StringComparison.Ordinal))
+            return;
+
+        FillInDbCredentials(file, upgrader, isRubiconCoreConfigure, isRubiconApi, containsDevDb);
     }
 
     /// <summary> Aktualizace hostname z mcrai1 na <see cref="PhpUpgraderBase.Hostname"/>. </summary>

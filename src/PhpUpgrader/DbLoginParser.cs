@@ -8,6 +8,12 @@ public readonly struct DbLoginParser
 
     public string Password { get; }
 
+    public string? DevDatabase { get; }
+
+    public string? DevUsername { get; }
+
+    public string? DevPassword { get; }
+
     public bool Success { get; }
 
     public DbLoginParser(string baseFolder, string webName)
@@ -31,6 +37,9 @@ public readonly struct DbLoginParser
             Database = login[1];
             UserName = login[2];
             Password = login[3];
+            DevDatabase = login.Length > 4 ? login[4] : null;
+            DevUsername = login.Length > 5 ? login[5] : null;
+            DevPassword = login.Length > 6 ? login[6] : null;
         }
     }
 }

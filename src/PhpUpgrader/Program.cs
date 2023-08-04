@@ -30,12 +30,15 @@ public static class Program
     /// <param name="dontUpload"> Neptat se a po aktualizaci soubory nenahrávat. </param>
     /// <param name="dontUpgrade"> Nespouštět PHP upgrader, pouze ostatní nastavené procesy s FTP. </param>
     /// <param name="ftpMaxMb"> Limit velikosti souboru v MB při FTP synchronizaci (0 a menší => vypnuto). </param>
+    /// <param name="devDb"> Databáze "rubicon_6_dev_...". </param>
+    /// <param name="devUser"> Uživatelské jméno k dev databázi. </param>
+    /// <param name="devPassword"> Heslo k dev databázi. </param>
     public static async Task Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
                                   string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
                                   string host = "localhost", string? beta = null, string connectionFile = "connection.php",
                                   bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false,
                                   bool checkFtp = false, bool ignoreFtp = false, bool upload = false, bool dontUpload = false, bool dontUpgrade = false,
-                                  double ftpMaxMb = 500)
+                                  double ftpMaxMb = 500, string? devDb = null, string? devUser = null, string? devPassword = null)
     {
         if (webName is null or { Length: 0 })
         {
@@ -52,7 +55,8 @@ public static class Program
         //0. fáze: příprava PHP upgraderu (kontrola zadaných argumentů)
         // Může nastat případ, kdy složka webu neexistuje. Uživatel je tázán, zda se pokusit stáhnout z FTP mcrai1.
         var uw = await LoadPhpUpgraderAsync(rubicon, adminFolders, rootFolders, beta,
-                                            connectionFile, ignoreConnect, db, user, password, host, dontUpgrade).ConfigureAwait(false);
+                                            connectionFile, ignoreConnect, db, user, password, host, dontUpgrade,
+                                            devDb, devUser, devPassword).ConfigureAwait(false);
         if (uw is not null and var (upgrader, workDir)) //PHP upgrader se povedlo inicializovat.
         {
             //1. fáze: (pokud je vyžadováno)
@@ -73,7 +77,7 @@ public static class Program
         Console.WriteLine($"Celkový čas: {DateTime.Now - startTime}");
     }
 
-    static async Task<(PhpUpgraderBase, string workDir)?> LoadPhpUpgraderAsync(bool rubicon, string[] adminFolders, string[] rootFolders, string beta, string connectionFile, bool ignoreConnect, string db, string user, string password, string host, bool dontUpgrade)
+    static async Task<(PhpUpgraderBase, string workDir)?> LoadPhpUpgraderAsync(bool rubicon, string[] adminFolders, string[] rootFolders, string beta, string connectionFile, bool ignoreConnect, string db, string user, string password, string host, bool dontUpgrade, string? devDb, string? devUser, string? devPassword)
     {
         var workDir = Path.Join(_baseFolder, "weby", _webName);
         if (_webName == string.Empty)
@@ -104,14 +108,10 @@ public static class Program
             return (null, workDir);
         }
         //Složka webu k aktualizaci existuje, vytvořit PHP upgrader.
-        var upgrader = !rubicon ? new MonaUpgrader(_baseFolder, _webName)
-        {
-            AdminFolders = adminFolders,
-            RenameBetaWith = beta,
-            ConnectionFile = connectionFile,
-        }
-        : new RubiconUpgrader(_baseFolder, _webName);
-
+        var upgrader = !rubicon
+            ? new MonaUpgrader(_baseFolder, _webName) { AdminFolders = adminFolders, RenameBetaWith = beta, ConnectionFile = connectionFile }
+            : new RubiconUpgrader(_baseFolder, _webName);
+        
         if (!ignoreConnect)
         {
             if (db is null || user is null || password is null)
@@ -122,12 +122,19 @@ public static class Program
                     db = dbLogins.Database;
                     user = dbLogins.UserName;
                     password = dbLogins.Password;
+                    devDb ??= dbLogins.DevDatabase;
+                    devUser ??= dbLogins.DevUsername;
+                    devPassword ??= dbLogins.DevPassword;
                 }
             }
-            upgrader.Database = db;
-            upgrader.Username = user;
-            upgrader.Password = password;
-            upgrader.Hostname = host;
+            upgrader.Database = db; upgrader.Username = user;
+            upgrader.Password = password; upgrader.Hostname = host;
+            if (upgrader is RubiconUpgrader ru)
+            {
+                ru.DevDatabase = devDb;
+                ru.DevUsername = devUser;
+                ru.DevPassword = devPassword;
+            }
         }
         upgrader.OtherRootFolders = rootFolders;
         return (upgrader, workDir);

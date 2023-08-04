@@ -2,9 +2,12 @@
 
 public static partial class UndefinedConstAccess
 {
+    private static readonly string _aegisxDetailB = Path.Join("aegisx", "detail_b.php");
+
     public static FileWrapper UpgradeUndefinedConstAccess(this FileWrapper file)
     {
-        if (UndefinedConstAccessRegex().IsMatch(file.Content.ToString()))
+        if (!file.Path.EndsWith(_aegisxDetailB, StringComparison.OrdinalIgnoreCase)
+            && UndefinedConstAccessRegex().IsMatch(file.Content.ToString()))
         {
             file.Content.Replace(
                 UndefinedConstAccessRegex()

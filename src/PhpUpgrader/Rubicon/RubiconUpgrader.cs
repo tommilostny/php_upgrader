@@ -6,6 +6,12 @@ namespace PhpUpgrader.Rubicon;
 /// <summary> PHP upgrader pro systém Rubicon, založený na upgraderu pro systém Mona. </summary>
 public sealed class RubiconUpgrader : MonaUpgrader
 {
+    public string? DevDatabase { get; set; }
+
+    public string? DevUsername { get; set; }
+
+    public string? DevPassword { get; set; }
+
     private readonly ObjectClassHandler _objectClassHandler;
 
     /// <summary> Konstruktor Rubicon > Mona upgraderu. </summary>

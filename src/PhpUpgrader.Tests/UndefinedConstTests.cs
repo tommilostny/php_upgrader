@@ -23,4 +23,22 @@ public sealed class UndefinedConstTests : UnitTestWithOutputBase
         _output.WriteLine(updated);
         Assert.True(file.IsModified);
     }
+
+    [Theory]
+    [InlineData("<?php include('a_safe.php'); ?>\r\n<?php\r\n\r\n$pole = $_REQUEST;//poslane xml data\r\n//print_r ($pole);\r\n//echo \"<br />_<br /><br />\";\r\n//echo $_FILES[\"jmeno_souboru_h_foto\"][\"tmp_name\"].\"<br /><br />\";\r\n\r\n// odstraneni pripadnych apostrofu\r\n$pole['seo_title'] = str_replace(\"'\", \"\", $pole['seo_title']);\r\n$pole['seo_description'] = str_replace(\"'\", \"\", $pole['seo_description']);\r\n$pole['seo_keywords'] = str_replace(\"'\", \"\", $pole['seo_keywords']);\r\n$pole['zkraceny_vypis'] = str_replace(\"'\", \"\", $pole['zkraceny_vypis']);\r\n$pole['text'] = str_replace(\"'\", \"\", $pole['text']);\r\n$pole['product_name'] = str_replace(\"'\", \"\", $pole['product_name']);\r\n  \r\n$cz_osetreni = array(\"(\" => \"\", \")\" => \"\", \"-\" => \"\", \"ě\" => \"e\", \"š\" => \"s\", \"č\" => \"c\", \"ř\"=>\"r\",\"ž\"=>\"z\",\"ý\"=>\"y\",\"á\"=>\"a\",\"í\"=>\"i\",\"é\"=>\"e\",\"ú\"=>\"u\",\"ů\"=>\"u\",\"Ě\" => \"e\", \"Š\" => \"s\", \"Č\" => \"c\", \"Ř\"=>\"r\",\"Ž\"=>\"z\",\"Ý\"=>\"y\",\"Á\"=>\"a\",\"Í\"=>\"i\",\"É\"=>\"e\",\"Ú\"=>\"u\",\"Ů\"=>\"u\",\"ą\" => \"a\",\"ć\" => \"c\",\"ę\" => \"e\",\"ł\" => \"l\",\"ń\" => \"n\",\"ó\" => \"o\",\"ś\" => \"s\",\"ź\" => \"z\",\"ż\" => \"z\",\"Ą\" => \"a\",\"Ć\" => \"c\",\"Ę\" => \"e\",\"Ł\" => \"l\",\"Ń\" => \"n\",\"Ó\" => \"o\",\"Ś\" => \"s\",\"Ź\" => \"z\",\"Ż\" => \"z\",\"á\" => \"a\",\"ä\" => \"a\",\"č\" => \"c\",\"ď\" => \"d\",\"dž\" => \"dz\",\"é\" => \"e\",\"í\" => \"i\",\"ľ\" => \"l\",\" ĺ \" => \"l\",\"ň\" => \"n\",\"ó\" => \"o\",\"ô\" => \"o\",\"ŕ\" => \"r\",\"š\" => \"s\",\"ť\" => \"t\",\"ú\" => \"u\",\"ý\" => \"y\",\"ž \" => \"z\",\"Á\" => \"a\",\"Ä\" => \"a\",\"Č\" => \"c\",\"Ď\" => \"d\",\"DŽ\" => \"dz\",\"É\" => \"e\",\"Í\" => \"i\",\"Ľ\" => \"l\",\" Ĺ \" => \"l\",\"Ň\" => \"n\",\"Ó\" => \"o\",\"Ô\" => \"o\",\"Ŕ\" => \"r\",\"Š\" => \"s\",\"Ť\" => \"t\",\"Ú\" => \"u\",\"Ý\" => \"y\",\"Ž \" => \"z\",\"*\" => \"\",\"!\" => \"\",\"\\\"\" => \"\",\" \" => \"_\",\"/\" => \"\");\r\n\r\n\t//media\r\n\tif ($_FILES[\"jmeno_souboru_h_foto\"][\"tmp_name\"]<>\"\") {\r\n\t\t$s_nazev \t\t= $pole['product_name'];\r\n\t\t$s_p_nazev \t\t= $pole['product_name'];\r\n\t\t\r\n\t\t$maxDimW = 1000;\r\n\t\t$maxDimH = 1000;\r\n\t\tlist($width, $height, $type, $attr) = getimagesize( $_FILES[\"jmeno_souboru_h_foto\"][\"tmp_name\"] );\r\n\t\tif ( $width > $maxDimW || $height > $maxDimH ) {")]
+    public void DoesNotUpdateStringConcatWithPlus_WhenAlreadyParentheses(string content)
+    {
+        //Arrange
+        var file = new FileWrapper("file.php", content);
+
+        //Act
+        file.UpgradeUndefinedConstAccess();
+
+        //Assert
+        _output.WriteLine(content);
+        _output.WriteLine("=========================================================");
+        var updated = file.Content.ToString();
+        _output.WriteLine(updated);
+        Assert.False(file.IsModified);
+    }
 }
