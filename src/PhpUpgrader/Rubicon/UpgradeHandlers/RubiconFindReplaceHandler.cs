@@ -9,7 +9,7 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
     /// Před prvním zavoláním je stejné jako pro <seealso cref="MonaFindReplaceHandler"/>.
     /// Do této kolekce jsou přidány předpřipravené případy z <see cref="_additionalReplacements"/>, které je poté smazáno a nastaveno na null.
     /// </remarks>
-    public override ICollection<(string find, string replace)> Replacements
+    public override IList<(string find, string replace)> Replacements
     {
         get
         {

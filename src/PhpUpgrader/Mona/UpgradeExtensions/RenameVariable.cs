@@ -47,21 +47,14 @@ public static class RenameVariable
     /// <summary> Přejmenovat proměnnou ve slovníku <see cref="MonaFindReplaceHandler.Replacements"/>. </summary>
     public static void RenameVarInFindReplace(this MonaUpgrader upgrader, string oldVarName, string newVarName)
     {
-        var renamedItems = new Stack<(string, string, string, string)>();
-        foreach (var (find, replace) in upgrader.FindReplaceHandler.Replacements)
+        for (var i = 0; i < upgrader.FindReplaceHandler.Replacements.Count; i++)
         {
-            if (find.Contains(oldVarName, StringComparison.Ordinal) || replace.Contains(oldVarName, StringComparison.Ordinal))
-            {
-                var newKey = RenameVar(upgrader, find, newVarName, oldVarName);
-                var newValue = RenameVar(upgrader, replace, newVarName, oldVarName);
-                renamedItems.Push((find, replace, newKey, newValue));
-            }
-        }
-        while (renamedItems.Count > 0)
-        {
-            var (oldKey, oldValue, newKey, newValue) = renamedItems.Pop();
-            upgrader.FindReplaceHandler.Replacements.Remove((oldKey, oldValue));
-            upgrader.FindReplaceHandler.Replacements.Add((newKey, newValue));
+            var (find, replace) = upgrader.FindReplaceHandler.Replacements[i];
+
+            var newKey = RenameVar(upgrader, find, newVarName, oldVarName);
+            var newValue = RenameVar(upgrader, replace, newVarName, oldVarName);
+
+            upgrader.FindReplaceHandler.Replacements[i] = (newKey, newValue);
         }
     }
 }

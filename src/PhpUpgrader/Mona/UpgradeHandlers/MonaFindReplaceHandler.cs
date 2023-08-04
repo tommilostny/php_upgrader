@@ -2,7 +2,7 @@
 
 public class MonaFindReplaceHandler : IFindReplaceHandler
 {
-    public virtual ICollection<(string find, string replace)> Replacements => _replacements;
+    public virtual IList<(string find, string replace)> Replacements => _replacements;
 
     protected readonly IList<(string, string)> _replacements = new List<(string, string)>()
     {

@@ -90,7 +90,7 @@ public static partial class RegexFunctions
         var pattern = Regex.Replace(match.Value[++bracketIndex..^1],
                                     $@"(^{delimiter})|([^\\]{delimiter})",
                                     _PatternDelimiterEscapeEvaluator,
-                                    RegexOptions.None,
+                                    RegexOptions.ExplicitCapture,
                                     TimeSpan.FromSeconds(4));
 
         return $"{pregFunction}({quote}{delimiter}{pattern}{delimiter}{ignoreFlag}{quote}";
@@ -98,7 +98,7 @@ public static partial class RegexFunctions
         string _PatternDelimiterEscapeEvaluator(Match match)
         {
             var index = match.Value.StartsWith(delimiter) ? 0 : 1;
-            return match.Value.Insert(index, @"\\");
+            return match.Value.Insert(index, @"\");
         }
     });
 
