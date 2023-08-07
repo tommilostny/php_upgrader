@@ -46,26 +46,32 @@ public static partial class UndefinedConstAccess
     /// </summary>
     private static void FixInvalidUseInString(FileWrapper file)
     {
-        var stringStartIndex = -1;
-        var isPhp = false;
-        var inLineComment = false;
-        var inBlockComment = false;
+        var stringStartIndex = -1;  // "string"
+        var inPhpBlock = false;     // <?php code ?>
+        var inLineComment = false;  // /* comment */
+        var inBlockComment = false; // // comment
+        var inSimpleString = false; // 'string'
 
         for (var i = 0; i < file.Content.Length; i++)
         {
-            if (IsInPhp(file.Content, ref i, ref isPhp) == ReturnState.Continue)
+            if (IsInPhp(file.Content, ref i, ref inPhpBlock) == ReturnState.Continue)
                 continue;
 
-            if (isPhp && (stringStartIndex != -1 || IsInComment(file.Content, ref i, ref inLineComment, ref inBlockComment) == ReturnState.Ok))
+            if (inPhpBlock && (_IsInString() || IsInComment(file.Content, ref i, ref inLineComment, ref inBlockComment) == ReturnState.Ok))
             {
-                var isQuote = file.Content[i] == '"';
-                if (!isQuote || (i > 0 && file.Content[i - 1] == '\\' && isQuote))
+                if (!_IsInString() && file.Content[i] == '\'' && (i == 0 || file.Content[i - 1] != '\\'))
+                {
+                    inSimpleString = !inSimpleString;
+                    continue;
+                }
+                bool isQuote;
+                if (inSimpleString || !(isQuote = file.Content[i] == '"') || (i > 0 && file.Content[i - 1] == '\\' && isQuote))
                 {
                     continue;
                 }
                 if (isQuote)
                 {
-                    if (stringStartIndex == -1)
+                    if (!_IsInString())
                     {
                         stringStartIndex = i + 1;
                         continue;
@@ -75,6 +81,9 @@ public static partial class UndefinedConstAccess
                 }
             }
         }
+
+        bool _IsInString() => stringStartIndex != -1;
+        
         int _ReplaceInvalidUseInString(in int stringEndIndex)
         {
             var count = stringEndIndex - stringStartIndex;
