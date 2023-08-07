@@ -47,14 +47,13 @@ internal sealed class FtpUploader : FtpBase
         async Task _Upload(string localPath, AsyncFtpClient client)
         {
             var remotePath = $"{_path}{localPath[(_baseFolder.Length + 6 + _webName.Length)..].Replace('\\', '/')}";
-            //var remoteInfo = await client.GetObjectInfo(remotePath, dateModified: true).ConfigureAwait(false);
-            //if (remoteInfo is null || remoteInfo.Modified != File.GetLastWriteTime(localPath))
-            //{
-            lock (_writeLock)
-                ColoredConsole.WriteLine($"🔼 Probíhá upload\t{ConsoleColor.DarkGray}{remotePath}{Symbols.PREVIOUS_COLOR}...");
+            if (!remotePath.StartsWith("httpdocs/_foxydesk", StringComparison.Ordinal))
+            {
+                lock (_writeLock)
+                    ColoredConsole.WriteLine($"🔼 Probíhá upload\t{ConsoleColor.DarkGray}{remotePath}{Symbols.PREVIOUS_COLOR}...");
 
-            await client.UploadFile(localPath, remotePath, createRemoteDir: true, existsMode: FtpRemoteExists.Overwrite).ConfigureAwait(false);
-            //}
+                await client.UploadFile(localPath, remotePath, createRemoteDir: true, existsMode: FtpRemoteExists.Overwrite).ConfigureAwait(false);
+            }
             clients.Enqueue(client);
         }
     }
