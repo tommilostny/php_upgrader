@@ -115,6 +115,11 @@ public static partial class WhileListEach
         var rubiconPath = Path.Join(upgrader.WebFolder, "rubicon");
         _UpdateIncludeFiles(includes.Where(p => p.Value.Contains("rubicon/", StringComparison.Ordinal)), rubiconPath);
 
+        if (upgrader is RubiconUpgrader ru && ru.HasRubiconOutside)
+        {
+            _UpdateIncludeFiles(includes.Where(p => p.Value.Contains("rubicon/", StringComparison.Ordinal)), ru.OutsideRubiconFolder);
+        }
+
         void _UpdateIncludeFiles(IEnumerable<Match> includeMatches, string dir)
         {
             foreach (var match in includeMatches)

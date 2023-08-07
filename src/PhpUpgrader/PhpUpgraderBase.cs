@@ -59,9 +59,12 @@ public abstract class PhpUpgraderBase
     /// <summary> Kód, který se spustí po úspěšné <see cref="UpgradeProcedure(string)"/>. </summary>
     protected abstract void AfterUpgradeProcedure(FileWrapper file);
 
+    /// <summary> Spustí aktualizaci všech souborů ve složce. </summary>
+    public virtual void RunUpgrade(string directoryPath) => UpgradeAllFilesRecursively(directoryPath);
+
     /// <summary> Rekurzivní upgrade .php souborů ve všech podadresářích. </summary>
     /// <param name="directoryPath">Cesta k adresáři, kde hledat .php soubory.</param>
-    public void UpgradeAllFilesRecursively(string directoryPath)
+    protected void UpgradeAllFilesRecursively(string directoryPath)
     {
         //rekurzivní aktualizace podsložek
         foreach (var subdir in Directory.GetDirectories(directoryPath))

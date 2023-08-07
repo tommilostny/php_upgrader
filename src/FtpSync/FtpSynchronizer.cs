@@ -141,7 +141,7 @@ internal sealed class FtpSynchronizer : FtpBase
                 tasks.Add(DownloadAndUploadAsync(cl1, cl2, file1.FullName, file1.FullName, downClients, upClients));
             }
         }
-        await Task.Delay(500).ConfigureAwait(false);
+        await Task.Delay(1000).ConfigureAwait(false);
         if (tasks.Exists(t => !t.IsCompleted)) lock (_writeLock)
             {
                 ColoredConsole.SetColor(ConsoleColor.White).WriteLine("🔄️Čeká se na dokončení posledních operací...").ResetColor();

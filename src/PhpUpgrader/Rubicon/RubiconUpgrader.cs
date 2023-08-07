@@ -6,6 +6,10 @@ namespace PhpUpgrader.Rubicon;
 /// <summary> PHP upgrader pro systém Rubicon, založený na upgraderu pro systém Mona. </summary>
 public sealed class RubiconUpgrader : MonaUpgrader
 {
+    public string? OutsideRubiconFolder { get; set; }
+
+    public bool HasRubiconOutside => OutsideRubiconFolder is not null;
+
     public string? DevDatabase { get; set; }
 
     public string? DevUsername { get; set; }
@@ -20,7 +24,21 @@ public sealed class RubiconUpgrader : MonaUpgrader
                new RubiconFindReplaceHandler(),
                new RubiconConnectHandler())
     {
+        OutsideRubiconFolder = Path.Join(BaseFolder, "weby", $"{WebName}-rubicon");
+        if (!Directory.Exists(OutsideRubiconFolder))
+        {
+            OutsideRubiconFolder = null;
+        }
         _objectClassHandler = new(this);
+    }
+
+    public override void RunUpgrade(string directoryPath)
+    {
+        UpgradeAllFilesRecursively(directoryPath);
+        if (HasRubiconOutside)
+        {
+            UpgradeAllFilesRecursively(OutsideRubiconFolder);
+        }
     }
 
     /// <summary> Procedura aktualizace Rubicon souborů. </summary>

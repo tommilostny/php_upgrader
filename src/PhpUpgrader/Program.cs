@@ -5,6 +5,7 @@ public static class Program
     private static string _webName;
     private static string _baseFolder;
     private static Lazy<McraiFtp> _lazyFtp;
+    private static Lazy<McraiFtp> _lazyRubiconFtp;
 
     /// <summary>
     /// RS Mona a Rubicon PHP upgrader z verze 5 na verzi 7 (vytvořeno pro McRAI).
@@ -51,6 +52,7 @@ public static class Program
         _baseFolder = baseFolder;
         _webName = webName;
         _lazyFtp = new(() => new McraiFtp(_webName, _baseFolder, Convert.ToInt64(ftpMaxMb * 1024 * 1024)));
+        _lazyRubiconFtp = new(() => new McraiFtp($"{_webName}-rubicon", _baseFolder, -1));
 
         //0. fáze: příprava PHP upgraderu (kontrola zadaných argumentů)
         // Může nastat případ, kdy složka webu neexistuje. Uživatel je tázán, zda se pokusit stáhnout z FTP mcrai1.
@@ -61,7 +63,7 @@ public static class Program
         {
             //1. fáze: (pokud je vyžadováno)
             // Kontrola nově upravených souborů na původním serveru (mcrai1) a jejich případné stažení.
-            await CheckForUpdatesAndDownloadFromFtpAsync(checkFtp, ignoreFtp).ConfigureAwait(false);
+            await CheckForUpdatesAndDownloadFromFtpAsync(checkFtp, ignoreFtp, upgrader).ConfigureAwait(false);
             if (!dontUpgrade)
             {
                 //2. fáze: Aktualizace celé složky webu
@@ -159,9 +161,13 @@ public static class Program
         if (!ignoreBackup)
         {
             BackupManager.LoadBackupFiles(useBackup, _baseFolder, _webName);
+            if (upgrader is RubiconUpgrader ru && ru.HasRubiconOutside)
+            {
+                BackupManager.LoadBackupFiles(useBackup, _baseFolder, $"{_webName}-rubicon");
+            }
         }
         Console.WriteLine("\nZpracované soubory:");
-        upgrader.UpgradeAllFilesRecursively(workDir);
+        upgrader.RunUpgrade(workDir);
 
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine($"\nAutomatický upgrade PHP webu {_webName} je dokončen!");
@@ -187,7 +193,7 @@ public static class Program
         }
     }
 
-    static async Task CheckForUpdatesAndDownloadFromFtpAsync(bool checkFtp, bool ignoreFtp)
+    static async Task CheckForUpdatesAndDownloadFromFtpAsync(bool checkFtp, bool ignoreFtp, PhpUpgraderBase upgrader)
     {
         if (ignoreFtp)
         {
@@ -201,6 +207,10 @@ public static class Program
         if (checkFtp)
         {
             await _lazyFtp.Value.UpdateAsync().ConfigureAwait(false);
+            if (upgrader is RubiconUpgrader ru && ru.HasRubiconOutside)
+            {
+                await _lazyRubiconFtp.Value.UpdateAsync().ConfigureAwait(false);
+            }
         }
     }
 
@@ -218,6 +228,10 @@ public static class Program
         if (upload)
         {
             await _lazyFtp.Value.UploadAsync().ConfigureAwait(false);
+            if (upgrader is RubiconUpgrader ru && ru.HasRubiconOutside)
+            {
+                await _lazyRubiconFtp.Value.UploadAsync().ConfigureAwait(false);
+            }
         }
     }
 }
