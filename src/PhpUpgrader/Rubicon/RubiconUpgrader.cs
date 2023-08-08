@@ -10,6 +10,10 @@ public sealed class RubiconUpgrader : MonaUpgrader
 
     public bool HasRubiconOutside => OutsideRubiconFolder is not null;
 
+    public string? OutsideWebUsersFolder { get; set; }
+
+    public bool HasWebUsersOutside => OutsideWebUsersFolder is not null;
+
     public string? DevDatabase { get; set; }
 
     public string? DevUsername { get; set; }
@@ -29,6 +33,11 @@ public sealed class RubiconUpgrader : MonaUpgrader
         {
             OutsideRubiconFolder = null;
         }
+        OutsideWebUsersFolder = Path.Join(BaseFolder, "weby", $"{WebName}-web_users");
+        if (!Directory.Exists(OutsideWebUsersFolder))
+        {
+            OutsideWebUsersFolder = null;
+        }
         _objectClassHandler = new(this);
     }
 
@@ -38,6 +47,10 @@ public sealed class RubiconUpgrader : MonaUpgrader
         if (HasRubiconOutside)
         {
             UpgradeAllFilesRecursively(OutsideRubiconFolder);
+        }
+        if (HasWebUsersOutside)
+        {
+            UpgradeAllFilesRecursively(OutsideWebUsersFolder);
         }
     }
 

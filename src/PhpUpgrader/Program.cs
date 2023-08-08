@@ -6,6 +6,7 @@ public static class Program
     private static string _baseFolder;
     private static Lazy<McraiFtp> _lazyFtp;
     private static Lazy<McraiFtp> _lazyRubiconFtp;
+    private static Lazy<McraiFtp> _lazyWebUsersFtp;
 
     /// <summary>
     /// RS Mona a Rubicon PHP upgrader z verze 5 na verzi 7 (vytvořeno pro McRAI).
@@ -53,6 +54,7 @@ public static class Program
         _webName = webName;
         _lazyFtp = new(() => new McraiFtp(_webName, _baseFolder, Convert.ToInt64(ftpMaxMb * 1024 * 1024)));
         _lazyRubiconFtp = new(() => new McraiFtp($"{_webName}-rubicon", _baseFolder, -1));
+        _lazyWebUsersFtp = new(() => new McraiFtp($"{_webName}-web_users", _baseFolder, -1));
 
         //0. fáze: příprava PHP upgraderu (kontrola zadaných argumentů)
         // Může nastat případ, kdy složka webu neexistuje. Uživatel je tázán, zda se pokusit stáhnout z FTP mcrai1.
@@ -161,9 +163,12 @@ public static class Program
         if (!ignoreBackup)
         {
             BackupManager.LoadBackupFiles(useBackup, _baseFolder, _webName);
-            if (upgrader is RubiconUpgrader ru && ru.HasRubiconOutside)
+            if (upgrader is RubiconUpgrader ru)
             {
-                BackupManager.LoadBackupFiles(useBackup, _baseFolder, $"{_webName}-rubicon");
+                if (ru.HasRubiconOutside)
+                    BackupManager.LoadBackupFiles(useBackup, _baseFolder, $"{_webName}-rubicon");
+                if (ru.HasWebUsersOutside)
+                    BackupManager.LoadBackupFiles(useBackup, _baseFolder, $"{_webName}-web_users");
             }
         }
         Console.WriteLine("\nZpracované soubory:");
@@ -207,9 +212,12 @@ public static class Program
         if (checkFtp)
         {
             await _lazyFtp.Value.UpdateAsync().ConfigureAwait(false);
-            if (upgrader is RubiconUpgrader ru && ru.HasRubiconOutside)
+            if (upgrader is RubiconUpgrader ru)
             {
-                await _lazyRubiconFtp.Value.UpdateAsync().ConfigureAwait(false);
+                if (ru.HasRubiconOutside)
+                    await _lazyRubiconFtp.Value.UpdateAsync().ConfigureAwait(false);
+                if (ru.HasWebUsersOutside)
+                    await _lazyWebUsersFtp.Value.UpdateAsync().ConfigureAwait(false);
             }
         }
     }
@@ -228,9 +236,12 @@ public static class Program
         if (upload)
         {
             await _lazyFtp.Value.UploadAsync().ConfigureAwait(false);
-            if (upgrader is RubiconUpgrader ru && ru.HasRubiconOutside)
+            if (upgrader is RubiconUpgrader ru)
             {
-                await _lazyRubiconFtp.Value.UploadAsync().ConfigureAwait(false);
+                if (ru.HasRubiconOutside)
+                    await _lazyRubiconFtp.Value.UploadAsync().ConfigureAwait(false);
+                if (ru.HasWebUsersOutside)
+                    await _lazyWebUsersFtp.Value.UploadAsync().ConfigureAwait(false);
             }
         }
     }
