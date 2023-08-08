@@ -24,7 +24,7 @@ internal struct UpgraderConfig
 
     public string BaseFolder { get; set; } = "/McRAI";
 
-    public string Host { get; set; } = "localhost";
+    public string Host { get; set; } = "127.0.0.1";
 
     public string Database { get; set; } = string.Empty;
 

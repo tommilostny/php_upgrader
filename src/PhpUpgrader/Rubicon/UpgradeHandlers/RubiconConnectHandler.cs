@@ -24,46 +24,12 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
     /// <summary> Aktualizace souborů připojení systému Rubicon. </summary>
     public override void UpgradeConnect(FileWrapper file, PhpUpgraderBase upgrader)
     {
-        if (!UpgradeMonaLikeConnect(file, upgrader))
-        {
-            UpgradeMysqlConnect(file);
-        }
+        _ = UpgradeMonaLikeConnect(file, upgrader);
         UpgradeSetup(file, upgrader as RubiconUpgrader);
         UpgradeHostname(file, upgrader);
         UpgradeOldDbConnect(file, upgrader);
         UpgradeRubiconModulesDB(file, upgrader);
         UpgradeDefines(file, upgrader);
-    }
-
-    public static void UpgradeMysqlConnect(FileWrapper file)
-    {
-        //var content = file.Content.ToString();
-        //var connectMatch = Regex.Match(content,
-        //                               @"(?<beta>\$\w+?)\s*?=\s*?mysql(i_|_p)?connect\s*?\((?<host>.+?),(?<user>.+?),(?<pass>.+?)\)",
-        //                               RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-        //                               TimeSpan.FromSeconds(4));
-        //if (connectMatch.Success)
-        //{
-        //    var dbSelectMatch = Regex.Match(content,
-        //                                    @"mysql_select_db\s*?\((?<db>.+?),(?<beta>.+?)\)",
-        //                                    RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-        //                                    TimeSpan.FromSeconds(4));
-        //    if (dbSelectMatch.Success)
-        //    {
-        //        var beta = connectMatch.Groups["beta"].Value;
-        //        if (string.Equals(dbSelectMatch.Groups["beta"].Value.Trim(), beta, StringComparison.Ordinal))
-        //        {
-        //            var host = connectMatch.Groups["host"].Value.Trim();
-        //            var user = connectMatch.Groups["user"].Value.Trim();
-        //            var pass = connectMatch.Groups["pass"].Value.Trim();
-        //            var db = dbSelectMatch.Groups["db"].Value.Trim();
-        //
-        //            file.Content.Replace(connectMatch.Value, $"{beta} = mysqli_connect({host}, {user}, {pass})")
-        //                        .Replace(dbSelectMatch.Value, $"mysqli_select_db({beta})");
-        //            
-        //        }
-        //    }
-        //}
     }
 
     /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php. </summary>
@@ -167,7 +133,8 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
 
         if (database is null || username is null || password is null
             || file.Content.Contains($"password = '{password}';")
-            || file.Content.Contains($"password_beta = \"{password}\";"))
+            || file.Content.Contains($"password_beta = \"{password}\";")
+            || file.Content.Contains($"password_sportmall_import = \"{password}\";"))
             return;
 
         bool usernameLoaded = false, passwordLoaded = false, databaseLoaded = false, hostnameLoaded = false;
@@ -195,23 +162,24 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
             var eqIndex = match.ValueSpan.IndexOf('=');
             var varName = match.ValueSpan[..eqIndex].Trim();
 
-            var credential = _LoadCred(varName, "username", "$username_beta", ref usernameLoaded, username)
-                ?? _LoadCred(varName, "password", "$password_beta", ref passwordLoaded, password)
-                ?? _LoadCred(varName, "db", "$database_beta", ref databaseLoaded, database)
-                ?? _LoadCred(varName, "database", string.Empty, ref databaseLoaded, database);
+            var credential = _LoadCred(varName, "username", "$username_beta", "$username_sportmall_import", ref usernameLoaded, username)
+                ?? _LoadCred(varName, "password", "$password_beta", "$password_sportmall_import", ref passwordLoaded, password)
+                ?? _LoadCred(varName, "db", "$database_beta", "$database_sportmall_import", ref databaseLoaded, database)
+                ?? _LoadCred(varName, "database", string.Empty, string.Empty, ref databaseLoaded, database);
 
             if ((isRubiconCoreConfigure || isRubiconApi || containsDevDb) && credential is null)
             {
-                credential = _LoadCred(varName, "hostname", "$hostname_beta", ref hostnameLoaded, upgrader.Hostname);
+                credential = _LoadCred(varName, "hostname", "$hostname_beta", "$hostname_sportmall_import", ref hostnameLoaded, upgrader.Hostname);
             }
             var spaces = isRubiconApi ? "        " : string.Empty;
             return credential is null ? match.Value : $"//{match.Value}\n{spaces}{varName} = '{credential}';";
         }
 
-        static string? _LoadCred(ReadOnlySpan<char> varName, ReadOnlySpan<char> varEnd, ReadOnlySpan<char> betaName, ref bool loaded, string credValue)
+        static string? _LoadCred(ReadOnlySpan<char> varName, ReadOnlySpan<char> varEnd, ReadOnlySpan<char> betaName, ReadOnlySpan<char> sportMallName, ref bool loaded, string credValue)
             => !loaded
                 && (varName.EndsWith(varEnd, StringComparison.Ordinal)
-                    || (betaName.Length > 0 && varName.StartsWith(betaName, StringComparison.Ordinal)))
+                    || (betaName.Length > 0 && varName.StartsWith(betaName, StringComparison.Ordinal))
+                    || (sportMallName.Length > 0 && varName.StartsWith(sportMallName, StringComparison.Ordinal)))
                 && (loaded = true)
                     ? credValue
                     : null;
@@ -221,14 +189,15 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
     public static void UpgradeSetup(FileWrapper file, RubiconUpgrader upgrader)
     {
         InitSetupVars(file.Path, upgrader.WebName, out var isRubiconCoreConfigure, out var isRubiconApi);
-        var containsDevDb = file.Content.Contains("= \"rubicon_6_dev_");
+        var containsDevDb = file.Content.Contains("\"rubicon_6_dev_") || file.Content.Contains("'rubicon_6_dev_");
 
         if (!containsDevDb && !isRubiconCoreConfigure && !isRubiconApi
             && !file.Path.EndsWith(_setupPhp, StringComparison.Ordinal)
             && !file.Path.EndsWith(_setup500Php, StringComparison.Ordinal)
             && !file.Path.EndsWith("cat_url.php", StringComparison.Ordinal)
             && !file.Path.EndsWith("cat_fix.php", StringComparison.Ordinal)
-            && !file.Path.EndsWith("a_store_pohoda.php", StringComparison.Ordinal))
+            && !file.Path.EndsWith("a_store_pohoda.php", StringComparison.Ordinal)
+            && !file.Path.EndsWith("b2b_db.php", StringComparison.Ordinal))
             return;
 
         FillInDbCredentials(file, upgrader, isRubiconCoreConfigure, isRubiconApi, containsDevDb);
@@ -265,7 +234,9 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
                                      $"//$api = new RubiconAPI($_REQUEST['url'], '{hn}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');\n\t$api = new RubiconAPI($_REQUEST['url'], '{upgrader.Hostname}', $setup_connect_username, $setup_connect_password, $setup_connect_db, '5432');");
             }
             UpgradeDatabaseConnectCall(file, upgrader, hn, upgrader.Hostname);
-            file.Content.Replace($"\"host\"      => \"{hn}\",", $"\"host\"      => \"{upgrader.Hostname}\",");
+            file.Content
+                .Replace($"\"host\"      => \"{hn}\",", $"\"host\"      => \"{upgrader.Hostname}\",")
+                .Replace($"$ftp_server\t= '{hn}';"    , $"$ftp_server\t= '{upgrader.Hostname}';");
         }
     }
 
@@ -276,7 +247,6 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         yield return "mcrai.vshosting.cz";
         yield return "217.16.184.116";
         yield return "mcrai2.vshosting.cz";
-        yield return "localhost";
     }
 
     /// <summary> Aktualizace Database::connect. </summary>

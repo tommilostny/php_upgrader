@@ -36,7 +36,7 @@ public static class Program
     /// <param name="devPassword"> Heslo k dev databázi. </param>
     public static async Task Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
                                   string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
-                                  string host = "localhost", string? beta = null, string connectionFile = "connection.php",
+                                  string host = "127.0.0.1", string? beta = null, string connectionFile = "connection.php",
                                   bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false,
                                   bool checkFtp = false, bool ignoreFtp = false, bool upload = false, bool dontUpload = false, bool dontUpgrade = false,
                                   double ftpMaxMb = 500, string? devDb = null, string? devUser = null, string? devPassword = null)

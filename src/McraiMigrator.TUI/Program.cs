@@ -122,7 +122,7 @@ while (runPhpUpgrader is null)
     }
     if (option.StartsWith("[blue]Reset údajů k databázi[/]", StringComparison.Ordinal))
     {
-        config.Host = "localhost";
+        config.Host = "127.0.0.1";
         config.Database = config.UserName = config.Password = string.Empty;
         config.Save();
         continue;
