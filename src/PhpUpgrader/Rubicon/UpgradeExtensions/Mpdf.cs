@@ -4,12 +4,14 @@ public static class Mpdf
 {
     private static readonly string _functionsPath = Path.Join("mpdf", "includes", "functions.php");
     private static readonly string _mpdfPath = Path.Join("mpdf", "mpdf.php");
+    private static readonly string _mpdf57Path = Path.Join("MPDF57", "mpdf.php");
     private static readonly string _mpdfSourcePath = Path.Join("mpdf", "mpdf_source.php");
 
     public static bool UpgradeMpdf(this RubiconUpgrader upgrader, string filePath)
     {
         if (filePath.EndsWith(_mpdfSourcePath, StringComparison.Ordinal)
-            || filePath.EndsWith(_mpdfPath, StringComparison.Ordinal))
+            || filePath.EndsWith(_mpdfPath, StringComparison.Ordinal)
+            || filePath.EndsWith(_mpdf57Path, StringComparison.OrdinalIgnoreCase))
         {
             BackupManager.CreateBackupFile(filePath, upgrader.BaseFolder, upgrader.WebName, modified: true);
 
