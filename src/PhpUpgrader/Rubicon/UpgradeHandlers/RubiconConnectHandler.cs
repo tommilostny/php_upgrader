@@ -1,5 +1,6 @@
 ﻿using PhpUpgrader.Mona.UpgradeExtensions;
 using PhpUpgrader.Mona.UpgradeHandlers;
+using System.Text.RegularExpressions;
 
 namespace PhpUpgrader.Rubicon.UpgradeHandlers;
 
@@ -31,6 +32,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         UpgradeOldDbConnect(file, upgrader);
         UpgradeRubiconModulesDB(file, upgrader);
         UpgradeDefines(file, upgrader);
+        UpgradePgConnectWithStaticConnectionString(file, upgrader);
     }
 
     /// <summary> Soubor /Connections/rubicon_import.php, podobný connect/connection.php. </summary>
@@ -371,6 +373,17 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         }
     }
 
+    private static void UpgradePgConnectWithStaticConnectionString(FileWrapper file, PhpUpgraderBase upgrader)
+    {
+        if (file.Content.Contains("pg_connect") && !file.Content.Contains("port=$"))
+        {
+            file.Content.Replace(PgConnectRegex().Replace(
+                file.Content.ToString(),
+                m => $"pg_connect('host={upgrader.Hostname} port={m.Groups["port"]} dbname={upgrader.Database} user={upgrader.Username} password={upgrader.Password}'); //{m}"
+            ));
+        }
+    }
+
     private class MysqliQueryParamsFormat : IFormatProvider, ICustomFormatter
     {
         private char[]? _startChars;
@@ -396,4 +409,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
 
     [GeneratedRegex(@"define\s?\(\s?(?<quote>['""])db_(?<var>\w+?)\k<quote>.+?;", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex DefineDbVarRegex();
+
+    [GeneratedRegex(@"pg_connect\s?\(\s?[""']host\s?=\s?\S+?\sport\s?=\s?(?<port>\d+?)\sdbname\s?=\s?\S+?\suser\s?=\s?\S+?\spassword\s?=\s?\S+?\s?[""']\s?\);", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    private static partial Regex PgConnectRegex();
 }
