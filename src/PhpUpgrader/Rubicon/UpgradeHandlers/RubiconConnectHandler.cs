@@ -10,6 +10,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
     private static string? _rubiconConfCoreConfigurePhp = null;
     private static string? _rubiconApiPhp = null;
     private static string? _connectionsDir = null;
+    private static string? _apiPlatbyDbConnectPhp = null;
 
     private static readonly string _monamyDir = $"{Path.DirectorySeparatorChar}monamy{Path.DirectorySeparatorChar}";
     private static readonly string _connectionPhp = Path.Join("connect", "connection.php");
@@ -118,8 +119,10 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         _setup500Php ??= Path.Join(webName, "setup_500.php");
         _rubiconConfCoreConfigurePhp ??= Path.Join("conf", "core_configure.php");
         _rubiconApiPhp ??= Path.Join("classes", "RubiconAPI.class.php");
+        _apiPlatbyDbConnectPhp ??= Path.Join("api_platby", "api_db_conn.php");
 
-        isRubiconCoreConfigure = path.EndsWith(_rubiconConfCoreConfigurePhp, StringComparison.Ordinal);
+        isRubiconCoreConfigure = path.EndsWith(_rubiconConfCoreConfigurePhp, StringComparison.Ordinal)
+            || path.EndsWith(_apiPlatbyDbConnectPhp, StringComparison.Ordinal);
         isRubiconApi = path.EndsWith(_rubiconApiPhp, StringComparison.OrdinalIgnoreCase);
     }
 

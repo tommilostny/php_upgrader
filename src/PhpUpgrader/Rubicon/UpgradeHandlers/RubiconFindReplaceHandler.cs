@@ -185,12 +185,6 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("echo $query_data = \"\tSELECT * from aegisx_produkty_all WHERE language_id = 1",
          "$query_data = \"\tSELECT * from aegisx_produkty_all WHERE language_id = 1"
         ),
-        ("include (\"setup.php\");\r\ninclude_once (\"../setup.php\");\r\ninclude_once (\"../../setup.php\");\r\ninclude_once (\"../../../setup.php\");",
-         "if (!(include \"setup.php\")):\r\n\tif (!(include \"../setup.php\")):\r\n\t\tif (!(include \"../../setup.php\")):\r\n\t\t\tif (!(include \"../../../setup.php\")):\r\n\t\t\t\techo \"CHYBA - Nenalezen soubor setup.php!\";//Error\r\n\t\t\t\texit;\r\n\t\t\tendif;\r\n\t\tendif;\r\n\tendif;\r\nendif;"
-        ),
-        ("include (\"setup.php\");\ninclude_once (\"../setup.php\");\ninclude_once (\"../../setup.php\");\ninclude_once (\"../../../setup.php\");",
-         "if (!(include \"setup.php\")):\n\tif (!(include \"../setup.php\")):\n\t\tif (!(include \"../../setup.php\")):\n\t\t\tif (!(include \"../../../setup.php\")):\n\t\t\t\techo \"CHYBA - Nenalezen soubor setup.php!\";//Error\n\t\t\t\texit;\n\t\t\tendif;\n\t\tendif;\n\tendif;\nendif;"
-        ),
         ("if (count($MENU_CTG) > 0",
          "if ($MENU_CTG !== null && count($MENU_CTG) > 0"
         ),
