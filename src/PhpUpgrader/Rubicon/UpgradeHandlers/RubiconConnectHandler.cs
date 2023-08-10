@@ -135,8 +135,6 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         var username = containsDevDb ? upgrader.DevUsername : upgrader.Username;
         var password = containsDevDb ? upgrader.DevPassword : upgrader.Password;
 
-        file.Content.Replace("$_SERVER[HTTP_HOST]", "$_SERVER['HTTP_HOST']");
-
         if (database is null || username is null || password is null
             || file.Content.Contains($"password = '{password}';")
             || file.Content.Contains($"password_beta = \"{password}\";")
@@ -145,9 +143,12 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
 
         bool usernameLoaded = false, passwordLoaded = false, databaseLoaded = false, hostnameLoaded = false;
         var content = file.Content.ToString();
+        var updateHostname = isRubiconCoreConfigure || isRubiconApi || containsDevDb
+            || HostNamesToReplace().Any(hn => content.Contains($"$hostname_beta = \"{hn}\";", StringComparison.Ordinal));
 
-        file.Content.Replace(SetupConnectRegex().Replace(content, _NewCredentialAndComment))
-                    .Replace("////", "//");
+        file.Content.Replace("$_SERVER[HTTP_HOST]", "$_SERVER['HTTP_HOST']")
+            .Replace(SetupConnectRegex().Replace(content, _NewCredentialAndComment))
+             .Replace("////", "//");
 
         if (!usernameLoaded)
             file.Warnings.Add("setup - nenačtené přihlašovací jméno.");
@@ -155,7 +156,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
             file.Warnings.Add("setup - nenačtené heslo.");
         if (!databaseLoaded)
             file.Warnings.Add("setup - nenačtený název databáze.");
-        if (isRubiconCoreConfigure && !hostnameLoaded)
+        if (updateHostname && !hostnameLoaded)
             file.Warnings.Add("setup - nenačtená adresa databázového serveru.");
         file.Warnings.Add("setup - zkontrolovat připojení k databázi.");
 
@@ -168,27 +169,40 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
             var eqIndex = match.ValueSpan.IndexOf('=');
             var varName = match.ValueSpan[..eqIndex].Trim();
 
-            var credential = _LoadCred(varName, "username", "$username_beta", "$username_sportmall_import", ref usernameLoaded, username)
-                ?? _LoadCred(varName, "password", "$password_beta", "$password_sportmall_import", ref passwordLoaded, password)
-                ?? _LoadCred(varName, "db", "$database_beta", "$database_sportmall_import", ref databaseLoaded, database)
-                ?? _LoadCred(varName, "database", string.Empty, string.Empty, ref databaseLoaded, database);
+            var credential = LoadCred(varName, "username", "$username_beta", "$username_sportmall_import", ref usernameLoaded, username)
+                ?? LoadCred(varName, "password", "$password_beta", "$password_sportmall_import", ref passwordLoaded, password)
+                ?? LoadCred(varName, "db", "$database_beta", "$database_sportmall_import", ref databaseLoaded, database)
+                ?? LoadCred(varName, "database", string.Empty, string.Empty, ref databaseLoaded, database);
 
-            if ((isRubiconCoreConfigure || isRubiconApi || containsDevDb) && credential is null)
+            if (updateHostname && credential is null)
             {
-                credential = _LoadCred(varName, "hostname", "$hostname_beta", "$hostname_sportmall_import", ref hostnameLoaded, upgrader.Hostname);
+                credential = LoadCred(varName, "hostname", "$hostname_beta", "$hostname_sportmall_import", ref hostnameLoaded, upgrader.Hostname);
             }
-            var spaces = isRubiconApi ? "        " : string.Empty;
+            var spaces = GetSpacesBeforeIndex(content, match.Index);
             return credential is null ? match.Value : $"//{match.Value}\n{spaces}{varName} = '{credential}';";
-        }
 
-        static string? _LoadCred(ReadOnlySpan<char> varName, ReadOnlySpan<char> varEnd, ReadOnlySpan<char> betaName, ReadOnlySpan<char> sportMallName, ref bool loaded, string credValue)
-            => !loaded
-                && (varName.EndsWith(varEnd, StringComparison.Ordinal)
-                    || (betaName.Length > 0 && varName.StartsWith(betaName, StringComparison.Ordinal))
-                    || (sportMallName.Length > 0 && varName.StartsWith(sportMallName, StringComparison.Ordinal)))
-                && (loaded = true)
-                    ? credValue
-                    : null;
+        }
+    }
+    
+    private static string? LoadCred(ReadOnlySpan<char> varName, ReadOnlySpan<char> varEnd, ReadOnlySpan<char> betaName, ReadOnlySpan<char> sportMallName, ref bool loaded, string credValue)
+        => !loaded
+            && (varName.EndsWith(varEnd, StringComparison.Ordinal)
+                || (betaName.Length > 0 && varName.StartsWith(betaName, StringComparison.Ordinal))
+                || (sportMallName.Length > 0 && varName.StartsWith(sportMallName, StringComparison.Ordinal)))
+            && (loaded = true)
+                ? credValue
+                : null;
+
+    private static ReadOnlySpan<char> GetSpacesBeforeIndex(string content, int index)
+    {
+        var count = 0;
+        for (var i = index - 1; i >= 0; i--)
+        {
+            if (content[i] is not ' ' and not '\t')
+                break;
+            count++;
+        }
+        return content.AsSpan(index - count, count);
     }
 
     /// <summary> Aktualizace údajů k databázi v souboru setup.php. </summary>
