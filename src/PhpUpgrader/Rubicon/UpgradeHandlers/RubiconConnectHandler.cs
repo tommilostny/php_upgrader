@@ -60,7 +60,8 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
             var backup = (upgrader.ConnectionFile, upgrader.Database, upgrader.Username, upgrader.Password, upgrader.Hostname);
             upgrader.ConnectionFile = file.Path.Split(Path.DirectorySeparatorChar)[^1];
 
-            if (string.Equals(upgrader.Hostname, "localhost", StringComparison.Ordinal))
+            if (string.Equals(upgrader.Hostname, "localhost", StringComparison.Ordinal)
+                || string.Equals(upgrader.Hostname, "127.0.0.1", StringComparison.Ordinal))
             {
                 upgrader.Database = upgrader.Username = upgrader.Password = null;
             }
