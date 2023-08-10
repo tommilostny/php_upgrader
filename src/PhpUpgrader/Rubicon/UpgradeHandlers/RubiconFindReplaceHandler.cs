@@ -230,5 +230,8 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("//}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n} else {\n  fputs($fp,\"XML ma nulovou velikost\\n\");\n}\nfclose($fp);",
          "//}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\nelse {\n  fputs($fp,\"XML ma nulovou velikost\\n\");\n}\nfclose($fp);"
         ),
+        ("function add_to_card($ADD_TO_CARD,$PRODUCT,$POCET_ROLL_SET,$pole_gift){",
+         "function add_to_card($ADD_TO_CARD, $PRODUCT, $POCET_ROLL_SET, $pole_gift = null){"
+        ),
     };
 }
