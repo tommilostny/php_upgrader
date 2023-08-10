@@ -9,7 +9,7 @@ public static partial class UndefinedConstAccess
         {
             var updated = UndefinedConstAccessRegex().Replace(contentStr, _UndefinedConstAccessEvaluator);
             file.Content.Replace(
-                InvalidUseInStringRegex().Replace(updated, _FixInvalidConstAccessInString)
+                StringWithInvalidArrayAccessRegex().Replace(updated, _FixInvalidConstAccessInString)
             );
         }
         return file;
@@ -27,13 +27,13 @@ public static partial class UndefinedConstAccess
 
         static string _FixInvalidConstAccessInString(Match stringMatch)
         {
-            if (!stringMatch.Groups["str"].Success || stringMatch.Value.Contains("<?php", StringComparison.OrdinalIgnoreCase))
+            if (!stringMatch.Groups["str"].Success || PhpOpeningTagRegex().IsMatch(stringMatch.Value))
             {
                 return stringMatch.Value;
             }
             using var sb = ZString.CreateStringBuilder();
             var i = 0;
-            var invalidVarAccesses = InvalidAccessInStringRegex()
+            var invalidVarAccesses = InvalidArrayAccessInStringRegex()
                 .Matches(stringMatch.Value)
                 .Where(m => m.Groups["inv"].Success);
 
@@ -56,8 +56,11 @@ public static partial class UndefinedConstAccess
     private static partial Regex UndefinedConstAccessRegex();
 
     [GeneratedRegex(@"""\.\$\w+?[^\s.&@\]""']*?\['[a-z_][a-z_0-9]*?'\]\.""|(?<inv>\$\w+?[^\s.&@\]""']*?\['[a-z_][a-z_0-9]*?'\])", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 55555)]
-    private static partial Regex InvalidAccessInStringRegex();
+    private static partial Regex InvalidArrayAccessInStringRegex();
 
-    [GeneratedRegex(@"'([^']|(?<=(?<!\\)\\)')*'|(?<str>(?<=<\?(([pP][hH][pP])|=)((.|\n)(?!(\?>|\/(\/|\*(?!.*?\*\/)))))*?)""([^""]|(?<=(?<!\\)\\)"")*(?<![{.])\$\w+?\S*?\['[a-z_]+?'\](?![}.])([^""]|(?<=(?<!\\)\\)"")*"")", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 55555)]
-    private static partial Regex InvalidUseInStringRegex();
+    [GeneratedRegex(@"\/(\/.*?\n|\*(.|\n)*?(\*\/|$))|(?<q>['""](?!<\?(([pP][hH][pP])|=)))(((?!\k<q>).|(?<=(?<!\\)\\)\k<q>)(?!\$?\w+?[^\s.&@\]""']*?\['[a-z_][a-z_0-9]*?'\]))*(?<!\\)\k<q>|(?<str>""(?!<\?(([pP][hH][pP])|=))([^""\n]|(?<=(?<!\\)\\)"")*(?<!{)\$\w+?[^\s.&@\]""']*?\['[a-z_][a-z_0-9]*?'\](?!})([^""\n]|(?<=(?<!\\)\\)"")*"")", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 55555)]
+    private static partial Regex StringWithInvalidArrayAccessRegex();
+
+    [GeneratedRegex(@"<\?(([pP][hH][pP])|=)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 666666)]
+    private static partial Regex PhpOpeningTagRegex();
 }
