@@ -101,7 +101,8 @@ public sealed class RubiconUpgrader : MonaUpgrader
                     .UpgradeUnexpectedEOF()
                     .UpgradeSetyFormImplodes()
                     .UpgradeSetupIncludes()
-                    .UpgradePHPMailer(this);
+                    .UpgradePHPMailer(this)
+                    .UpgradeMktime();
                 return file;
         }
     }
