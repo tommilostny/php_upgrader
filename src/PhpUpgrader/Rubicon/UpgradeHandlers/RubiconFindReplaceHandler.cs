@@ -233,5 +233,8 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("function add_to_card($ADD_TO_CARD,$PRODUCT,$POCET_ROLL_SET,$pole_gift){",
          "function add_to_card($ADD_TO_CARD, $PRODUCT, $POCET_ROLL_SET, $pole_gift = null){"
         ),
+        ("$setup_T_EMAIL = 'pro.jirka@seznam.cz';",
+         "$setup_T_EMAIL = 'info@botaska.cz'; //'pro.jirka@seznam.cz';"
+        ),
     };
 }

@@ -44,14 +44,18 @@ public sealed class RubiconUpgrader : MonaUpgrader
     public override void RunUpgrade(string directoryPath)
     {
         UpgradeAllFilesRecursively(directoryPath);
+        string oldWebName = WebName;
         if (HasRubiconOutside)
         {
+            WebName = $"{WebName}-rubicon";
             UpgradeAllFilesRecursively(OutsideRubiconFolder);
         }
         if (HasWebUsersOutside)
         {
+            WebName = $"{oldWebName}-web_users";
             UpgradeAllFilesRecursively(OutsideWebUsersFolder);
         }
+        WebName = oldWebName;
     }
 
     /// <summary> Procedura aktualizace Rubicon souborů. </summary>
@@ -96,7 +100,8 @@ public sealed class RubiconUpgrader : MonaUpgrader
                     .UpgradeMissingCurlyBracket()
                     .UpgradeUnexpectedEOF()
                     .UpgradeSetyFormImplodes()
-                    .UpgradeSetupIncludes();
+                    .UpgradeSetupIncludes()
+                    .UpgradePHPMailer(this);
                 return file;
         }
     }

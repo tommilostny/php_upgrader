@@ -18,7 +18,7 @@ public abstract class PhpUpgraderBase
     public string BaseFolder { get; }
 
     /// <summary> Název webu ve složce 'weby'. </summary>
-    public string WebName { get; }
+    public string WebName { get; protected set; }
 
     private string? _webFolder = null;
     /// <summary> Absolutní cesta k složce webu. </summary>

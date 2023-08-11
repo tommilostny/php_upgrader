@@ -139,6 +139,13 @@ internal sealed class FtpSynchronizer : FtpBase
             {
                 var (cl1, cl2) = await ExtractClientsAsync(downClients, upClients).ConfigureAwait(false);
                 tasks.Add(DownloadAndUploadAsync(cl1, cl2, file1.FullName, file1.FullName, downClients, upClients));
+                continue;
+            }
+            if (file1.Name.EndsWith(".php", StringComparison.OrdinalIgnoreCase))
+            {
+                var cl = await ExtractClientAsync(downClients).ConfigureAwait(false);
+                await HandlePhpFileAsync(cl, file1.FullName, PhpHandleMode.CheckLocal).ConfigureAwait(false);
+                downClients.Enqueue(cl);
             }
         }
         await Task.Delay(1000).ConfigureAwait(false);
@@ -226,7 +233,8 @@ internal sealed class FtpSynchronizer : FtpBase
     private enum PhpHandleMode
     {
         Download,
-        DeleteLocal
+        DeleteLocal,
+        CheckLocal
     }
 
     private async Task HandlePhpFileAsync(AsyncFtpClient sourceClient, string sourcePath, PhpHandleMode handleMode)
@@ -257,6 +265,26 @@ internal sealed class FtpSynchronizer : FtpBase
                     localFileInfo.Delete();
                 deleteBackupFile = true;
                 break;
+
+            case PhpHandleMode.CheckLocal:
+                if (!localFileInfo.Exists)
+                {
+                    if (!localFileInfo.Directory!.Exists)
+                        localFileInfo.Directory.Create();
+                    try
+                    {
+                        await sourceClient.DownloadFile(localFileInfo.FullName, sourcePath).ConfigureAwait(false);
+                        lock (_writeLock)
+                            ColoredConsole.WriteLine($"🔽 Stažen chybějící soubor:\t{ConsoleColor.DarkGray}{sourcePath}{Symbols.PREVIOUS_COLOR}...");
+                    }
+                    catch (FtpException ex)
+                    {
+                        lock (_writeLock)
+                            ColoredConsole.WriteLineError($"{ConsoleColor.Red}❌ {sourcePath}: {ex.Message}")
+                                .WriteLineError($"   {ex.InnerException?.Message}").ResetColor();
+                    }
+                }
+                break;
         }
         if (deleteBackupFile)
         {
@@ -275,7 +303,8 @@ internal sealed class FtpSynchronizer : FtpBase
         var sortedFiles1 = files1.Select(f => f.FullName).Order(StringComparer.Ordinal).ToImmutableList();
         foreach (var file2 in files2.Keys)
         {
-            if (file2.EndsWith("ObjectBase.php", StringComparison.Ordinal))
+            if (file2.EndsWith("ObjectBase.php", StringComparison.Ordinal)
+                || file2.EndsWith("Exception.php", StringComparison.Ordinal))
                 continue;
 
             var i = sortedFiles1.BinarySearch(file2, StringComparer.Ordinal);

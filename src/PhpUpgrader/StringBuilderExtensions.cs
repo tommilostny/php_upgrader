@@ -168,6 +168,29 @@ internal static class StringBuilderExtensions
     }
 
     /// <summary>
+    /// Nalezne index posledního výskytu dané hodnoty v instanci <seealso cref="StringBuilder"/>.
+    /// </summary>
+    /// <param name="source">Řetězec, kde se hledá.</param>
+    /// <param name="value">Hledaná hodnota.</param>
+    /// <returns>Index začátku <paramref name="value"/> v <paramref name="source"/> nebo <b>-1</b>, pokud není nalezena.</returns>
+    internal static int LastIndexOf(this StringBuilder source, ReadOnlySpan<char> value)
+    {
+        for (var (i, j) = (source.Length - 1, value.Length - 1); i >= 0; i--)
+        {
+            if (source[i] != value[j])
+            {
+                j = value.Length - 1;
+                continue;
+            }
+            if (--j < 0)
+            {
+                return i - j - 1;
+            }
+        }
+        return -1;
+    }
+
+    /// <summary>
     /// Nahradí <paramref name="oldValue"/> za <paramref name="newValue"/> v instanci <seealso cref="StringBuilder"/>.
     /// </summary>
     /// <param name="source">Řetězec, kde se nahrazuje.</param>

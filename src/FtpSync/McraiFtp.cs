@@ -23,7 +23,8 @@ public sealed class McraiFtp
                     string? path, string? webName,
                     long maxFileSize,
                     string baseFolder = DefaultBaseFolder,
-                    string host = DefaultHostname1)
+                    string host = DefaultHostname1,
+                    bool silentLoginParseError = false)
     {
         try //Načíst přihlašovací údaje k FTP. Uložené v souboru ftp_logins.txt nebo zadané.
         {
@@ -31,7 +32,8 @@ public sealed class McraiFtp
         }
         catch (Exception ex)
         {
-            ColoredConsole.SetColor(ConsoleColor.Red).WriteLineError(ex.Message).ResetColor();
+            if (!silentLoginParseError)
+                ColoredConsole.SetColor(ConsoleColor.Red).WriteLineError(ex.Message).ResetColor();
             throw;
         }
         _path = path;
@@ -41,8 +43,8 @@ public sealed class McraiFtp
         _host = host;
     }
 
-    public McraiFtp(string webName, string baseFolder, long maxFileSize, string host = DefaultHostname1)
-        : this(username: null, password: null, path: null, webName, maxFileSize, baseFolder, host)
+    public McraiFtp(string webName, string baseFolder, long maxFileSize, string host = DefaultHostname1, bool silentLoginParseError = false)
+        : this(username: null, password: null, path: null, webName, maxFileSize, baseFolder, host, silentLoginParseError)
     {
     }
 

@@ -53,8 +53,8 @@ public static class Program
         _baseFolder = baseFolder;
         _webName = webName;
         _lazyFtp = new(() => new McraiFtp(_webName, _baseFolder, Convert.ToInt64(ftpMaxMb * 1024 * 1024)));
-        _lazyRubiconFtp = new(() => new McraiFtp($"{_webName}-rubicon", _baseFolder, -1));
-        _lazyWebUsersFtp = new(() => new McraiFtp($"{_webName}-web_users", _baseFolder, -1));
+        _lazyRubiconFtp = new(() => new McraiFtp($"{_webName}-rubicon", _baseFolder, -1, silentLoginParseError: true));
+        _lazyWebUsersFtp = new(() => new McraiFtp($"{_webName}-web_users", _baseFolder, -1, silentLoginParseError: true));
 
         //0. fáze: příprava PHP upgraderu (kontrola zadaných argumentů)
         // Může nastat případ, kdy složka webu neexistuje. Uživatel je tázán, zda se pokusit stáhnout z FTP mcrai1.
@@ -98,14 +98,14 @@ public static class Program
         if (!dontUpgrade && !Directory.Exists(workDir))
         {
             Console.WriteLine($"Složka {workDir} neexistuje. Načítám údaje z ftp_logins.txt a stahuji z FTP {McraiFtp.DefaultHostname1}.");
-            try
-            {
-                await _lazyFtp.Value.DownloadAsync().ConfigureAwait(false);
-            }
-            catch
-            {
-                return null;
-            }
+            try { await _lazyFtp.Value.DownloadAsync().ConfigureAwait(false); }
+            catch { return null; }
+
+            try { await _lazyRubiconFtp.Value.DownloadAsync().ConfigureAwait(false); }
+            catch { }
+
+            try { await _lazyWebUsersFtp.Value.DownloadAsync().ConfigureAwait(false); }
+            catch { }
         }
         if (dontUpgrade)
         {
