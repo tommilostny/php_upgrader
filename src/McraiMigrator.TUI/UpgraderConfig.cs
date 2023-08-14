@@ -32,6 +32,8 @@ internal struct UpgraderConfig
 
     public string Password { get; set; } = string.Empty;
 
+    public string[] AdminFolders { get; set; } = new[] { "admin" };
+
     public bool RunPhpUpgrade { get; set; } = true;
 
     public static UpgraderConfig Load()

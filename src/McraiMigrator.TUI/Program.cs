@@ -32,6 +32,7 @@ while (runPhpUpgrader is null)
                 $"Použít zálohu: {config.UseBackup.ToYesNo()}",
                 "[blue]Reset údajů k databázi[/]",
                 "[blue]Reset všech hodnot[/]",
+                $"Admin složky (Mona): [white]{string.Join(", ", config.AdminFolders)}[/]",
                 "[red]Ukončit[/]",
             }));
     if (option.StartsWith("[green]Spustit[/]", StringComparison.Ordinal))
@@ -127,6 +128,12 @@ while (runPhpUpgrader is null)
         config.Save();
         continue;
     }
+    if (option.StartsWith("Admin složky (Mona):", StringComparison.Ordinal))
+    {
+        config.AdminFolders = AnsiConsole.Ask<string>("Zadejte admin složky (oddělené čárkou): ").Split(',').Select(x => x.Trim()).ToArray();
+        Console.SetCursorPosition(0, Console.CursorTop - 1);
+        continue;
+    }
     runPhpUpgrader = false;
 }
 config.Save();
@@ -152,6 +159,7 @@ await PhpUpgrader.Program.Main
     db: string.IsNullOrWhiteSpace(config.Database) ? null : config.Database,
     user: string.IsNullOrWhiteSpace(config.UserName) ? null : config.UserName,
     password: string.IsNullOrWhiteSpace(config.Password) ? null : config.Password,
-    dontUpgrade: !config.RunPhpUpgrade
+    dontUpgrade: !config.RunPhpUpgrade,
+    adminFolders: config.AdminFolders
 )
 .ConfigureAwait(false);
