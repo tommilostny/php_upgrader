@@ -8,10 +8,13 @@ public static class PHPMailer
     {
         _createOrderSendMailPath ??= Path.Join("rubicon", "modules", "card", "create_order_send_mail.php");
 
-        if (file.Path.EndsWith(_createOrderSendMailPath, StringComparison.Ordinal) && file.Content.Contains("new PHPMailer"))
+        if (file.Path.EndsWith(_createOrderSendMailPath, StringComparison.Ordinal))
         {
             file.Content.Insert(file.Content.IndexOf("<?php") + 6, "include_once \"mail/Exception.php\";");
-            UpdateMailerConfig(file, upgrader);
+            if (file.Content.Contains("new PHPMailer"))
+            {
+                UpdateMailerConfig(file, upgrader);
+            }
         }
         return file;
     }
