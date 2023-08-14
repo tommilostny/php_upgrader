@@ -58,7 +58,7 @@ public static partial class UndefinedConstAccess
     [GeneratedRegex(@"""\.\$\w+?[^\s.&@\]""']*?\['[a-z_][a-z_0-9]*?'\]\.""|(?<inv>\$\w+?[^\s.&@\]""']*?\['[a-z_][a-z_0-9]*?'\])", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 55555)]
     private static partial Regex InvalidArrayAccessInStringRegex();
 
-    [GeneratedRegex(@"\/(\/.*?\n|\*(.|\n)*?(\*\/|$))|(?<q>['""](?!<\?(([pP][hH][pP])|=)))(((?!\k<q>).|(?<=(?<!\\)\\)\k<q>)(?!\$?\w+?[^\s.&@\]""']*?\['[a-z_][a-z_0-9]*?'\]))*(?<!\\)\k<q>|(?<str>""(?!<\?(([pP][hH][pP])|=))([^""\n]|(?<=(?<!\\)\\)"")*(?<!{)\$\w+?[^\s.&@\]""']*?\['[a-z_][a-z_0-9]*?'\](?!})([^""\n]|(?<=(?<!\\)\\)"")*"")", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 55555)]
+    [GeneratedRegex(@"\/(\/.*?\n|\*(.|\n)*?(\*\/|$))|(?<q>['""](?!<\?(([pP][hH][pP])|=)))(((?!\k<q>).|(?<=(?<!\\)\\)\k<q>)(?!\$?\w+?[^\s.&@\]""']*?\['[a-z_][a-z_0-9]*?'\]))*(?<!\\)\k<q>|(?<str>""(?!<\?(([pP][hH][pP])|=))([^""\n]|(?<=(?<!\\)\\)"")*(?<!{)\$\w+?[^\s.&@\]""']*?\['[a-z_][a-z_0-9]*?'\](?!})([^""\n]|(?<=(?<!\\)\\)"")*(?<!\.\s?)"")", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 55555)]
     private static partial Regex StringWithInvalidArrayAccessRegex();
 
     [GeneratedRegex(@"<\?(([pP][hH][pP])|=)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 666666)]
