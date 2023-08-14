@@ -5,33 +5,67 @@
 /// </summary>
 public static partial class Mktime
 {
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "MA0011:IFormatProvider is missing", Justification = "<Pending>")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "MA0011:IFormatProvider is missing", Justification = "Basic param check with int.TryParse")]
     public static FileWrapper UpgradeMktime(this FileWrapper file)
     {
-        if (file.Content.Contains("mktime"))
+        var mktimeIndex = file.Content.IndexOf("mktime");
+        while (mktimeIndex > -1)
         {
-            file.Content.Replace(MktimeCallRegex().Replace(file.Content.ToString(), _MktimeCallEvaluator));
+            var sb = new StringBuilder("mktime(");
+            var bracketScope = 1;
+            var paramsCount = 0;
+            var paramStartIndex = file.Content.IndexOf('(', mktimeIndex) + 1;
+            int i;
+            for (i = paramStartIndex; bracketScope > 0; i++)
+            {
+                switch (file.Content[i])
+                {
+                    case '(': bracketScope++; break;
+                    case ')':
+                        if (--bracketScope == 0)
+                        {
+                            _AppendParameter(sb, ref paramStartIndex, i);
+                            paramsCount++;
+                            sb.Append(')');
+                        }
+                        break;
+                    case ',':
+                        if (bracketScope == 1)
+                        {
+                            _AppendParameter(sb, ref paramStartIndex, i);
+                            if (++paramsCount < 6)
+                            {
+                                sb.Append(", ");
+                            }
+                        }
+                        break;
+                }
+            }
+            if (paramsCount < 6)
+            {
+                mktimeIndex = file.Content.IndexOf("mktime", mktimeIndex + 1);
+                continue;
+            }
+            file.Content.Remove(mktimeIndex, i - mktimeIndex);
+            file.Content.Insert(mktimeIndex, sb);
+            mktimeIndex = file.Content.IndexOf("mktime", mktimeIndex + sb.Length);
         }
         return file;
 
-        static string _MktimeCallEvaluator(Match match)
+        void _AppendParameter(StringBuilder sb, ref int startIndex, int endIndex)
         {
-            using var sb = ZString.CreateStringBuilder();
-            sb.Append("mktime(");
-            for (byte i = 1; i < 7; i++)
-            {
-                var param = match.Groups[i].Value;
-                var isInt = int.TryParse(param, out _);
-                sb.Append(isInt ? param : $"intval({param})");
-                if (i < 6)
-                    sb.Append(", ");
-            }
-            sb.Append(");");
-            return sb.ToString();
+            var count = endIndex - startIndex;
+            if (count == 0)
+                return;
+
+            Span<char> param = stackalloc char[count];
+            file.Content.CopyTo(startIndex, param, count);
+            param = param.Trim();
+
+            var isInt = int.TryParse(param, out _);
+            sb.Append(isInt ? param : $"intval({param})");
+
+            startIndex = endIndex + 1;
         }
     }
-
-    [GeneratedRegex(@"mktime\s?\(\s?(.+?)\s?,\s?(.+?)\s?,\s?(.+?)\s?,\s?(.+?)\s?,\s?(.+?)\s?,\s?(.+?)\s?\);", RegexOptions.None, matchTimeoutMilliseconds: 666666)]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "MA0023:Add RegexOptions.ExplicitCapture", Justification = "<Pending>")]
-    private static partial Regex MktimeCallRegex();
 }

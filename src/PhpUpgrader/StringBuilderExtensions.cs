@@ -154,10 +154,11 @@ internal static class StringBuilderExtensions
     /// </summary>
     /// <param name="source">Řetězec, kde se hledá.</param>
     /// <param name="value">Hledaná hodnota.</param>
+    /// <param name="startIndex">Index, na kterém začneme hledat.</param>
     /// <returns>Index <paramref name="value"/> v <paramref name="source"/> nebo <b>-1</b>, pokud není nalezena.</returns>
-    internal static int IndexOf(this StringBuilder source, char value)
+    internal static int IndexOf(this StringBuilder source, char value, int startIndex = 0)
     {
-        for (var i = 0; i < source.Length; i++)
+        for (var i = startIndex; i < source.Length; i++)
         {
             if (source[i] == value)
             {
