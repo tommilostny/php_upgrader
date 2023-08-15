@@ -146,9 +146,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         var updateHostname = isRubiconCoreConfigure || isRubiconApi || containsDevDb
             || HostNamesToReplace().Any(hn => content.Contains($"$hostname_beta = \"{hn}\";", StringComparison.Ordinal));
 
-        file.Content.Replace("$_SERVER[HTTP_HOST]", "$_SERVER['HTTP_HOST']")
-            .Replace(SetupConnectRegex().Replace(content, _NewCredentialAndComment))
-             .Replace("////", "//");
+        file.Content.Replace(SetupConnectRegex().Replace(content, _NewCredentialAndComment)).Replace("////", "//");
 
         if (!usernameLoaded)
             file.Warnings.Add("setup - nenačtené přihlašovací jméno.");
@@ -221,6 +219,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
             return;
 
         FillInDbCredentials(file, upgrader, isRubiconCoreConfigure, isRubiconApi, containsDevDb);
+        file.Content.Replace("$_SERVER[HTTP_HOST]", "$_SERVER['HTTP_HOST']");
     }
 
     /// <summary> Aktualizace hostname z mcrai1 na <see cref="PhpUpgraderBase.Hostname"/>. </summary>
