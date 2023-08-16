@@ -185,12 +185,6 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("echo $query_data = \"\tSELECT * from aegisx_produkty_all WHERE language_id = 1",
          "$query_data = \"\tSELECT * from aegisx_produkty_all WHERE language_id = 1"
         ),
-        ("if (count($MENU_CTG) > 0",
-         "if ($MENU_CTG !== null && count($MENU_CTG) > 0"
-        ),
-        ("if (count($MENU_CTG) == 0",
-         "if ($MENU_CTG === null || count($MENU_CTG) == 0"
-        ),
         ("foreach($VARIANTY[\"$idp\"] as $varianta) {",
          "if (isset($VARIANTY[\"$idp\"])) foreach($VARIANTY[\"$idp\"] as $varianta) {"
         ),
