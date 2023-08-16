@@ -19,11 +19,11 @@ public static partial class Countable
                 '>' => '!',
                 _ => null
             };
-            return $"if ({bang}empty({match.Groups["var"].ValueSpan}))";
+            return $"if ({bang}empty({match.Groups["var"].ValueSpan})";
         }
     }
 
-    [GeneratedRegex(@"if\s?\(\s?count\s?\(\s?(?<var>\$\w+?)\s?\)\s?(?<op>>|===?)\s?0\s?\)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 666666)]
+    [GeneratedRegex(@"\bif\s?\(\s?count\s?\(\s?(?<var>\$\w+?)\s?\)\s?(?<op>>|===?)\s?0", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 666666)]
     private static partial Regex CountableIfRegex();
 
 }

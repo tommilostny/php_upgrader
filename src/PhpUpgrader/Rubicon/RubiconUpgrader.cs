@@ -105,7 +105,8 @@ public sealed class RubiconUpgrader : MonaUpgrader
                     .UpgradeMktime()
                     .UpgradeMoneyCreateXmlFtp()
                     .UpgradeCountableWarning()
-                    .UpgradeVipClub();
+                    .UpgradeVipClub()
+                    .UpgradeGoPay();
                 return file;
         }
     }
