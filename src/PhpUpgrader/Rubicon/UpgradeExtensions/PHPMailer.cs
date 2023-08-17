@@ -2,19 +2,19 @@
 
 public static class PHPMailer
 {
-    private static string? _createOrderSendMailPath;
+    private static string? _exceptionPhp = null;
 
     public static FileWrapper UpgradePHPMailer(this FileWrapper file, PhpUpgraderBase upgrader)
     {
-        _createOrderSendMailPath ??= Path.Join("rubicon", "modules", "card", "create_order_send_mail.php");
-
-        if (file.Path.EndsWith(_createOrderSendMailPath, StringComparison.Ordinal))
+        if (file.Content.Contains("include_once \"mail/PHPMailer.php\";"))
         {
-            file.Content.Insert(file.Content.IndexOf("<?php") + 6, "include_once \"mail/Exception.php\";");
-            if (file.Content.Contains("new PHPMailer"))
+            _exceptionPhp ??= Path.Join(upgrader.WebFolder, "mail", "Exception.php");
+            if (!File.Exists(_exceptionPhp))
             {
-                UpdateMailerConfig(file, upgrader);
+                File.Copy(Path.Join(upgrader.BaseFolder, "important", "Exception.txt"), _exceptionPhp);
             }
+            file.Content.Insert(file.Content.IndexOf("<?php") + 6, "include_once \"mail/Exception.php\";");
+            UpdateMailerConfig(file, upgrader);
         }
         return file;
     }
@@ -28,27 +28,22 @@ public static class PHPMailer
             .Replace("$mail->SMTPSecure = \"tls\";", "$mail->SMTPSecure = \"ssl\";")
             .Replace("$mail->Port       = 587;", "$mail->Port       = 465;");
         
-        var mailPasswordLine = File.ReadAllLines(Path.Join(upgrader.BaseFolder, "mail_passwords.txt"))
-                        .FirstOrDefault(line => line.StartsWith(upgrader.WebName, StringComparison.Ordinal))
-                        ?.Split(':');
-        if (mailPasswordLine is not null and not { Length: < 2 })
+        var mailPassword = File.ReadAllText(Path.Join(upgrader.BaseFolder, "mail_password.txt")).AsSpan().Trim();
+        if (file.Content.Contains("$mail->Username   = \"obchodni-podminky@vestavne-spotrebice.cz\""))
         {
-            var mailPassword = mailPasswordLine[1].AsSpan().Trim();
             _InsertPassword(_IndexFunc, mailPassword);
             _InsertPassword(_LastIndexFunc, mailPassword);
-            return;
         }
-        file.Warnings.Add("Obsahuje PHPMailer, ale není možné automaticky doplnit heslo k mailu.");
 
-        int _IndexFunc(StringBuilder sb, string s) => sb.IndexOf(s);
-        int _LastIndexFunc(StringBuilder sb, string s) => sb.LastIndexOf(s);
+        static int _IndexFunc(StringBuilder sb, string s) => sb.IndexOf(s);
+        static int _LastIndexFunc(StringBuilder sb, string s) => sb.LastIndexOf(s);
 
         void _InsertPassword(Func<StringBuilder, string, int> indexFunc, ReadOnlySpan<char> password)
         {
-            var mailPasswordCodeIndex = indexFunc(file.Content, "$mail->Password   =");
-            if (mailPasswordCodeIndex != -1)
+            var index = indexFunc(file.Content, "$mail->Password   =");
+            if (index != -1 && !(file.Content[index - 1] == '/' && file.Content[index - 2] == '/'))
             {
-                file.Content.Insert(mailPasswordCodeIndex, $"$mail->Password   = \"{password}\"; //");
+                file.Content.Insert(index, $"$mail->Password   = \"{password}\"; //");
             }
         }
 
