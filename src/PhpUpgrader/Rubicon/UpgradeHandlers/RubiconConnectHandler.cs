@@ -1,6 +1,5 @@
 ﻿using PhpUpgrader.Mona.UpgradeExtensions;
 using PhpUpgrader.Mona.UpgradeHandlers;
-using System.Text.RegularExpressions;
 
 namespace PhpUpgrader.Rubicon.UpgradeHandlers;
 
@@ -60,12 +59,8 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
             var backup = (upgrader.ConnectionFile, upgrader.Database, upgrader.Username, upgrader.Password, upgrader.Hostname);
             upgrader.ConnectionFile = file.Path.Split(Path.DirectorySeparatorChar)[^1];
 
-            if (string.Equals(upgrader.Hostname, "localhost", StringComparison.Ordinal)
-                || string.Equals(upgrader.Hostname, "127.0.0.1", StringComparison.Ordinal))
-            {
-                upgrader.Database = upgrader.Username = upgrader.Password = null;
-            }
-            if (file.Content.Contains("rdesign.cybersales.cz") || file.Content.Contains("mcrai2.vshosting.cz"))
+            upgrader.Database = upgrader.Username = upgrader.Password = null;
+            if (file.Content.Contains("rdesign.cybersales.cz") || file.Content.Contains("mcrai2.vshosting.cz") || file.Content.Contains("217.16.184.116"))
             {
                 upgrader.Hostname = null;
             }
@@ -135,7 +130,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         var username = containsDevDb ? upgrader.DevUsername : upgrader.Username;
         var password = containsDevDb ? upgrader.DevPassword : upgrader.Password;
 
-        if (database is null || username is null || password is null
+        if ((upgrader.Hostname is "217.16.184.116" && !containsDevDb) || database is null || username is null || password is null
             || file.Content.Contains($"password = '{password}';")
             || file.Content.Contains($"password_beta = \"{password}\";")
             || file.Content.Contains($"password_sportmall_import = \"{password}\";"))
@@ -174,11 +169,11 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
 
             if (updateHostname && credential is null)
             {
-                credential = LoadCred(varName, "hostname", "$hostname_beta", "$hostname_sportmall_import", ref hostnameLoaded, upgrader.Hostname);
+                var host = containsDevDb ? "127.0.0.1" : upgrader.Hostname;
+                credential = LoadCred(varName, "hostname", "$hostname_beta", "$hostname_sportmall_import", ref hostnameLoaded, host);
             }
             var spaces = GetSpacesBeforeIndex(content, match.Index);
             return credential is null ? match.Value : $"//{match.Value}\n{spaces}{varName} = '{credential}';";
-
         }
     }
     
@@ -383,13 +378,14 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
                 "name" => upgrader.Database,
                 _ => null
             };
-            return cred is null ? match.Value : $"define('db_{varPart}', '{cred}');";
+            return string.IsNullOrEmpty(cred) ? match.Value : $"define('db_{varPart}', '{cred}');";
         }
     }
 
     private static void UpgradePgConnectWithStaticConnectionString(FileWrapper file, PhpUpgraderBase upgrader)
     {
-        if (file.Content.Contains("pg_connect") && !file.Content.Contains("port=$"))
+        if (upgrader.Database is not null && upgrader.Username is not null && upgrader.Password is not null
+            && file.Content.Contains("pg_connect") && !file.Content.Contains("port=$"))
         {
             file.Content.Replace(PgConnectRegex().Replace(
                 file.Content.ToString(),
@@ -421,7 +417,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
     [GeneratedRegex(@"\$(hostname|database|username|password)_(?<beta>\w+)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex ConnectVarRegex();
 
-    [GeneratedRegex(@"define\s?\(\s?(?<quote>['""])db_(?<var>\w+?)\k<quote>.+?;", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    [GeneratedRegex(@"define\s?\(\s?(?<q>['""])db_(?<var>\w+?)\k<q>\s?,\s?\k<q>.+?\k<q>\s?\);", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex DefineDbVarRegex();
 
     [GeneratedRegex(@"pg_connect\s?\(\s?[""']host\s?=\s?\S+?\sport\s?=\s?(?<port>\d+?)\sdbname\s?=\s?\S+?\suser\s?=\s?\S+?\spassword\s?=\s?\S+?\s?[""']\s?\);", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
