@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeExtensions;
 
-public static class GoPay
+public static partial class GoPay
 {
     private static readonly string _gopayHelperPHP = Path.Join("gopay", "api", "gopay_helper.php");
     private static readonly string _gopaySoapPHP = Path.Join("gopay", "api", "gopay_soap.php");
@@ -23,8 +23,25 @@ public static class GoPay
         }
         else if (file.Path.EndsWith(_gopaySoapPHP, StringComparison.Ordinal))
         {
-            file.Content.Replace("$go_client->__call", "$go_client->__soapCall");
+            file.Content.Replace(SoapCallRegex().Replace(file.Content.ToString(), _SoapCallEvaluator));
         }
         return file;
+
+        static string _SoapCallEvaluator(Match match)
+        {
+            using var sb = ZString.CreateStringBuilder();
+            sb.Append("$go_client->__soapCall('");
+            sb.Append(match.Groups["method"].Value);
+
+            var args = match.Groups["args"].Value;
+            sb.Append(args.StartsWith("array()", StringComparison.OrdinalIgnoreCase)
+                ? $"', {args});"
+                : $"', array({args}));");
+
+            return sb.ToString();
+        }
     }
+
+    [GeneratedRegex(@"\$go_client->__call\s?\(\s?(?<q>['""])(?<method>\w+?)\k<q>,\s*(?<args>.+?)\);", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    private static partial Regex SoapCallRegex();
 }
