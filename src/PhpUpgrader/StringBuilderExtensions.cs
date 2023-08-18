@@ -155,6 +155,21 @@ internal static class StringBuilderExtensions
     /// <param name="source">Řetězec, kde se hledá.</param>
     /// <param name="value">Hledaná hodnota.</param>
     /// <param name="startIndex">Index, na kterém začneme hledat.</param>
+    /// <param name="maxDistance"></param>
+    /// <returns>Index začátku <paramref name="value"/> v <paramref name="source"/> nebo <b>-1</b>, pokud není nalezena.</returns>
+    internal static int IndexOf(this StringBuilder source, ReadOnlySpan<char> value, int startIndex, int maxDistance)
+    {
+        Span<char> sourceSlice = stackalloc char[maxDistance - startIndex];
+        source.CopyTo(startIndex, sourceSlice, maxDistance);
+        return sourceSlice.IndexOf(value);
+    }
+
+    /// <summary>
+    /// Nalezne index dané hodnoty v instanci <seealso cref="StringBuilder"/>.
+    /// </summary>
+    /// <param name="source">Řetězec, kde se hledá.</param>
+    /// <param name="value">Hledaná hodnota.</param>
+    /// <param name="startIndex">Index, na kterém začneme hledat.</param>
     /// <returns>Index <paramref name="value"/> v <paramref name="source"/> nebo <b>-1</b>, pokud není nalezena.</returns>
     internal static int IndexOf(this StringBuilder source, char value, int startIndex = 0)
     {

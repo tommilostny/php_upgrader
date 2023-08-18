@@ -4,6 +4,12 @@ public static partial class Mssql
 {
     private static string? _mssqlOverwritePhp = null;
 
+    private static string[] _mssqlFunctionNames = {
+        "mssql_connect"     , "mssql_query"           , "mssql_fetch_array",
+        "mssql_result"      , "mssql_close"           , "mssql_fetch_assoc",
+        "mssql_fetch_object", "mssql_get_last_message", "mssql_num_rows"   ,
+    };
+
     /// <summary>
     /// PhpStorm:
     /// 'mssql_query' was removed in 7.0 PHP version.<br />
@@ -18,7 +24,7 @@ public static partial class Mssql
     /// </remarks>
     public static FileWrapper UpgradeMssql(this FileWrapper file, PhpUpgraderBase upgrader)
     {
-        if (file.Content.Contains("mssql_"))
+        if (_mssqlFunctionNames.Any(mfn => file.Content.Contains(mfn)))
         {
             AddMssqlOverwriteRequire(file, upgrader);
             EnsureMssqlOverwriteFileExists(upgrader);
@@ -33,7 +39,13 @@ public static partial class Mssql
         var folderScopeLevel = file.Path.Split(Path.DirectorySeparatorChar).Length;
         folderScopeLevel -= upgrader.WebFolder.Split(Path.DirectorySeparatorChar).Length;
 
-        file.Content.Insert(file.Content.IndexOf("<?php") + 6,
+        var phpOpeningIndex = int.Max(file.Content.IndexOf("<?php", 0, 42), file.Content.IndexOf("<?PHP", 0, 42));
+        if (phpOpeningIndex == -1)
+        {
+            file.Content.Insert(0, "<?php\n\n?>");
+            phpOpeningIndex = 0;
+        }
+        file.Content.Insert(phpOpeningIndex + 6,
             SetupIncludes.CreateIncludesCascade("mssql_overwrite.php", folderScopeLevel)
         );
     }
