@@ -1,10 +1,17 @@
 <?php
-function mssql_connect($serverInfo, $username, $password, $database) {
+/* Overwrite of mssql_* functions with their sqlsrv_* equivalents for compatibility with PHP 7.0+
+ * Author: Tomáš Milostný, 2023
+ */
+
+ function mssql_connect($serverInfo, $username, $password, $database) {
+     // Replace ':' with ',' in server info
+    $serverInfo = str_replace(':', ',', $serverInfo);
     // Construct the connection options array
     $connectionOptions = array(
         "Database" => $database,
         "UID" => $username,
-        "PWD" => $password
+        "PWD" => $password,
+        "TrustServerCertificate" => true,
     );
     // Establish the connection
     $conn = sqlsrv_connect($serverInfo, $connectionOptions);
