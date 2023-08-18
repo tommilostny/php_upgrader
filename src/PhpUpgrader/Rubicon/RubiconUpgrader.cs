@@ -71,7 +71,9 @@ public sealed class RubiconUpgrader : MonaUpgrader
         switch (base.UpgradeProcedure(filePath))
         {
             //MonaUpgrader končí s null, také hned skončit.
-            case null: return null;
+            case null:
+            case var mssqlOverwrite when mssqlOverwrite.Path.EndsWith("mssql_overwrite.php", StringComparison.Ordinal):
+                return null;
 
             //jinak máme soubor k aktualizaci dalšími metodami specifickými pro Rubicon.
             case var file:
@@ -95,7 +97,7 @@ public sealed class RubiconUpgrader : MonaUpgrader
                     .UpgradeAdminerMysql()
                     .UpgradeNajdiVDb()
                     .UpgradeUnparenthesizedPlus()
-                    .UpgradeMssql()
+                    .UpgradeMssql(this)
                     .UpgradeMpdfFunctions()
                     .UpgradeMissingCurlyBracket()
                     .UpgradeUnexpectedEOF()

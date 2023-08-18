@@ -29,45 +29,49 @@ public static partial class SetupIncludes
                 count++;
             }
             while (true);
-            sb.Clear();
-            var file = match.Groups["file"].ValueSpan;
-            for (var i = 0; i < count; i++)
-            {
-                for (var j = 0; j < i; j++)
-                {
-                    sb.Append("\t");
-                }
-                sb.Append("if (!(include_once \"");
-                for (var j = 0; j < i; j++)
-                {
-                    sb.Append("../");
-                }
-                sb.Append(file);
-                sb.AppendLine("\")):");
-            }
-            for (var j = 0; j < count; j++)
-            {
-                sb.Append("\t");
-            }
-            sb.Append("echo \"CHYBA - Nenalezen soubor ");
-            sb.Append(file);
-            sb.AppendLine("!\";");
-            for (var j = 0; j < count; j++)
-            {
-                sb.Append("\t");
-            }
-            sb.Append("exit();");
-            for (var i = 0; i < count; i++)
-            {
-                sb.AppendLine();
-                for (var j = 0; j < count - i - 1; j++)
-                {
-                    sb.Append("\t");
-                }
-                sb.Append("endif;");
-            }
-            return sb.ToString();
+            return CreateIncludesCascade(match.Groups["file"].ValueSpan, count);
         }
+    }
+
+    public static string CreateIncludesCascade(ReadOnlySpan<char> file, int levels)
+    {
+        using var sb = ZString.CreateStringBuilder();
+        for (var i = 0; i < levels; i++)
+        {
+            for (var j = 0; j < i; j++)
+            {
+                sb.Append("\t");
+            }
+            sb.Append("if (!(include_once \"");
+            for (var j = 0; j < i; j++)
+            {
+                sb.Append("../");
+            }
+            sb.Append(file);
+            sb.AppendLine("\")):");
+        }
+        for (var j = 0; j < levels; j++)
+        {
+            sb.Append("\t");
+        }
+        sb.Append("echo \"CHYBA - Nenalezen soubor ");
+        sb.Append(file);
+        sb.AppendLine("!\";");
+        for (var j = 0; j < levels; j++)
+        {
+            sb.Append("\t");
+        }
+        sb.Append("exit();");
+        for (var i = 0; i < levels; i++)
+        {
+            sb.AppendLine();
+            for (var j = 0; j < levels - i - 1; j++)
+            {
+                sb.Append("\t");
+            }
+            sb.Append("endif;");
+        }
+        return sb.ToString();
     }
 
     [GeneratedRegex(@"include(_once)?\s?\([""'](?<file>.+?)[""']\);(\s*?include(_once)?\s?\([""'](\.\.\/)+?\k<file>[""']\);)+", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 55555)]

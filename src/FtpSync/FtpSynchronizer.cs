@@ -304,7 +304,8 @@ internal sealed class FtpSynchronizer : FtpBase
         foreach (var file2 in files2.Keys)
         {
             if (file2.EndsWith("ObjectBase.php", StringComparison.Ordinal)
-                || file2.EndsWith("Exception.php", StringComparison.Ordinal))
+                || file2.EndsWith("Exception.php", StringComparison.Ordinal)
+                || file2.EndsWith("mssql_overwrite.php", StringComparison.Ordinal))
                 continue;
 
             var i = sortedFiles1.BinarySearch(file2, StringComparer.Ordinal);
