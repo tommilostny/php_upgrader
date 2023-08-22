@@ -4,8 +4,16 @@ public static partial class GoPay
 {
     private static readonly string _gopayHelperPHP = Path.Join("gopay", "api", "gopay_helper.php");
     private static readonly string _gopaySoapPHP = Path.Join("gopay", "api", "gopay_soap.php");
+    private static readonly string _mcGoPayPHP = Path.Join("classes", "McGoPay.setup.php");
 
     public static FileWrapper UpgradeGoPay(this FileWrapper file)
+    {
+        UpgradeGopaySOAPHelper(file);
+        UpgradeMcGoPay(file);
+        return file;
+    }
+
+    private static void UpgradeGopaySOAPHelper(FileWrapper file)
     {
         if (file.Path.EndsWith(_gopayHelperPHP, StringComparison.Ordinal))
         {
@@ -25,7 +33,6 @@ public static partial class GoPay
         {
             file.Content.Replace(SoapCallRegex().Replace(file.Content.ToString(), _SoapCallEvaluator));
         }
-        return file;
 
         static string _SoapCallEvaluator(Match match)
         {
@@ -39,6 +46,24 @@ public static partial class GoPay
                 : $"', array({args}));");
 
             return sb.ToString();
+        }
+    }
+
+    private static void UpgradeMcGoPay(FileWrapper file)
+    {
+        if (file.Path.EndsWith(_mcGoPayPHP, StringComparison.Ordinal))
+        {
+            file.Content
+                .Replace("// ===== Gate definition by DOMAIN_ID (for PHP < 7.0) =====\nclass gateway_params { static function getparams() { return [",
+                         "// ===== Gate definition by DOMAIN_ID (for PHP 7+) =====\ndefine('gateway_params', [")
+                .Replace("// ===== Gate definition by DOMAIN_ID (for PHP < 7.0) =====\r\nclass gateway_params { static function getparams() { return [",
+                         "// ===== Gate definition by DOMAIN_ID (for PHP 7+) =====\r\ndefine('gateway_params', [")
+                .Replace("];}}\n// ===== Gate definition by DOMAIN_ID (for PHP 7+) =====\n/*\ndefine('gateway_params', [",
+                         "]);\n// ===== Gate definition by DOMAIN_ID (for PHP < 7.0) =====\n/*\nclass gateway_params { static function getparams() { return [")
+                .Replace("];}}\r\n// ===== Gate definition by DOMAIN_ID (for PHP 7+) =====\r\n/*\r\ndefine('gateway_params', [",
+                         "]);\r\n// ===== Gate definition by DOMAIN_ID (for PHP < 7.0) =====\r\n/*\r\nclass gateway_params { static function getparams() { return [")
+                .Replace("]);\n*/", "];}}\n*/")
+                .Replace("]);\r\n*/", "];}}\r\n*/");
         }
     }
 
