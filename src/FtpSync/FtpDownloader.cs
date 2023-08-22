@@ -26,10 +26,11 @@ internal sealed class FtpDownloader : FtpBase
                                         existsMode: FtpLocalExists.Overwrite,
                                         rules: PhpRules,
                                         progress: new FtpProgressReport(FtpOp.Download)).ConfigureAwait(false);
-
-        var realPath = Path.Join(pathBase, _webName);
-        Directory.Move(temporaryPath, realPath);
-
+        if (_webName != _path)
+        {
+            var realPath = Path.Join(pathBase, _webName);
+            Directory.Move(temporaryPath, realPath);
+        }
         ColoredConsole.SetColor(ConsoleColor.Green)
             .WriteLine($"✅ Stahování PHP souborů z {Client1.Host} dokončeno.")
             .WriteLine()
