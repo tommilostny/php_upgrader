@@ -15,18 +15,19 @@ internal sealed class FtpDownloader : FtpBase
             .WriteLine($"🔄️Probíhá stahování PHP souborů z {Client1.Host}...")
             .ResetColor();
 
-        var temporaryPath = Path.Join(Path.GetTempPath(), _path);
+        var pathBase = Path.Join(_baseFolder, "weby");
+        var temporaryPath = Path.Join(pathBase, _path);
         if (Directory.Exists(temporaryPath))
             Directory.Delete(temporaryPath, recursive: true);
         Directory.CreateDirectory(temporaryPath);
 
-        await Client1.DownloadDirectory(localFolder: Path.GetTempPath(),
+        await Client1.DownloadDirectory(localFolder: pathBase,
                                         remoteFolder: _path,
                                         existsMode: FtpLocalExists.Overwrite,
                                         rules: PhpRules,
                                         progress: new FtpProgressReport(FtpOp.Download)).ConfigureAwait(false);
 
-        var realPath = Path.Join(_baseFolder, "weby", _webName);
+        var realPath = Path.Join(pathBase, _webName);
         Directory.Move(temporaryPath, realPath);
 
         ColoredConsole.SetColor(ConsoleColor.Green)

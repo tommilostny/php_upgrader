@@ -91,16 +91,18 @@ public static class Program
         }
         //Složka existuje, ale je prázdná, smazat.
         if (Directory.Exists(workDir) && !Directory.EnumerateFileSystemEntries(workDir).GetEnumerator().MoveNext())
-        {
             Directory.Delete(workDir);
-        }
+
         //Pokusit se stáhnout soubory, pokud složka neexistuje (aka děláme nový web poprvé).
         if (!dontUpgrade && !Directory.Exists(workDir))
         {
             Console.WriteLine($"Složka {workDir} neexistuje. Načítám údaje z ftp_logins.txt a stahuji z FTP {McraiFtp.DefaultHostname1}.");
             try { await _lazyFtp.Value.DownloadAsync().ConfigureAwait(false); }
-            catch { return null; }
-
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex.Message);
+                return null;
+            }
             try { await _lazyRubiconFtp.Value.DownloadAsync().ConfigureAwait(false); }
             catch { }
 
@@ -108,14 +110,12 @@ public static class Program
             catch { }
         }
         if (dontUpgrade)
-        {
             return (null, workDir);
-        }
+
         //Složka webu k aktualizaci existuje, vytvořit PHP upgrader.
         var upgrader = !rubicon
             ? new MonaUpgrader(_baseFolder, _webName) { AdminFolders = adminFolders, RenameBetaWith = beta, ConnectionFile = connectionFile }
-            : new RubiconUpgrader(_baseFolder, _webName);
-        
+            : new RubiconUpgrader(_baseFolder, _webName);      
         if (!ignoreConnect)
         {
             if (db is null || user is null || password is null)
