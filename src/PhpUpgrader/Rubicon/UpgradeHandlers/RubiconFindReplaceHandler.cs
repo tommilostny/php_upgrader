@@ -263,5 +263,8 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("else://pokud se jedna o shop (musime nacist i podkategory)\n\t\t$SQL_NEWS_SPECIAL = \"WHERE category_id = \".$NAVIGACE[\"1\"][\"id\"].\" \";\n\t\t//load db\n\t\t$query_nk = \"SELECT category_id,shop_id_up FROM shop_category WHERE shop_id_up = \".$NAVIGACE[\"1\"][\"id\"].\" AND category_id IN (SELECT category_id FROM news) ORDER BY category_id ASC\";\n\t\t$nk = pg_query($query_nk);\n\t\t$row_nk = pg_fetch_assoc($nk);\n\t\t$totalRows_nk = pg_num_rows($nk);\n\t\tif($totalRows_nk > 0):\n\t\t\tdo {\n\t\t\t\t$SQL_NEWS_SPECIAL .= \" OR category_id = \".$row_nk['category_id'].\" \";\n\t\t\t} while ($row_nk = pg_fetch_assoc($nk));\n\t\tendif;\n\t\t//\t\n\t\t\n\tendif;",
          "else: //pokud se jedna o shop (musime nacist i podkategory)\n\t\tif (isset($NAVIGACE[\"1\"])):\n\t\t\t$SQL_NEWS_SPECIAL = \"WHERE category_id = \".$NAVIGACE[\"1\"][\"id\"].\" \";\n\t\t\t//load db\n\t\t\t$query_nk = \"SELECT category_id,shop_id_up FROM shop_category WHERE shop_id_up = \".$NAVIGACE[\"1\"][\"id\"].\" AND category_id IN (SELECT category_id FROM news) ORDER BY category_id ASC\";\n\t\t\t$nk = pg_query($query_nk);\n\t\t\t$row_nk = pg_fetch_assoc($nk);\n\t\t\t$totalRows_nk = pg_num_rows($nk);\n\t\t\tif($totalRows_nk > 0):\n\t\t\t\tdo {\n\t\t\t\t\t$SQL_NEWS_SPECIAL .= \" OR category_id = \".$row_nk['category_id'].\" \";\n\t\t\t\t} while ($row_nk = pg_fetch_assoc($nk));\n\t\t\tendif;\n\t\tendif;\n\tendif;"
         ),
+        ("<?PHP } elseif ($auth->isLoggedIn()) { ?>",
+         "<?php } elseif (isset($auth) && $auth->isLoggedIn()) { ?>"
+        ),
     };
 }

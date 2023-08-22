@@ -63,14 +63,23 @@ public static partial class GoPay
                          "]);\n// ===== Gate definition by DOMAIN_ID (for PHP < 7.0) =====\n/*\nclass gateway_params { static function getparams() { return [")
                 .Replace("];}}\r\n// ===== Gate definition by DOMAIN_ID (for PHP 7+) =====\r\n/*\r\ndefine('gateway_params', [",
                          "]);\r\n// ===== Gate definition by DOMAIN_ID (for PHP < 7.0) =====\r\n/*\r\nclass gateway_params { static function getparams() { return [")
+                .Replace("];}}\n// ===== Gate definition by DOMAIN_ID (for PHP 7+) =====\ndefine('gateway_params', [",
+                         "]);\n// ===== Gate definition by DOMAIN_ID (for PHP < 7.0) =====\nclass gateway_params { static function getparams() { return [")
+                .Replace("];}}\r\n// ===== Gate definition by DOMAIN_ID (for PHP 7+) =====\r\ndefine('gateway_params', [",
+                         "]);\r\n// ===== Gate definition by DOMAIN_ID (for PHP < 7.0) =====\r\nclass gateway_params { static function getparams() { return [")
                 .Replace("]);\n*/", "];}}\n*/")
-                .Replace("]);\r\n*/", "];}}\r\n*/");
+                .Replace("]);\r\n*/", "];}}\r\n*/")
+                .Replace("]);\n?>", "];}}\n?>")
+                .Replace("]);\r\n?>", "];}}\r\n?>");
             return;
         }
         if (file.Path.EndsWith(_mcGoPayPHP, StringComparison.Ordinal))
         {
-            file.Content.Replace("$gateway_params = gateway_params::getparams();",
-                                 "if ((float)phpversion() > 7.0) $gateway_params = gateway_params; else $gateway_params = gateway_params::getparams();");
+            file.Content
+                .Replace("$gateway_params = gateway_params::getparams();",
+                         "if ((float)phpversion() > 7.0) $gateway_params = gateway_params; else $gateway_params = gateway_params::getparams();")
+                .Replace("if ((float)phpversion() > 7.0) $gateway_params = gateway_params; else if ((float)phpversion() > 7.0) $gateway_params = gateway_params; else $gateway_params = gateway_params::getparams();",
+                         "if ((float)phpversion() > 7.0) $gateway_params = gateway_params; else $gateway_params = gateway_params::getparams();");
         }
     }
 
