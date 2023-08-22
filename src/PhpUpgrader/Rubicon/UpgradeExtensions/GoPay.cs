@@ -4,7 +4,8 @@ public static partial class GoPay
 {
     private static readonly string _gopayHelperPHP = Path.Join("gopay", "api", "gopay_helper.php");
     private static readonly string _gopaySoapPHP = Path.Join("gopay", "api", "gopay_soap.php");
-    private static readonly string _mcGoPayPHP = Path.Join("classes", "McGoPay.setup.php");
+    private static readonly string _mcGoPaySetupPHP = Path.Join("classes", "McGoPay.setup.php");
+    private static readonly string _mcGoPayPHP = Path.Join("classes", "McGoPay.php");
 
     public static FileWrapper UpgradeGoPay(this FileWrapper file)
     {
@@ -51,7 +52,7 @@ public static partial class GoPay
 
     private static void UpgradeMcGoPay(FileWrapper file)
     {
-        if (file.Path.EndsWith(_mcGoPayPHP, StringComparison.Ordinal))
+        if (file.Path.EndsWith(_mcGoPaySetupPHP, StringComparison.Ordinal))
         {
             file.Content
                 .Replace("// ===== Gate definition by DOMAIN_ID (for PHP < 7.0) =====\nclass gateway_params { static function getparams() { return [",
@@ -64,6 +65,12 @@ public static partial class GoPay
                          "]);\r\n// ===== Gate definition by DOMAIN_ID (for PHP < 7.0) =====\r\n/*\r\nclass gateway_params { static function getparams() { return [")
                 .Replace("]);\n*/", "];}}\n*/")
                 .Replace("]);\r\n*/", "];}}\r\n*/");
+            return;
+        }
+        if (file.Path.EndsWith(_mcGoPayPHP, StringComparison.Ordinal))
+        {
+            file.Content.Replace("$gateway_params = gateway_params::getparams();",
+                                 "if ((float)phpversion() > 7.0) $gateway_params = gateway_params; else $gateway_params = gateway_params::getparams();");
         }
     }
 
