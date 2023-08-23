@@ -1,5 +1,7 @@
 ﻿namespace FtpSync;
 
+#pragma warning disable MA0052 // Replace constant Enum.ToString with nameof.
+
 internal sealed class FtpSynchronizer : FtpBase
 {
     private readonly long _fileSizeLimit;
@@ -103,16 +105,26 @@ internal sealed class FtpSynchronizer : FtpBase
                 .Select(f => (name: f.FullName, size: _ToGigaBytes(f.Size)))
                 .ToArray();
 
-            if (bigFiles.Length > 0) lock (_writeLock)
+            if (bigFiles.Length > 0)
             {
-                ColoredConsole.SetColor(ConsoleColor.Yellow).Write(Client1.Host)
-                    .ResetColor().WriteLine($": Nalezeno celkem {bigFiles.Length} souborů větších než {_ToGigaBytes(_fileSizeLimit)} GB.");
+                using var tmpClient2 = new AsyncFtpClient(Client2.Host, Client2.Credentials, config: Client2.Config);
+                await ConnectClientAsync(tmpClient2).ConfigureAwait(false);
+                lock (_writeLock)
+                    ColoredConsole.SetColor(ConsoleColor.Yellow).Write(Client1.Host)
+                        .ResetColor().WriteLine($": Nalezeno celkem {bigFiles.Length} souborů větších než {_ToGigaBytes(_fileSizeLimit)} GB.");
+                    
                 foreach (var (name, size) in bigFiles)
                 {
-                    ColoredConsole.SetColor(ConsoleColor.White)
-                        .Write($"{size}\tGB\t")
-                        .ResetColor().WriteLine(name);
+                    var existsOnServer2 = await tmpClient2.FileExists(name).ConfigureAwait(false);
+                    lock (_writeLock)
+                        ColoredConsole.SetColor(ConsoleColor.Yellow).Write(Client1.Host)
+                            .SetColor(ConsoleColor.White)
+                            .Write($": {size} GB\t")
+                            .ResetColor()
+                            .Write(existsOnServer2 ? "✅️ " : "❌ ")
+                            .WriteLine(name);
                 }
+
             }
         }    
         return files;
@@ -234,7 +246,7 @@ internal sealed class FtpSynchronizer : FtpBase
     {
         Download,
         DeleteLocal,
-        CheckLocal
+        CheckLocal,
     }
 
     private async Task HandlePhpFileAsync(AsyncFtpClient sourceClient, string sourcePath, PhpHandleMode handleMode)
@@ -305,7 +317,8 @@ internal sealed class FtpSynchronizer : FtpBase
         {
             if (file2.EndsWith("ObjectBase.php", StringComparison.Ordinal)
                 || file2.EndsWith("Exception.php", StringComparison.Ordinal)
-                || file2.EndsWith("mssql_overwrite.php", StringComparison.Ordinal))
+                || file2.EndsWith("mssql_overwrite.php", StringComparison.Ordinal)
+                || file2.EndsWith(".csv", StringComparison.Ordinal))
                 continue;
 
             var i = sortedFiles1.BinarySearch(file2, StringComparer.Ordinal);

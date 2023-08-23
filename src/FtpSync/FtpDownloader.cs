@@ -26,7 +26,7 @@ internal sealed class FtpDownloader : FtpBase
                                         existsMode: FtpLocalExists.Overwrite,
                                         rules: PhpRules,
                                         progress: new FtpProgressReport(FtpOp.Download)).ConfigureAwait(false);
-        if (_webName != _path)
+        if (!string.Equals(_webName, _path, StringComparison.Ordinal))
         {
             var realPath = Path.Join(pathBase, _webName);
             Directory.Move(temporaryPath, realPath);
