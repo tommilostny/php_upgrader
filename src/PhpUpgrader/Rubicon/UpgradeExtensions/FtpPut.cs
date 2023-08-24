@@ -1,14 +1,25 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeExtensions;
 
-public static class MoneyCreateXmlFtp
+public static class FtpPut
 {
     private static readonly string _createXMLPHP = Path.Join("money", "createXML.php");
+    private static readonly string _importToPohodaPHP = Path.Join("rss", "import_to_pohoda.php");
 
-    public static FileWrapper UpgradeMoneyCreateXmlFtp(this FileWrapper file)
+    public static FileWrapper UpgradeFtpPut(this FileWrapper file)
     {
         if (file.Path.EndsWith(_createXMLPHP, StringComparison.Ordinal))
         {
-            var i = file.Content.IndexOf("if(!ftp_put($ftp_spojeni,");
+            AddPassiveMode("ftp_spojeni");
+        }
+        else if (file.Path.EndsWith(_importToPohodaPHP, StringComparison.Ordinal))
+        {
+            AddPassiveMode("spojeni");
+        }
+        return file;
+
+        void AddPassiveMode(string connVarName)
+        {
+            var i = file.Content.IndexOf($"if(!ftp_put(${connVarName},");
             string? ftpPasv = null;
             while (i != -1)
             {
@@ -23,11 +34,10 @@ public static class MoneyCreateXmlFtp
                     }
                     break;
                 }
-                ftpPasv ??= $"ftp_pasv($ftp_spojeni, true);{Environment.NewLine}{spaces}";
+                ftpPasv ??= $"ftp_pasv(${connVarName}, true);{Environment.NewLine}{spaces}";
                 file.Content.Insert(i, ftpPasv);
-                i = file.Content.IndexOf("if(!ftp_put($ftp_spojeni,", i + ftpPasv.Length + 1);
+                i = file.Content.IndexOf($"if(!ftp_put(${connVarName},", i + ftpPasv.Length + 1);
             }
         }
-        return file;
     }
 }

@@ -105,7 +105,7 @@ public sealed class RubiconUpgrader : MonaUpgrader
                     .UpgradeSetupIncludes()
                     .UpgradePHPMailer(this)
                     .UpgradeMktime()
-                    .UpgradeMoneyCreateXmlFtp()
+                    .UpgradeFtpPut()
                     .UpgradeCountableWarning()
                     .UpgradeVipClub()
                     .UpgradeGoPay()
