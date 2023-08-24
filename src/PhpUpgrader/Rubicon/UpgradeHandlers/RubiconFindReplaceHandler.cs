@@ -266,5 +266,11 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("<?PHP } elseif ($auth->isLoggedIn()) { ?>",
          "<?php } elseif (isset($auth) && $auth->isLoggedIn()) { ?>"
         ),
+        ("$search = new Search($searchValue, $language_id, $domainid);",
+         "$search = new Search($searchValue, $language_id, $domainid, $_SERVER['SERVER_NAME']);"
+        ),
+        ("$search = new Search($searchValue, $DOMAIN_ID);",
+         "$search = new Search($searchValue, $DOMAIN_ID, $_SERVER['SERVER_NAME']);"
+        ),
     };
 }
