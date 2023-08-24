@@ -1,5 +1,7 @@
 ﻿namespace FtpSync;
 
+#pragma warning disable MA0052
+
 internal sealed class FtpUploader : FtpBase
 {
     public FtpUploader(string path, string baseFolder, string webName, string server, string username, string password)
@@ -47,7 +49,8 @@ internal sealed class FtpUploader : FtpBase
         async Task _Upload(string localPath, AsyncFtpClient client)
         {
             var remotePath = $"{_path}{localPath[(_baseFolder.Length + 6 + _webName.Length)..].Replace('\\', '/')}";
-            if (!remotePath.StartsWith("httpdocs/_foxydesk", StringComparison.Ordinal))
+            if (!remotePath.StartsWith("httpdocs/_foxydesk", StringComparison.Ordinal)
+                && !remotePath.StartsWith("httpdocs/_201", StringComparison.Ordinal))
             {
                 lock (_writeLock)
                     ColoredConsole.WriteLine($"🔼 Probíhá upload\t{ConsoleColor.DarkGray}{remotePath}{Symbols.PREVIOUS_COLOR}...");

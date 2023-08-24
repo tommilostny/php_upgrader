@@ -315,9 +315,7 @@ internal sealed class FtpSynchronizer : FtpBase
         var sortedFiles1 = files1.Select(f => f.FullName).Order(StringComparer.Ordinal).ToImmutableList();
         foreach (var file2 in files2.Keys)
         {
-            if (file2.EndsWith("ObjectBase.php", StringComparison.Ordinal)
-                || file2.EndsWith("Exception.php", StringComparison.Ordinal)
-                || file2.EndsWith("mssql_overwrite.php", StringComparison.Ordinal)
+            if (file2.EndsWith(".php", StringComparison.Ordinal)
                 || file2.EndsWith(".csv", StringComparison.Ordinal))
                 continue;
 
