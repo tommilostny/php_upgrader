@@ -42,7 +42,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
         {
             return true;
         }
-        if (file.Path.Contains(_connectionsDir ??= Path.Join(upgrader.WebName, "Connections"), StringComparison.Ordinal)
+        if (file.Path.Contains(_connectionsDir ??= $"{Path.DirectorySeparatorChar}Connections{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
             || (file.Path.Contains(_monamyDir, StringComparison.Ordinal)
                 && file.Path.EndsWith(_connectionPhp, StringComparison.Ordinal)))
         {
