@@ -24,9 +24,14 @@ public static class PHPMailer
         _InsertHost(_IndexFunc);
         _InsertHost(_LastIndexFunc);
         file.Content
-            .Replace("//$mail->SMTPSecure = \"ssl\";", "$mail->SMTPSecure = \"ssl\";")
-            .Replace("$mail->SMTPSecure = \"tls\";", "$mail->SMTPSecure = \"ssl\";")
-            .Replace("$mail->Port       = 587;", "$mail->Port       = 465;");
+            .Replace("//$mail->SMTPSecure = \"ssl\";", "$mail->SMTPSecure = \"\";")
+            .Replace("$mail->SMTPSecure = \"tls\";", "$mail->SMTPSecure = \"\";")
+            .Replace("$mail->Port       = 587;", "$mail->Port       = 465;")
+            .Replace("$mail->Port       = 465;", "$mail->Port       = 25;");
+        //file.Content
+        //    .Replace("//$mail->SMTPSecure = \"ssl\";", "$mail->SMTPSecure = \"ssl\";")
+        //    .Replace("$mail->SMTPSecure = \"tls\";", "$mail->SMTPSecure = \"ssl\";")
+        //    .Replace("$mail->Port       = 587;", "$mail->Port       = 465;");
         
         var mailPassword = File.ReadAllText(Path.Join(upgrader.BaseFolder, "mail_password.txt")).AsSpan().Trim();
         if (file.Content.Contains("$mail->Username   = \"obchodni-podminky@vestavne-spotrebice.cz\""))
@@ -52,7 +57,8 @@ public static class PHPMailer
             var hostCodeIndex = indexFunc(file.Content, "$mail->Host       =");
             if (hostCodeIndex != -1)
             {
-                file.Content.Insert(hostCodeIndex, $"$mail->Host       = \"mcrai-upgrade.vshosting.cz\"; //");
+                //file.Content.Insert(hostCodeIndex, $"$mail->Host       = \"mcrai-upgrade.vshosting.cz\"; //");
+                file.Content.Insert(hostCodeIndex, $"$mail->Host       = \"mcrai.vshosting.cz\"; //");
             }
         }
     }
