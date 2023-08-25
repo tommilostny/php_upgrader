@@ -24,12 +24,22 @@ public static partial class Mssql
     /// </remarks>
     public static FileWrapper UpgradeMssql(this FileWrapper file, PhpUpgraderBase upgrader)
     {
+        if (file.Path.EndsWith("index.php", StringComparison.Ordinal) && _mssqlOverwritePhp is not null)
+        {
+            file.Content.Replace("pg_close($beta); ?>", "pg_close($beta);\nif (isset($ms_beta)) {\n\tmssql_close($ms_beta);\n}\n?>");
+        }
         if (_mssqlFunctionNames.Any(mfn => file.Content.Contains(mfn)))
         {
             AddMssqlOverwriteRequire(file, upgrader);
             EnsureMssqlOverwriteFileExists(upgrader);
             UpgradeMssqlPConnect(file);
-            file.Content.Replace("//echo \"CHYBA - MSSQL nepripojeno!\";//Error", "echo \"CHYBA - MSSQL nepripojeno!\";//Error\n\tdie(print_r(sqlsrv_errors(), true));");
+            file.Content
+                .Replace("//echo \"CHYBA - MSSQL nepripojeno!\";//Error",
+                         "echo \"CHYBA - MSSQL nepripojeno!<br><pre>\";//Error\n\tdie(print_r(sqlsrv_errors(), true));")
+                .Replace("$ms_hostname_beta = \"90.182.11.147\";",
+                         "$ms_hostname_beta = \"90.182.11.147\\\\eshop\";")
+                .Replace("$ms_database_beta = \"eshop\";",
+                         "$ms_database_beta = \"Helios001\";");
         }
         return file;
     }

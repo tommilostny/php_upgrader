@@ -74,15 +74,17 @@ public abstract class PhpUpgraderBase
         //aktualizace aktuální složky
         foreach (var filePath in Directory.GetFiles(directoryPath, "*.php"))
         {
+            if (filePath.EndsWith("mssql_overwrite.php", StringComparison.Ordinal))
+                continue;
+
             TotalFilesCount++;
             FileWrapper.PrintFile(filePath, "🔃");
             Console.Write('\r');
 
             FileWrapper? file;
             if ((file = UpgradeProcedure(filePath)) is null)
-            {
                 continue;
-            }
+
             AfterUpgradeProcedure(file);
             //upraveno, zapsat do souboru
             file.PrintStatus();

@@ -3,9 +3,20 @@
  * Author: Tomáš Milostný, 2023
  */
 
- function mssql_connect($serverInfo, $username, $password, $database) {
-     // Replace ':' with ',' in server info
-    $serverInfo = str_replace(':', ',', $serverInfo);
+/** Global connection variable used when the $conn parameter is null. */
+$_mssql_overwrite_conn = null;
+
+/** Checks if the $conn parameter is null and if so, assigns the global connection to it. */
+function _check_assign_from_global_conn(&$conn) {
+    if ($conn === null) {
+        global $_mssql_overwrite_conn;
+        $conn = $_mssql_overwrite_conn ?? false;
+    }
+}
+
+function mssql_connect($serverInfo, $username, $password, $database) {
+    // Replace ':' with '\\, ' in server info to maintain backward compatibility.
+    $serverInfo = str_replace(':', ', ', $serverInfo);
     // Construct the connection options array
     $connectionOptions = array(
         "Database" => $database,
@@ -14,15 +25,24 @@
         "TrustServerCertificate" => true,
     );
     // Establish the connection
-    $conn = sqlsrv_connect($serverInfo, $connectionOptions);
-    return $conn;
+    global $_mssql_overwrite_conn;
+    $_mssql_overwrite_conn = sqlsrv_connect($serverInfo, $connectionOptions);
+    return $_mssql_overwrite_conn;
 }
 
-function mssql_close($conn) {
+function mssql_close($conn = null) {
+    _check_assign_from_global_conn($conn);
+    if ($conn === false) {
+        return false;
+    }
     return sqlsrv_close($conn);
 }
 
-function mssql_query($query, $conn) {
+function mssql_query($query, $conn = null) {
+    _check_assign_from_global_conn($conn);
+    if ($conn === false) {
+        return false;
+    }
     $result = sqlsrv_query($conn, $query);
     return $result;
 }
