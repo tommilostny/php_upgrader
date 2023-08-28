@@ -272,5 +272,34 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("$search = new Search($searchValue, $DOMAIN_ID);",
          "$search = new Search($searchValue, $DOMAIN_ID, $_SERVER['SERVER_NAME']);"
         ),
+        (@"public static function insert($query, $parameters = [])
+	{
+		try
+		{
+			$tmp = self::$conn->prepare($query);
+			$tmp->execute($parameters);
+
+            return self::$conn->lastInsertId();
+		}
+		catch (PDOException $e)
+		{
+			echo $e->getMessage();
+			Debugger::handleError($e);
+		}
+	}", @"public static function insert($query, $parameters = [])
+	{
+		try
+		{
+			$tmp = self::$conn->prepare($query);
+			$tmp->execute($parameters);
+
+            return self::$conn->lastInsertId();
+		}
+		catch (PDOException $e)
+		{
+			//echo $e->getMessage();
+			Debugger::handleError($e);
+		}
+	}"),
     };
 }
