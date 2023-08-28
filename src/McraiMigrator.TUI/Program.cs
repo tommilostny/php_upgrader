@@ -1,4 +1,6 @@
-﻿using McraiMigrator.TUI;
+﻿#pragma warning disable MA0076 // Year is just a number
+
+using McraiMigrator.TUI;
 using Spectre.Console;
 
 var config = UpgraderConfig.Load();
@@ -155,7 +157,7 @@ await PhpUpgrader.Program.Main
     dontUpload: !config.UploadFtp,
     useBackup: config.UseBackup,
     ftpMaxMb: config.MaxFileSizeMB,
-    host: config.Host,
+    host: string.Equals(config.Host, "mcrai2.vshosting.cz", StringComparison.Ordinal) ? "217.16.184.116" : config.Host,
     db: string.IsNullOrWhiteSpace(config.Database) ? null : config.Database,
     user: string.IsNullOrWhiteSpace(config.UserName) ? null : config.UserName,
     password: string.IsNullOrWhiteSpace(config.Password) ? null : config.Password,
