@@ -34,7 +34,7 @@ internal abstract class FtpBase : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    protected async Task ConnectClientAsync(AsyncFtpClient client)
+    protected async Task ConnectClientVerboseAsync(AsyncFtpClient client)
     {
         lock (_writeLock)
             ColoredConsole.WriteLine($"{ConsoleColor.DarkYellow}{client.Credentials.UserName}@{client.Host}{Symbols.PREVIOUS_COLOR}: připojování...");

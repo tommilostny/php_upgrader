@@ -9,7 +9,7 @@ internal sealed class FtpDownloader : FtpBase
 
     public async Task DownloadPhpsAsync()
     {
-        await ConnectClientAsync(Client1).ConfigureAwait(false);
+        await ConnectClientVerboseAsync(Client1).ConfigureAwait(false);
 
         ColoredConsole.SetColor(ConsoleColor.Cyan)
             .WriteLine($"🔄️Probíhá stahování PHP souborů z {Client1.Host}...")

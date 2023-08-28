@@ -6,6 +6,8 @@ internal sealed class FtpSynchronizer : FtpBase
 {
     private readonly long _fileSizeLimit;
 
+    private (string name, double size)[]? _bigFiles = null;
+
     private AsyncFtpClient Client2 { get; set; }
 
     public FtpSynchronizer(string path, string baseFolder, string webName, string server1, string server2, string username, string password, long maxFileSize)
@@ -23,8 +25,8 @@ internal sealed class FtpSynchronizer : FtpBase
 
     public async Task SynchronizeAsync()
     {
-        await ConnectClientAsync(Client1).ConfigureAwait(false);
-        await ConnectClientAsync(Client2).ConfigureAwait(false);
+        await ConnectClientVerboseAsync(Client1).ConfigureAwait(false);
+        await ConnectClientVerboseAsync(Client2).ConfigureAwait(false);
 
         ImmutableArray<FtpListItem>? files1 = null;
         ImmutableDictionary<string, DateTime>? files2 = null;
@@ -100,20 +102,20 @@ internal sealed class FtpSynchronizer : FtpBase
         PrintListingEndMessage(Client1.Host, files.Length);
         if (checkLimit)
         {
-            var bigFiles = ftpListItems
+            _bigFiles = ftpListItems
                 .Where(f => f.Type == FtpObjectType.File && f.Size >= _fileSizeLimit)
                 .Select(f => (name: f.FullName, size: _ToGigaBytes(f.Size)))
                 .ToArray();
 
-            if (bigFiles.Length > 0)
+            if (_bigFiles.Length > 0)
             {
                 using var tmpClient2 = new AsyncFtpClient(Client2.Host, Client2.Credentials, config: Client2.Config);
-                await ConnectClientAsync(tmpClient2).ConfigureAwait(false);
+                await tmpClient2.Connect().ConfigureAwait(false);
                 lock (_writeLock)
                     ColoredConsole.SetColor(ConsoleColor.Yellow).Write(Client1.Host)
-                        .ResetColor().WriteLine($": Nalezeno celkem {bigFiles.Length} souborů větších než {_ToGigaBytes(_fileSizeLimit)} GB.");
+                        .ResetColor().WriteLine($": Nalezeno celkem {_bigFiles.Length} souborů větších než {_ToGigaBytes(_fileSizeLimit)} GB.");
                     
-                foreach (var (name, size) in bigFiles)
+                foreach (var (name, size) in _bigFiles)
                 {
                     var existsOnServer2 = await tmpClient2.FileExists(name).ConfigureAwait(false);
                     lock (_writeLock)
@@ -312,11 +314,15 @@ internal sealed class FtpSynchronizer : FtpBase
     {
         ColoredConsole.SetColor(ConsoleColor.Cyan).WriteLine($"🔄️Probíhá kontrola přebytečných souborů (smazané na {Client1.Host})...").ResetColor();
 
-        var sortedFiles1 = files1.Select(f => f.FullName).Order(StringComparer.Ordinal).ToImmutableList();
+        var files1Names = files1.Select(f => f.FullName);
+        if (_bigFiles is not null)
+        {
+            files1Names = files1Names.Concat(_bigFiles.Select(f => f.name));
+        }
+        var sortedFiles1 = files1Names.Order(StringComparer.Ordinal).ToImmutableList();
         foreach (var file2 in files2.Keys)
         {
-            if (file2.EndsWith(".php", StringComparison.Ordinal)
-                || file2.EndsWith(".csv", StringComparison.Ordinal))
+            if (file2.EndsWith(".php", StringComparison.Ordinal))
                 continue;
 
             var i = sortedFiles1.BinarySearch(file2, StringComparer.Ordinal);

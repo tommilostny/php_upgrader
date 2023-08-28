@@ -11,7 +11,7 @@ internal sealed class FtpUploader : FtpBase
 
     public async Task UploadPhpsAsync()
     {
-        await ConnectClientAsync(Client1).ConfigureAwait(false);
+        await ConnectClientVerboseAsync(Client1).ConfigureAwait(false);
 
         ColoredConsole.SetColor(ConsoleColor.Cyan)
             .WriteLine($"🔄️Probíhá nahrávání upravených PHP souborů na {Client1.Host}...")
