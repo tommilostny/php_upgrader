@@ -91,6 +91,7 @@ public sealed class RubiconUpgrader : MonaUpgrader
                     .UpgradeLibDbMysql()
                     .UpgradeArrayMissingKeyValue()
                     .UpgradePiwikaLibsPearRaiseError()
+                    .UpgradeMcPayment()
                     .UpgradeRequiredParameterFollowsOptional()
                     .UpgradeNullByteInRegex()
                     .UpgradePclZipLib()
