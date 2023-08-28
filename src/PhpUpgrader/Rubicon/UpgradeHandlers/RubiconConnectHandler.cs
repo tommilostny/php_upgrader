@@ -232,6 +232,16 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
             {
                 continue;
             }
+            string? backup = (string.Equals(upgrader.Hostname, "217.16.184.116", StringComparison.Ordinal)
+                    || string.Equals(upgrader.Hostname, "mcrai2.vshosting.cz", StringComparison.Ordinal))
+                && (string.Equals(hn, "93.185.102.228", StringComparison.Ordinal)
+                    || string.Equals(hn, "mcrai.vshosting.cz", StringComparison.Ordinal))
+                ? upgrader.Hostname
+                : null;
+            if (backup is not null)
+            {
+                upgrader.Hostname = "mcrai-upgrade.vshosting.cz";
+            }
             if (moneyXmlInclude && !file.Content.Contains($"//$conn = pg_connect(\"host = {hn}"))
             {
                 file.Content.Replace($"$conn = pg_connect(\"host = {hn}",
@@ -251,6 +261,10 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
             file.Content
                 .Replace($"\"host\"      => \"{hn}\",", $"\"host\"      => \"{upgrader.Hostname}\",")
                 .Replace($"$ftp_server\t= '{hn}';"    , $"$ftp_server\t= '{upgrader.Hostname}';");
+            if (backup is not null)
+            {
+                upgrader.Hostname = backup;
+            }
         }
     }
 
