@@ -301,5 +301,7 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
 			Debugger::handleError($e);
 		}
 	}"),
+      ("round((real)$", "round((float)$"),
+      ("echo found;", "echo 'found';"),
     };
 }

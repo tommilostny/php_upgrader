@@ -33,44 +33,32 @@ public static partial class SetupIncludes
         }
     }
 
-    public static string CreateIncludesCascade(ReadOnlySpan<char> file, int levels)
+    public static string CreateIncludesCascade(in ReadOnlySpan<char> file, in int levels)
     {
         using var sb = ZString.CreateStringBuilder();
-        for (var i = 0; i < levels; i++)
-        {
-            for (var j = 0; j < i; j++)
-            {
-                sb.Append("\t");
-            }
-            sb.Append("if (!(include_once \"");
-            for (var j = 0; j < i; j++)
-            {
-                sb.Append("../");
-            }
-            sb.Append(file);
-            sb.AppendLine("\")):");
-        }
-        for (var j = 0; j < levels; j++)
-        {
-            sb.Append("\t");
-        }
-        sb.Append("echo \"CHYBA - Nenalezen soubor ");
+        sb.Append("// Include ");
+        sb.Append(file);
+        sb.Append(" recursively from up to ");
+        sb.Append(levels - 1);
+        sb.AppendLine(" levels up.");
+        sb.Append("$_inc_file = '");
+        sb.Append(file);
+        sb.AppendLine("';");
+        sb.Append("for ($i = 0; $i < ");
+        sb.Append(levels);
+        sb.AppendLine("; $i++) {");
+        sb.AppendLine("\tif (file_exists($_inc_file)) {");
+        sb.AppendLine("\t\tinclude_once $_inc_file;");
+        sb.AppendLine("\t\tbreak;");
+        sb.AppendLine("\t}");
+        sb.AppendLine("\t$_inc_file = \"../$_inc_file\";");
+        sb.AppendLine('}');
+        sb.AppendLine("if (!file_exists($_inc_file)) {");
+        sb.Append("\techo \"CHYBA - Nenalezen soubor ");
         sb.Append(file);
         sb.AppendLine("!\";");
-        for (var j = 0; j < levels; j++)
-        {
-            sb.Append("\t");
-        }
-        sb.Append("exit();");
-        for (var i = 0; i < levels; i++)
-        {
-            sb.AppendLine();
-            for (var j = 0; j < levels - i - 1; j++)
-            {
-                sb.Append("\t");
-            }
-            sb.Append("endif;");
-        }
+        sb.AppendLine("\texit;");
+        sb.Append('}');
         return sb.ToString();
     }
 
