@@ -157,7 +157,7 @@ await PhpUpgrader.Program.Main
     dontUpload: !config.UploadFtp,
     useBackup: config.UseBackup,
     ftpMaxMb: config.MaxFileSizeMB,
-    host: string.Equals(config.Host, "mcrai2.vshosting.cz", StringComparison.Ordinal) ? "217.16.184.116" : config.Host,
+    host: HostnameToKnownIP(config.Host),
     db: string.IsNullOrWhiteSpace(config.Database) ? null : config.Database,
     user: string.IsNullOrWhiteSpace(config.UserName) ? null : config.UserName,
     password: string.IsNullOrWhiteSpace(config.Password) ? null : config.Password,
@@ -165,3 +165,9 @@ await PhpUpgrader.Program.Main
     adminFolders: config.AdminFolders
 )
 .ConfigureAwait(false);
+
+static string HostnameToKnownIP(string hostname) => hostname.StartsWith("mcrai2", StringComparison.Ordinal)
+    ? "217.16.184.116"
+    : hostname.StartsWith("local", StringComparison.Ordinal)
+        ? "127.0.0.1"
+        : hostname;
