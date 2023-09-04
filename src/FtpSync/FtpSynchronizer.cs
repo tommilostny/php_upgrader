@@ -253,6 +253,12 @@ internal sealed class FtpSynchronizer : FtpBase
 
     private async Task HandlePhpFileAsync(AsyncFtpClient sourceClient, string sourcePath, PhpHandleMode handleMode)
     {
+        if (sourcePath.Contains("gopay", StringComparison.OrdinalIgnoreCase))
+        {
+            lock (_writeLock)
+                ColoredConsole.WriteLine($"⚠️ Ignorován PHP soubor:\t{ConsoleColor.DarkGray}{sourcePath}{Symbols.PREVIOUS_COLOR}...");
+            return;
+        }
         //Na serveru je nový nebo upravený PHP soubor.
         //Cesta tohoto souboru jako lokální cesta na disku.
         var localPath = sourcePath.Replace($"/{_path}/", string.Empty, StringComparison.Ordinal);
@@ -268,9 +274,7 @@ internal sealed class FtpSynchronizer : FtpBase
                 if (!localFileInfo!.Directory!.Exists)
                     localFileInfo.Directory.Create();
 
-                var fs = await sourceClient
-                    .DownloadFile(localFileInfo.FullName, sourcePath, FtpLocalExists.Overwrite)
-                    .ConfigureAwait(false);
+                var fs = await sourceClient.DownloadFile(localFileInfo.FullName, sourcePath, FtpLocalExists.Overwrite).ConfigureAwait(false);
                 deleteBackupFile = fs.IsSuccess();
                 break;
 

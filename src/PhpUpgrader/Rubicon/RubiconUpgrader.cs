@@ -72,7 +72,9 @@ public sealed class RubiconUpgrader : MonaUpgrader
         {
             //MonaUpgrader končí s null, také hned skončit.
             case null:
+            //+ ignorovat mnou přidané soubory.
             case var mssqlOverwrite when mssqlOverwrite.Path.EndsWith("mssql_overwrite.php", StringComparison.Ordinal):
+            case var mcgopayHelper when mcgopayHelper.Path.EndsWith("McGoPayHelper.php", StringComparison.Ordinal):
                 return null;
 
             //jinak máme soubor k aktualizaci dalšími metodami specifickými pro Rubicon.
@@ -109,7 +111,7 @@ public sealed class RubiconUpgrader : MonaUpgrader
                     .UpgradeFtpPut()
                     .UpgradeCountableWarning()
                     .UpgradeVipClub()
-                    .UpgradeGoPay()
+                    .UpgradeGoPay(this)
                     .FixProductList();
                 return file;
         }

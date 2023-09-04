@@ -2,51 +2,87 @@
 
 public static partial class GoPay
 {
-    private static readonly string _gopayHelperPHP = Path.Join("gopay", "api", "gopay_helper.php");
-    private static readonly string _gopaySoapPHP = Path.Join("gopay", "api", "gopay_soap.php");
     private static readonly string _mcGoPaySetupPHP = Path.Join("classes", "McGoPay.setup.php");
     private static readonly string _mcGoPayPHP = Path.Join("classes", "McGoPay.php");
+    private static readonly string _cartStep02PHP = Path.Join("card", "step_02.php");
+    private static readonly string _cartStep04PHP = Path.Join("card", "step_04.php");
+    private static string? _mcGoPayHelperPHP = null;
 
-    public static FileWrapper UpgradeGoPay(this FileWrapper file)
+    public static FileWrapper UpgradeGoPay(this FileWrapper file, PhpUpgraderBase upgrader)
     {
-        UpgradeGopaySOAPHelper(file);
+        EnsureMcGoPayHelperExists(upgrader);
+        UpgradeCartStep02(file);
+        UpgradeCookies(file);
+        UpgradeCartStep04(file);
         UpgradeMcGoPay(file);
         return file;
     }
 
-    private static void UpgradeGopaySOAPHelper(FileWrapper file)
+    private static void EnsureMcGoPayHelperExists(PhpUpgraderBase upgrader)
     {
-        if (file.Path.EndsWith(_gopayHelperPHP, StringComparison.Ordinal))
+        _mcGoPayHelperPHP ??= Path.Join(upgrader.WebFolder, "classes", "McGoPayHelper.php");
+        if (!File.Exists(_mcGoPayHelperPHP))
         {
-            file.Content.Replace("Předpokladem je PHP verze 5.1.2 a vyšší s modulem mcrypt.",
-                                 "Předpokladem je PHP verze 7.4. a vyšší s modulem OpenSSL.");
-            var encryptIndex = file.Content.IndexOf("public static function encrypt($data, $secret) {") + 48;
-            file.Content.Insert(encryptIndex, "/*");
-            file.Content.Insert(file.Content.IndexOf('}', encryptIndex),
-                "    */\n        $key = substr($secret, 0, 24); // 3DES requires a 24-byte key\n\n        // Pad the input data to a multiple of the block size\n        $block_size = 8; // 3DES uses 8-byte blocks\n        $padding = $block_size - (strlen($data) % $block_size);\n        $data .= str_repeat(chr($padding), $padding);\n\n        $encrypted_data = openssl_encrypt($data, 'des-ede3', $key, OPENSSL_RAW_DATA);\n\n        return bin2hex($encrypted_data);\n    ");
-
-            var decryptIndex = file.Content.IndexOf("public static function decrypt($data, $secret) {") + 48;
-            file.Content.Insert(decryptIndex, "/*");
-            file.Content.Insert(file.Content.IndexOf('}', decryptIndex),
-                "    */\n        $key = substr($secret, 0, 24);\n        $binary_data = hex2bin($data);\n\n        $decrypted_data = openssl_decrypt($binary_data, 'des-ede3', $key, OPENSSL_RAW_DATA);\n\n        // Remove padding\n        $padding = ord($decrypted_data[strlen($decrypted_data) - 1]);\n        $decrypted_data = substr($decrypted_data, 0, -$padding);\n\n        return trim($decrypted_data);\n    ");
+            File.WriteAllText(_mcGoPayHelperPHP, File.ReadAllText(Path.Join(upgrader.BaseFolder, "important", "McGoPayHelper.php")));
         }
-        else if (file.Path.EndsWith(_gopaySoapPHP, StringComparison.Ordinal))
-        {
-            file.Content.Replace(SoapCallRegex().Replace(file.Content.ToString(), _SoapCallEvaluator));
-        }
+    }
 
-        static string _SoapCallEvaluator(Match match)
+    private static void UpgradeCartStep02(FileWrapper file)
+    {
+        if (file.Path.EndsWith(_cartStep02PHP, StringComparison.Ordinal) && file.Path.Contains("templates", StringComparison.Ordinal))
         {
+            var insertIndex = file.Content.IndexOf("require_once('gopay/vlozeni.php');");
+            if (insertIndex != -1)
+            {
+                file.Content.Insert(insertIndex, "(new McGoPayHelper($DOMAIN_ID))->renderPaymentMethods($UserCookiePlatba); //");
+            }
+        }
+    }
+
+    private static void UpgradeCookies(FileWrapper file)
+    {
+        file.Content.Replace("$_SESSION['UserCookiePlatbaName'] = \"GoPay\";$UserCookiePlatbaName =  $_SESSION['UserCookiePlatbaName'];",
+                             "$_SESSION['UserCookiePlatbaName'] = McGoPayHelper::paymentMethodName($_POST[\"card_form_adress_platba\"]) /*\"GoPay\"*/; $UserCookiePlatbaName = $_SESSION['UserCookiePlatbaName'];");
+    }
+
+    private static void UpgradeCartStep04(FileWrapper file)
+    {
+        if (file.Path.EndsWith(_cartStep04PHP, StringComparison.Ordinal) && file.Path.Contains("templates", StringComparison.Ordinal))
+        {
+            var paymentIndex = file.Content.IndexOf("require_once('gopay/soap/payment.php');");
+            if (paymentIndex == -1)
+                return;
+
             using var sb = ZString.CreateStringBuilder();
-            sb.Append("$go_client->__soapCall('");
-            sb.Append(match.Groups["method"].Value);
+            sb.AppendLine();
+            sb.AppendLine("    $mcgopayHelper = new McGoPayHelper($DOMAIN_ID);");
+            sb.AppendLine();
+            sb.AppendLine("    $isOldPayment = $mcgopayHelper->renderPaymentStatus();");
+            sb.AppendLine("    if (!$isOldPayment):");
+            sb.AppendLine("      $contact = [");
+            sb.AppendLine("        'first_name' => $UserCookieName,");
+            sb.AppendLine("        'last_name' => $UserCookiePrijmeni,");
+            sb.AppendLine("        'email' => $UserCookieEmail,");
+            sb.AppendLine("        'phone_number' => $UserCookieTel,");
+            sb.AppendLine("        'city' => $UserCookieCity,");
+            sb.AppendLine("        'street' => $UserCookieStreet,");
+            sb.AppendLine("        'postal_code' => $UserCookieZip,");
+            sb.AppendLine("      ];");
+            sb.AppendLine("      $paymentLink = $mcgopayHelper->createPayment($doklad_n, $platba, $id_objednavky, $contact);");
+            sb.AppendLine("      $mcgopayHelper->renderPaymentButton($paymentLink);");
+            sb.AppendLine();
+            sb.Append("/* ");
+            file.Content.Insert(paymentIndex, sb.ToString());
 
-            var args = match.Groups["args"].Value;
-            sb.Append(args.StartsWith("array()", StringComparison.OrdinalIgnoreCase)
-                ? $"', {args});"
-                : $"', array({args}));");
-
-            return sb.ToString();
+            var fwdButtonIndex = file.Content.IndexOf("Přejít na gopay a provést platbu</a></p>", paymentIndex);
+            var endIndex = file.Content.IndexOf("<?php", fwdButtonIndex);
+            if (endIndex == -1)
+                return;
+            file.Content.Insert(endIndex + 6, "*/ endif;")
+                .Replace("window.location.href=\"<?= $gopay_odkaz; ?>\";",
+                         "document.getElementById('payment-invoke-checkout').click();")
+                .Replace("if($_SESSION['UserCookieGopayProbehnout'] == 1) { ?>",
+                         "if($_SESSION['UserCookieGopayProbehnout'] == 1 && !isset($_GET['id'])) { ?>");
         }
     }
 
@@ -82,7 +118,4 @@ public static partial class GoPay
                          "if ((float)phpversion() > 7.0) $gateway_params = gateway_params; else $gateway_params = gateway_params::getparams();");
         }
     }
-
-    [GeneratedRegex(@"\$go_client->__call\s?\(\s?(?<q>['""])(?<method>\w+?)\k<q>,\s*(?<args>.+?)\);", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
-    private static partial Regex SoapCallRegex();
 }
