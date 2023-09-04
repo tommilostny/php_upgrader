@@ -431,7 +431,7 @@ public sealed partial class RubiconConnectHandler : MonaConnectHandler, IConnect
     [GeneratedRegex(@"\$(hostname|database|username|password)_(?<beta>\w+)", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex ConnectVarRegex();
 
-    [GeneratedRegex(@"define\s?\(\s?(?<q>['""])db_(?<var>\w+?)\k<q>\s?,\s?\k<q>.+?\k<q>\s?\);", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    [GeneratedRegex(@"define\s?\(\s?(?<q>['""])db_(?<var>\w+?)\k<q>\s?,\s?\k<q>.*?\k<q>\s?\);", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex DefineDbVarRegex();
 
     [GeneratedRegex(@"pg_connect\s?\(\s?[""']host\s?=\s?\S+?\sport\s?=\s?(?<port>\d+?)\sdbname\s?=\s?\S+?\suser\s?=\s?\S+?\spassword\s?=\s?\S+?\s?[""']\s?\);", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
