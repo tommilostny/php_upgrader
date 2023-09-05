@@ -84,7 +84,7 @@ class McGoPayHelper {
     }
 
     public function createPayment(string $doklad, int $paymentId, int $orderId, array $contact): ?string {
-        if (in_array($paymentId, $this->mcgopay->getOnline())) {
+        if ($this->isGopay($paymentId)) {
             $items = $this->mcgopay->getItemsFromDB($orderId);
             $gopaySwift = null;
             switch ($paymentId) {
@@ -103,8 +103,8 @@ class McGoPayHelper {
         return null;
     }
 
-    public function renderPaymentButton(string $gateLink): void {
-        ?><form class="text-center" action="<?= $gateLink ?>" method="POST" id="gopay-payment-button">
+    public function renderPaymentButton(string $gatewayLink): void {
+        ?><form class="text-center" action="<?= $gatewayLink ?>" method="POST" id="gopay-payment-button">
             <button class="kosik_zpet" id="payment-invoke-checkout" type="submit" style="height:100%">
                 Zaplatit nyní
             </button>
@@ -252,10 +252,8 @@ class McGoPayHelper {
             [ $response->json['order_number'] ]
         )->is_canceled;
     
-        if (!$is_canceled && in_array($pay_status, [ PaymentStatus::TIMEOUTED, PaymentStatus::CANCELED])) {
-            //var_dump($response);
+        if (!$is_canceled && in_array($pay_status, [ PaymentStatus::TIMEOUTED, PaymentStatus::CANCELED ])) {
             $respTimeout = $this->mcgopay->getNewPaymentFromTimeout($response);
-            //var_dump($respTimeout);
             if ($this->mcgopay->isResponseOK($respTimeout)) {
                 $response = $respTimeout;
                 $pay_status = $this->mcgopay->getStatusID($response);

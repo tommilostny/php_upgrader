@@ -60,8 +60,8 @@ public static partial class GoPay
             sb.AppendLine();
             sb.AppendLine("    $mcgopayHelper = new McGoPayHelper($DOMAIN_ID);");
             sb.AppendLine();
-            sb.AppendLine("    $isOldPayment = $mcgopayHelper->renderPaymentStatus();");
-            sb.AppendLine("    if (!$isOldPayment):");
+            sb.AppendLine("    $isNewPayment = !$mcgopayHelper->renderPaymentStatus();");
+            sb.AppendLine("    if ($isNewPayment) {");
             sb.AppendLine("      $contact = [");
             sb.AppendLine("        'first_name' => $UserCookieName,");
             sb.AppendLine("        'last_name' => $UserCookiePrijmeni,");
@@ -73,7 +73,7 @@ public static partial class GoPay
             sb.AppendLine("      ];");
             sb.AppendLine("      $paymentLink = $mcgopayHelper->createPayment($doklad_n, $platba, $id_objednavky, $contact);");
             sb.AppendLine("      $mcgopayHelper->renderPaymentButton($paymentLink);");
-            sb.AppendLine();
+            sb.AppendLine("    }");
             sb.Append("/* ");
             file.Content.Insert(paymentIndex, sb.ToString());
 
@@ -81,7 +81,7 @@ public static partial class GoPay
             var endIndex = file.Content.IndexOf("<?php", fwdButtonIndex);
             if (endIndex == -1)
                 return;
-            file.Content.Insert(endIndex + 6, "*/ endif;")
+            file.Content.Insert(endIndex + 6, "*/")
                 .Replace("window.location.href=\"<?= $gopay_odkaz; ?>\";",
                          "document.getElementById('payment-invoke-checkout').click();")
                 .Replace("if($_SESSION['UserCookieGopayProbehnout'] == 1) { ?>",
