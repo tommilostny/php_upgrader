@@ -6,6 +6,7 @@ public static partial class GoPay
     private static readonly string _mcGoPayPHP = Path.Join("classes", "McGoPay.php");
     private static readonly string _cartStep02PHP = Path.Join("card", "step_02.php");
     private static readonly string _cartStep04PHP = Path.Join("card", "step_04.php");
+    private static readonly string _aegisxOrdersPHP = Path.Join("aegisx", "objednavka.php");
     private static string? _mcGoPayHelperPHP = null;
 
     public static FileWrapper UpgradeGoPay(this FileWrapper file, PhpUpgraderBase upgrader)
@@ -15,6 +16,7 @@ public static partial class GoPay
         UpgradeCookies(file);
         UpgradeCartStep04(file);
         UpgradeMcGoPay(file);
+        UpgradeAegisx(file, upgrader);
         return file;
     }
 
@@ -116,6 +118,39 @@ public static partial class GoPay
                          "if ((float)phpversion() > 7.0) $gateway_params = gateway_params; else $gateway_params = gateway_params::getparams();")
                 .Replace("if ((float)phpversion() > 7.0) $gateway_params = gateway_params; else if ((float)phpversion() > 7.0) $gateway_params = gateway_params; else $gateway_params = gateway_params::getparams();",
                          "if ((float)phpversion() > 7.0) $gateway_params = gateway_params; else $gateway_params = gateway_params::getparams();");
+        }
+    }
+
+    private static void UpgradeAegisx(FileWrapper file, PhpUpgraderBase upgrader)
+    {
+        if (file.Path.EndsWith(_aegisxOrdersPHP, StringComparison.Ordinal))
+        {
+            var inputIndex = file.Content.IndexOf("Neodesílat mail s fakturou");
+            if (inputIndex == -1)
+                return;
+            var insertIndex = file.Content.IndexOf("<?php }/* else { ?>", inputIndex);
+            if (insertIndex == -1)
+                return;
+
+            using var sb = ZString.CreateStringBuilder();
+            sb.AppendLine();
+            sb.AppendLine("\t\trequire_once 'autoloader.php';");
+            sb.AppendLine("\t\t$mcgopayHelper = new McGoPayHelper($row_data['domain_id']);");
+            sb.AppendLine();
+            sb.AppendLine("\t\tif ($mcgopayHelper->isGopay($row_data['platba_id'])) {");
+            sb.Append("\t\t\tDatabase::connect('");
+            sb.Append(upgrader.Hostname);
+            sb.Append("', '");
+            sb.Append(upgrader.Username);
+            sb.Append("', '");
+            sb.Append(upgrader.Password);
+            sb.Append("', '");
+            sb.Append(upgrader.Database);
+            sb.AppendLine("', '5432');");
+            sb.AppendLine("\t\t\t$mcgopayHelper->renderPaymentStatusAdmin($row_data['order_id'], $row_data['platba_name']);");
+            sb.AppendLine("\t\t}");
+
+            file.Content.Insert(insertIndex + 6, sb.ToString());
         }
     }
 }
