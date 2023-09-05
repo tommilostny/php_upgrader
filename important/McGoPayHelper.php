@@ -10,7 +10,7 @@ use GoPay\Definition\Response\PaymentStatus;
 class McGoPayHelper {
     private McGoPay $mcgopay;
     
-    public function __construct(?int $domainId = 1) {
+    public function __construct(?int $domainId) {
         $this->mcgopay = new McGoPay($domainId, production);
     }
 
@@ -49,7 +49,7 @@ class McGoPayHelper {
         return in_array($paymentId, $this->mcgopay->getOnline());
     }
 
-    public function renderPaymentMethods(int $selectedId) {
+    public function renderPaymentMethods(int $selectedId): void {
         ?> <h3 class="formular_podnadpis">On-line platby</h3> <?php
         $onlineMethods = $this->mcgopay->getOnline();
 
@@ -103,7 +103,7 @@ class McGoPayHelper {
         return null;
     }
 
-    public function renderPaymentButton(string $gateLink) {
+    public function renderPaymentButton(string $gateLink): void {
         ?><form class="text-center" action="<?= $gateLink ?>" method="POST" id="gopay-payment-button">
             <button class="kosik_zpet" id="payment-invoke-checkout" type="submit" style="height:100%">
                 Zaplatit nyní
@@ -196,34 +196,45 @@ class McGoPayHelper {
         return true;
     }
 
-    public function renderPaymentStatusAdmin(int $orderId, ?string $paymentName = null) {
+    public function renderPaymentStatusAdminDetail(int $orderId, string $paymentName): void {
+        ?><tr>
+            <th><strong>GoPay</strong></th>
+            <td style="padding-top: 10px">
+                <?= $paymentName ?>
+                <br />
+                <?php
+                $this->renderPaymentStatusAdmin($orderId);
+                ?>
+            </td>
+        </tr>
+        <?php
+    }
+
+    public function renderPaymentStatusAdminList(int $orderId): void {
+        $this->renderPaymentStatusAdmin($orderId);
+        ?><br /><?php
+    }
+
+    private function renderPaymentStatusAdmin(int $orderId): void {
         $id = $this->mcgopay->getPaymentIDbyOrderID($orderId);
         $response = $this->mcgopay->getStatus($id);
-        ?><tr><td>
-            <strong>Platba GoPay</strong>
-        </td><td style="padding-top:1.5rem">
-        <?php
         $pay_status = $this->mcgopay->isResponseOK($response) ? $this->getPaymentStatus($response) : null;           
         switch ($pay_status) {
             case PaymentStatus::PAID: ?>
-                <div class="color_bluen"><strong>Platba zaplacena</strong> dne <?= $this->mcgopay->getOrderStatus($orderId)['payment_time'] ?></div>
+                <span class="color_bluen"><strong>Platba zaplacena</strong> dne <?= $this->mcgopay->getOrderStatus($orderId)['payment_time'] ?></span>
                 <?php break;
             case PaymentStatus::CANCELED: ?>
-                <div class="color_orange"><strong>Platba byla zrušena</strong></div>
+                <span class="color_orange"><strong>Platba byla zrušena</strong></span>
                 <?php break;
             case PaymentStatus::TIMEOUTED: ?>
-                <div class="color_orange"><strong>Vypršel časový limit na platbu</strong></div>
+                <span class="color_orange"><strong>Vypršel časový limit na platbu</strong></span>
                 <?php break;
             case PaymentStatus::REFUNDED: ?>
-                <div class="color_orange"><strong>Platba byla vrácena (reklamace)</strong></div>
+                <span class="color_orange"><strong>Platba byla vrácena (reklamace)</strong></span>
                 <?php break;
             default: ?>
-                <div class="red"><strong>NEZAPLACENO</strong></div>
+                <span class="red"><strong>NEZAPLACENO</strong></span>
                 <?php break;
-        }
-        ?><br /></td></tr><?php
-        if ($paymentName !== null) {
-            ?> <tr><td colspan="2">(<?= $paymentName ?>)</td></tr><?php
         }
     }
 
@@ -238,8 +249,7 @@ class McGoPayHelper {
                     ON orders_data.order_id = orders.order_id
                     AND orders.doklad_n = ?
             ;",
-    
-            [$response->json['order_number']]
+            [ $response->json['order_number'] ]
         )->is_canceled;
     
         if (!$is_canceled && in_array($pay_status, [ PaymentStatus::TIMEOUTED, PaymentStatus::CANCELED])) {
@@ -251,8 +261,6 @@ class McGoPayHelper {
                 $pay_status = $this->mcgopay->getStatusID($response);
             }
         }
-    
-        if ($is_canceled) $pay_status = PaymentStatus::CANCELED;
-        return $pay_status;
+        return $is_canceled ? PaymentStatus::CANCELED : $pay_status;
     }
 }
