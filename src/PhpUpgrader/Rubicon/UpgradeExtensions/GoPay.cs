@@ -1,6 +1,6 @@
 ﻿namespace PhpUpgrader.Rubicon.UpgradeExtensions;
 
-public static partial class GoPay
+public static class GoPay
 {
     private static readonly string _mcGoPaySetupPHP = Path.Join("classes", "McGoPay.setup.php");
     private static readonly string _mcGoPayPHP = Path.Join("classes", "McGoPay.php");
