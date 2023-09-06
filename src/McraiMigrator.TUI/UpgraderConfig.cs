@@ -36,6 +36,8 @@ internal struct UpgraderConfig
 
     public bool RunPhpUpgrade { get; set; } = true;
 
+    public bool DeleteRedundantFiles { get; set; } = true;
+
     public static UpgraderConfig Load()
     {
         if (File.Exists(ConfigFileName))

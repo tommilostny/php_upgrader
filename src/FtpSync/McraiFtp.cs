@@ -13,6 +13,7 @@ public sealed class McraiFtp
     private readonly string? _path;
     private readonly string? _webName;
     private readonly long _maxFileSize;
+    private readonly bool _deleteRedundantFiles;
     private readonly string _baseFolder;
     private readonly string _host;
     private readonly LoginParser _login;
@@ -22,6 +23,7 @@ public sealed class McraiFtp
     public McraiFtp(string? username, string? password,
                     string? path, string? webName,
                     long maxFileSize,
+                    bool deleteRedundantFiles,
                     string baseFolder = DefaultBaseFolder,
                     string host = DefaultHostname1,
                     bool silentLoginParseError = false)
@@ -39,12 +41,13 @@ public sealed class McraiFtp
         _path = path;
         _webName = webName;
         _maxFileSize = maxFileSize;
+        _deleteRedundantFiles = deleteRedundantFiles;
         _baseFolder = baseFolder;
         _host = host;
     }
 
-    public McraiFtp(string webName, string baseFolder, long maxFileSize, string host = DefaultHostname1, bool silentLoginParseError = false)
-        : this(username: null, password: null, path: null, webName, maxFileSize, baseFolder, host, silentLoginParseError)
+    public McraiFtp(string webName, string baseFolder, long maxFileSize, bool deleteRedundantFiles, string host = DefaultHostname1, bool silentLoginParseError = false)
+        : this(username: null, password: null, path: null, webName, maxFileSize, deleteRedundantFiles, baseFolder, host, silentLoginParseError)
     {
     }
 
@@ -54,7 +57,7 @@ public sealed class McraiFtp
         {
             using var synchronizer = new FtpSynchronizer(RemotePath, _baseFolder, _webName!, _host,
                                                          upgradeServerHostname, _login.Username!, _login.Password!,
-                                                         _maxFileSize);
+                                                         _maxFileSize, _deleteRedundantFiles);
             await synchronizer.SynchronizeAsync().ConfigureAwait(false);
         }).ConfigureAwait(false);
     }

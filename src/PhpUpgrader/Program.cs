@@ -35,12 +35,13 @@ public static class Program
     /// <param name="devDb"> Databáze "rubicon_6_dev_...". </param>
     /// <param name="devUser"> Uživatelské jméno k dev databázi. </param>
     /// <param name="devPassword"> Heslo k dev databázi. </param>
+    /// <param name="deleteRedundant"> Smazat redundantní soubory (jsou na mcrai-upgrade, ale už ne na starém mcrai). </param>
     public static async Task Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
                                   string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
                                   string host = "127.0.0.1", string? beta = null, string connectionFile = "connection.php",
                                   bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false,
                                   bool checkFtp = false, bool ignoreFtp = false, bool upload = false, bool dontUpload = false, bool dontUpgrade = false,
-                                  double ftpMaxMb = 500, string? devDb = null, string? devUser = null, string? devPassword = null)
+                                  double ftpMaxMb = 500, string? devDb = null, string? devUser = null, string? devPassword = null, bool deleteRedundant = true)
     {
         if (webName is null or { Length: 0 })
         {
@@ -52,9 +53,9 @@ public static class Program
         var startTime = DateTime.Now;
         _baseFolder = baseFolder;
         _webName = webName;
-        _lazyFtp = new(() => new McraiFtp(_webName, _baseFolder, Convert.ToInt64(ftpMaxMb * 1024 * 1024)));
-        _lazyRubiconFtp = new(() => new McraiFtp($"{_webName}-rubicon", _baseFolder, -1, silentLoginParseError: true));
-        _lazyWebUsersFtp = new(() => new McraiFtp($"{_webName}-web_users", _baseFolder, -1, silentLoginParseError: true));
+        _lazyFtp = new(() => new McraiFtp(_webName, _baseFolder, Convert.ToInt64(ftpMaxMb * 1024 * 1024), deleteRedundant));
+        _lazyRubiconFtp = new(() => new McraiFtp($"{_webName}-rubicon", _baseFolder, -1, deleteRedundant, silentLoginParseError: true));
+        _lazyWebUsersFtp = new(() => new McraiFtp($"{_webName}-web_users", _baseFolder, -1, deleteRedundant, silentLoginParseError: true));
 
         //0. fáze: příprava PHP upgraderu (kontrola zadaných argumentů)
         // Může nastat případ, kdy složka webu neexistuje. Uživatel je tázán, zda se pokusit stáhnout z FTP mcrai1.

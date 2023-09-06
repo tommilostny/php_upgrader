@@ -16,7 +16,7 @@ while (runPhpUpgrader is null)
     var option = AnsiConsole.Prompt(
         new SelectionPrompt<string>()
             .HighlightStyle(Color.Orange1)
-            .PageSize(7)
+            .PageSize(8)
             .MoreChoicesText("[grey](Další možnosti...)[/]")
             .AddChoices(new[] {
                 "[green]Spustit[/]",
@@ -25,6 +25,7 @@ while (runPhpUpgrader is null)
                 $"Nahrát upravené soubory na FTP: {config.UploadFtp.ToYesNo()}",
                 $"Rubicon: {config.Rubicon.ToYesNo()}",
                 $"Maximální velikost souboru pro FTP synchronizaci: [white]{config.MaxFileSizeMB} MB[/]",
+                $"Mazat redundantní soubory: {config.DeleteRedundantFiles.ToYesNo()}",
                 $"Host: [white]{config.Host}[/]",
                 $"Databáze: [white]{config.Database}[/]",
                 $"Uživatel: [white]{config.UserName}[/]",
@@ -75,6 +76,11 @@ while (runPhpUpgrader is null)
         Console.Write("                                                                   ");
         Console.SetCursorPosition(0, Console.CursorTop - 1);
         Console.Write("                                                                   \r");
+        continue;
+    }
+    if (option.StartsWith("Mazat redundantní soubory:", StringComparison.Ordinal))
+    {
+        config.DeleteRedundantFiles = !config.DeleteRedundantFiles;
         continue;
     }
     if (option.StartsWith("Výchozí složka:", StringComparison.Ordinal))
@@ -157,6 +163,7 @@ await PhpUpgrader.Program.Main
     dontUpload: !config.UploadFtp,
     useBackup: config.UseBackup,
     ftpMaxMb: config.MaxFileSizeMB,
+    deleteRedundant: config.DeleteRedundantFiles,
     host: HostnameToKnownIP(config.Host),
     db: string.IsNullOrWhiteSpace(config.Database) ? null : config.Database,
     user: string.IsNullOrWhiteSpace(config.UserName) ? null : config.UserName,

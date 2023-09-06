@@ -5,16 +5,17 @@
 internal sealed class FtpSynchronizer : FtpBase
 {
     private readonly long _fileSizeLimit;
-
+    private readonly bool _deleteRedundantFiles;
     private (string name, double size)[]? _bigFiles = null;
 
     private AsyncFtpClient Client2 { get; set; }
 
-    public FtpSynchronizer(string path, string baseFolder, string webName, string server1, string server2, string username, string password, long maxFileSize)
+    public FtpSynchronizer(string path, string baseFolder, string webName, string server1, string server2, string username, string password, long maxFileSize, bool deleteRedundantFiles)
         : base(path, baseFolder, webName, server1, username, password)
     {
         Client2 = new AsyncFtpClient(server2, Client1.Credentials, config: Client1.Config);
         _fileSizeLimit = maxFileSize;
+        _deleteRedundantFiles = deleteRedundantFiles;
     }
 
     public override void Dispose()
@@ -316,6 +317,9 @@ internal sealed class FtpSynchronizer : FtpBase
 
     private async Task DeleteRedundantFilesAsync(ImmutableArray<FtpListItem> files1, ImmutableDictionary<string, DateTime> files2)
     {
+        if (!_deleteRedundantFiles)
+            return;
+
         ColoredConsole.SetColor(ConsoleColor.Cyan).WriteLine($"🔄️Probíhá kontrola přebytečných souborů (smazané na {Client1.Host})...").ResetColor();
 
         var files1Names = files1.Select(f => f.FullName);
@@ -326,7 +330,7 @@ internal sealed class FtpSynchronizer : FtpBase
         var sortedFiles1 = files1Names.Order(StringComparer.Ordinal).ToImmutableList();
         foreach (var file2 in files2.Keys)
         {
-            if (file2.EndsWith(".php", StringComparison.Ordinal))
+            if (file2.EndsWith(".php", StringComparison.Ordinal) || file2.Contains("gopay", StringComparison.OrdinalIgnoreCase))
                 continue;
 
             var i = sortedFiles1.BinarySearch(file2, StringComparer.Ordinal);
