@@ -10,14 +10,19 @@ public static partial class GoPay
     private static readonly string _aegisxOrdersListPHP = Path.Join("aegisx", "objednavky.php");
     private static string? _mcGoPayHelperPHP = null;
 
+    private static readonly string[] _allowedWebNames = { "nicom" };
+
     public static FileWrapper UpgradeGoPay(this FileWrapper file, PhpUpgraderBase upgrader)
     {
-        EnsureMcGoPayHelperExists(upgrader);
-        UpgradeCartStep02(file);
-        UpgradeCookies(file);
-        UpgradeCartStep04(file);
         UpgradeMcGoPay(file);
-        UpgradeAegisx(file, upgrader);
+        if (_allowedWebNames.Contains(upgrader.WebName, StringComparer.Ordinal))
+        {
+            EnsureMcGoPayHelperExists(upgrader);
+            UpgradeCartStep02(file);
+            UpgradeCookies(file);
+            UpgradeCartStep04(file);
+            UpgradeAegisx(file, upgrader);
+        }
         return file;
     }
 
