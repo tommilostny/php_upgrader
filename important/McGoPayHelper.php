@@ -97,14 +97,22 @@ class McGoPayHelper {
                 case 707: $gopayMethod = PaymentInstrument::APPLE_PAY;        break;
                 default:  $gopayMethod = PaymentInstrument::PAYMENT_CARD;     break;
             }
-            $response = $this->mcgopay->createPayment2($doklad, $contact, $items, $gopayMethod, $gopaySwift, null, $orderId);
+            try {
+                $response = $this->mcgopay->createPayment2($doklad, $contact, $items, $gopayMethod, $gopaySwift, null, $orderId);
+            } catch (\Throwable $th) {
+                echo $th->getMessage();
+            }
             return $this->mcgopay->getActionUrl($response);
         }
         return null;
     }
 
-    public function renderPaymentButton(string $gatewayLink): void {
-        ?><form class="text-center" action="<?= $gatewayLink ?>" method="POST" id="gopay-payment-button">
+    public function renderPaymentButton(string $gatewayLink, bool $isRedirect = true): void {
+        ?>
+        <p style="display: <?= $isRedirect ? 'block' : 'none' ?>">
+            <strong>Pokud nebudete během 5 sekund automaticky přesměrováni na platební bránu, klikněte na tlačítko zaplatit.</strong>
+        </p>
+        <form class="text-center" action="<?= $gatewayLink ?>" method="POST" id="gopay-payment-button">
             <button class="kosik_zpet" id="payment-invoke-checkout" type="submit" style="height:100%">
                 Zaplatit nyní
             </button>
@@ -152,7 +160,7 @@ class McGoPayHelper {
                                 <td class="resp_table_500">
                                     <p class="gp_label gp_red"><b>GoPay: Nezaplaceno</b></p>
                                     <p><strong>Pozor:</strong> - Zboží nebylo zaplaceno.</p>
-                                    <?php $this->renderPaymentButton($this->mcgopay->getActionUrl($response)) ?>
+                                    <?php $this->renderPaymentButton($this->mcgopay->getActionUrl($response), false) ?>
                                 </td>
                             </tr>
                         </table>
@@ -217,8 +225,12 @@ class McGoPayHelper {
 
     private function renderPaymentStatusAdmin(int $orderId): void {
         $id = $this->mcgopay->getPaymentIDbyOrderID($orderId);
-        $response = $this->mcgopay->getStatus($id);
-        $pay_status = $this->mcgopay->isResponseOK($response) ? $this->getPaymentStatus($response) : null;           
+        try {
+            $response = $this->mcgopay->getStatus($id);
+            $pay_status = $this->mcgopay->isResponseOK($response) ? $this->getPaymentStatus($response) : null;
+        } catch (\Throwable $th) {
+            $pay_status = null;
+        }
         switch ($pay_status) {
             case PaymentStatus::PAID: ?>
                 <span class="color_bluen"><strong>Platba zaplacena</strong> dne <?= $this->mcgopay->getOrderStatus($orderId)['payment_time'] ?></span>
