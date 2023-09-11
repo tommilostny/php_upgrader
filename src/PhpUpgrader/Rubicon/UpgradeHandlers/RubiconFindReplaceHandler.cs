@@ -272,6 +272,9 @@ public sealed class RubiconFindReplaceHandler : MonaFindReplaceHandler, IFindRep
         ("$search = new Search($searchValue, $DOMAIN_ID);",
          "$search = new Search($searchValue, $DOMAIN_ID, $_SERVER['SERVER_NAME']);"
         ),
+        ("$search = new Search($searchValue, $domainId);",
+         "$search = new Search($searchValue, $domainId, $_SERVER['SERVER_NAME']);"
+        ),
         (@"public static function insert($query, $parameters = [])
 	{
 		try

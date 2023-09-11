@@ -3,6 +3,10 @@
  * Author: Tomáš Milostný, 2023
  */
 
+define('MSSQL_ASSOC', SQLSRV_FETCH_ASSOC);
+define('MSSQL_NUM', SQLSRV_FETCH_NUMERIC);
+define('MSSQL_BOTH', SQLSRV_FETCH_BOTH);
+
 /** Global connection variable used when the $conn parameter is null. */
 $_mssql_overwrite_conn = null;
 
@@ -15,7 +19,7 @@ function _check_assign_from_global_conn(&$conn) {
 }
 
 function mssql_connect($serverInfo, $username, $password, $database) {
-    // Replace ':' with '\\, ' in server info to maintain backward compatibility.
+    // Replace ':' with ', ' in server info to maintain backward compatibility.
     $serverInfo = str_replace(':', ', ', $serverInfo);
     // Construct the connection options array
     $connectionOptions = array(
@@ -23,6 +27,7 @@ function mssql_connect($serverInfo, $username, $password, $database) {
         "UID" => $username,
         "PWD" => $password,
         "TrustServerCertificate" => true,
+        //"CharacterSet" => "windows-1250",
     );
     // Establish the connection
     global $_mssql_overwrite_conn;
@@ -43,8 +48,7 @@ function mssql_query($query, $conn = null) {
     if ($conn === false) {
         return false;
     }
-    $result = sqlsrv_query($conn, $query);
-    return $result;
+    return sqlsrv_query($conn, $query);
 }
 
 function mssql_result($result, $row, $field) {
@@ -53,7 +57,7 @@ function mssql_result($result, $row, $field) {
         sqlsrv_fetch($result);
     }
     // Fetch the specified field's value
-    $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
+    $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_BOTH);
     return $row[$field];
 }
 
@@ -61,13 +65,12 @@ function mssql_fetch_assoc($result) {
     return sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
 }
 
-function mssql_fetch_array($result) {
-    return sqlsrv_fetch_array($result, SQLSRV_FETCH_BOTH);
+function mssql_fetch_array($result, $resultType = SQLSRV_FETCH_BOTH) {
+    return sqlsrv_fetch_array($result, $resultType);
 }
 
-function mssql_fetch_object($result, $className = "stdClass") {
-    $row = sqlsrv_fetch_object($result, $className);
-    return $row;
+function mssql_fetch_object($result, $className = 'stdClass') {
+    return sqlsrv_fetch_object($result, $className);
 }
 
 function mssql_get_last_message() {
