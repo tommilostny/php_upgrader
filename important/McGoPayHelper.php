@@ -45,7 +45,7 @@ class McGoPayHelper {
         }
     }
 
-    public function isGopay(int $paymentId): bool {
+    public function isGopay($paymentId): bool {
         return in_array($paymentId, $this->mcgopay->getOnline());
     }
 
