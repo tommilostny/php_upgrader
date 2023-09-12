@@ -256,7 +256,7 @@ internal sealed class FtpSynchronizer : FtpBase
     {
         if (sourcePath.Contains("gopay", StringComparison.OrdinalIgnoreCase))
         {
-            lock (_writeLock)
+            if (handleMode == PhpHandleMode.Download) lock (_writeLock)
                 ColoredConsole.WriteLine($"⚠️ Ignorován PHP soubor:\t{ConsoleColor.DarkGray}{sourcePath}{Symbols.PREVIOUS_COLOR}...");
             return;
         }
