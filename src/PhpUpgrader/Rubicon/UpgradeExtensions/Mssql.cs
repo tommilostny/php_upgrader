@@ -49,15 +49,20 @@ public static partial class Mssql
         var folderScopeLevel = file.Path.Split(Path.DirectorySeparatorChar).Length;
         folderScopeLevel -= upgrader.WebFolder.Split(Path.DirectorySeparatorChar).Length;
 
-        var phpOpeningIndex = int.Max(file.Content.IndexOf("<?php", 0, 42), file.Content.IndexOf("<?PHP", 0, 42));
+        var phpOpeningIndex = Math.Min(file.Content.IndexOf("<?php"), file.Content.IndexOf("<?PHP"));
         if (phpOpeningIndex == -1)
         {
             file.Content.Insert(0, "<?php\n\n?>");
             phpOpeningIndex = 0;
         }
-        file.Content.Insert(phpOpeningIndex + 6,
-            SetupIncludes.CreateIncludesCascade("mssql_overwrite.php", folderScopeLevel)
+        using var sb = ZString.CreateStringBuilder();
+        sb.AppendLine("if (!function_exists('mssql_connect')) {");
+        sb.AppendLine(SetupIncludes
+            .CreateIncludesCascade("mssql_overwrite.php", folderScopeLevel)
+            .Replace("\n", "\n\t", StringComparison.Ordinal)
         );
+        sb.AppendLine('}');
+        file.Content.Insert(phpOpeningIndex + 6, sb.ToString());
     }
 
     private static void EnsureMssqlOverwriteFileExists(PhpUpgraderBase upgrader)
