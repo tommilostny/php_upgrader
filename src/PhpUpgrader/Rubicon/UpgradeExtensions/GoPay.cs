@@ -1,4 +1,6 @@
-﻿namespace PhpUpgrader.Rubicon.UpgradeExtensions;
+﻿using FluentFTP.Helpers;
+
+namespace PhpUpgrader.Rubicon.UpgradeExtensions;
 
 public static class GoPay
 {
@@ -8,6 +10,7 @@ public static class GoPay
     private static readonly string _cartStep04PHP = Path.Join("card", "step_04.php");
     private static readonly string _aegisxOrderDetailPHP = Path.Join("aegisx", "objednavka.php");
     private static readonly string _aegisxOrdersListPHP = Path.Join("aegisx", "objednavky.php");
+    private static readonly string _sendMailFakturaPHP = Path.Join("card", "send_mail_faktura.php");
     private static string? _mcGoPayHelperPHP = null;
 
     private static readonly string[] _allowedWebNames = { "nicom" };
@@ -22,6 +25,7 @@ public static class GoPay
             UpgradeCookies(file);
             UpgradeCartStep04(file);
             UpgradeAegisx(file, upgrader);
+            UpgradeSendMail(file);
         }
         return file;
     }
@@ -172,6 +176,22 @@ public static class GoPay
             sb.Append(isAegisxOrderDetail ? "}\n" : "} ?>");
 
             file.Content.Insert(insertIndex + 6, sb.ToString());
+        }
+    }
+
+    private static void UpgradeSendMail(this FileWrapper file)
+    {
+        if (file.Path.EndsWith(_sendMailFakturaPHP, StringComparison.Ordinal))
+        {
+            var insertIndex = file.Content.IndexOf("$zakaznik_paticka = '<br />Vážení klienti, děkujeme za vyplnění objednávky. Naše společnost i před zavedením nařízení Evropské komise (GDPR)");
+            if (insertIndex != -1)
+            {
+                using var sb = ZString.CreateStringBuilder();
+                sb.AppendLine("if ((new McGoPayHelper($DOMAIN_ID))->isGopay($ord_35)) {");
+                sb.AppendLine("    $zakaznik_hlavicka = str_replace(\"platbu hotově\", \"platbu GoPay\", $zakaznik_hlavicka);");
+                sb.AppendLine('}');
+                file.Content.Insert(insertIndex, sb.ToString());
+            }
         }
     }
 }
