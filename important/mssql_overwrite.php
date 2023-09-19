@@ -6,6 +6,7 @@
 define('MSSQL_ASSOC', SQLSRV_FETCH_ASSOC);
 define('MSSQL_NUM', SQLSRV_FETCH_NUMERIC);
 define('MSSQL_BOTH', SQLSRV_FETCH_BOTH);
+define('MSSQL_DEBUG', true);
 
 /** Global connection variable used when the $conn parameter is null. */
 $_mssql_overwrite_conn = null;
@@ -22,16 +23,34 @@ function mssql_connect($serverInfo, $username, $password, $database) {
     // Replace ':' with ', ' in server info to maintain backward compatibility.
     $serverInfo = str_replace(':', ', ', $serverInfo);
     // Construct the connection options array
-    $connectionOptions = array(
+    $connectionOptions = [
         "Database" => $database,
         "UID" => $username,
         "PWD" => $password,
         "TrustServerCertificate" => true,
-        //"CharacterSet" => "windows-1250",
-    );
-    // Establish the connection
+    ];
+
+    if (MSSQL_DEBUG) {
+        $connectionOptions['TraceOn'] = true;
+        $connectionOptions['TraceFile'] = '__mssql_trace.log';
+
+        echo '<pre>$serverInfo = ';
+        var_dump($serverInfo);
+        echo '</pre>';
+        echo '<pre>$connectionOptions = ';
+        var_dump($connectionOptions);
+        echo '</pre><br>';
+    }
+
     global $_mssql_overwrite_conn;
     $_mssql_overwrite_conn = sqlsrv_connect($serverInfo, $connectionOptions);
+    
+    if (file_exists($connectionOptions['TraceFile'])) {
+        $log = file_get_contents($connectionOptions['TraceFile']);
+        echo "<pre><b>Trace</b>: $log</pre><br>";
+        unlink($connectionOptions['TraceFile']);
+    }
+
     return $_mssql_overwrite_conn;
 }
 
@@ -62,14 +81,23 @@ function mssql_result($result, $row, $field) {
 }
 
 function mssql_fetch_assoc($result) {
+    if ($result === false) {
+        return false;
+    }
     return sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
 }
 
 function mssql_fetch_array($result, $resultType = SQLSRV_FETCH_BOTH) {
+    if ($result === false) {
+        return false;
+    }
     return sqlsrv_fetch_array($result, $resultType);
 }
 
 function mssql_fetch_object($result, $className = 'stdClass') {
+    if ($result === false) {
+        return false;
+    }
     return sqlsrv_fetch_object($result, $className);
 }
 
@@ -86,6 +114,9 @@ function mssql_get_last_message() {
 }
 
 function mssql_num_rows($result) {
+    if ($result === false) {
+        return 0;
+    }
     $numRows = sqlsrv_num_rows($result);
     return ($numRows !== false) ? $numRows : 0;
 }
