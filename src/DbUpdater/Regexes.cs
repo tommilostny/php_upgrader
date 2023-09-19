@@ -23,12 +23,11 @@ public static partial class Regexes
         match => $"DROP{match.Groups["what"]} CASCADE;"
     );
 
-    [GeneratedRegex("(smallint|numeric) DEFAULT '\\((?<num>\\d+?)\\)'", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    [GeneratedRegex("(?<type>smallint|numeric) DEFAULT '\\((?<num>\\d+?)\\)'", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
     private static partial Regex _smallintRegex();
 
     private static MatchEvaluator _smallintEval = new
     (
-        match => $"smallint DEFAULT '{match.Groups["num"]}'"
+        match => $"{match.Groups["type"]} DEFAULT '{match.Groups["num"]}'"
     );
-
 }
