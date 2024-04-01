@@ -158,7 +158,7 @@ class McGoPayHelper {
                                     <img src="/gopay/img/icons-basket/_gp_nopaid.jpg"/>
                                 </td>
                                 <td class="resp_table_500">
-                                    <p class="gp_label gp_red"><b>GoPay: Nezaplaceno</b></p>
+                                    <p class="gp_label gp_red">Stav platby GoPay: <b>Nezaplaceno</b></p>
                                     <p><strong>Pozor:</strong> - Zboží nebylo zaplaceno.</p>
                                     <?php $this->renderPaymentButton($this->mcgopay->getActionUrl($response), false) ?>
                                 </td>
@@ -174,7 +174,7 @@ class McGoPayHelper {
                                     <img src="/gopay/img/icons-basket/_gp_ok.jpg"/>
                                 </td>
                                 <td class="resp_table_500">
-                                    <p class="gp_label gp_green"><b>GoPay: Zaplaceno</b></p>
+                                    <p class="gp_label gp_green">Stav platby GoPay: <b>Zaplaceno</b></p>
                                     <p>Zboží bylo zaplaceno.</p>
                                 </td>
                             </tr>
@@ -192,7 +192,7 @@ class McGoPayHelper {
                                     <img src="/gopay/img/icons-basket/_gp_cancel.jpg"/>
                                 </td>
                                 <td class="resp_table_500">
-                                    <p class="gp_label gp_red"><b>Storno</b></p>
+                                    <p class="gp_label gp_red">Stav platby GoPay: <b>Storno</b></p>
                                     <p>Zboží bylo stornováno nebo vráceno.</p>
                                 </td>
                             </tr>

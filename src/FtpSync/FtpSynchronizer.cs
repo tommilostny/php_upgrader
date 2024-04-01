@@ -14,6 +14,8 @@ internal sealed class FtpSynchronizer : FtpBase
         : base(path, baseFolder, webName, server1, username, password)
     {
         Client2 = new AsyncFtpClient(server2, Client1.Credentials, config: Client1.Config);
+        Client2.ValidateCertificate += ValidateVshostingCert;
+
         _fileSizeLimit = maxFileSize;
         _deleteRedundantFiles = deleteRedundantFiles;
     }
@@ -58,8 +60,22 @@ internal sealed class FtpSynchronizer : FtpBase
     
     private async Task<IEnumerable<FtpListItem>> EnumerateServerFilesAsync(AsyncFtpClient client)
     {
-        return (await client.GetListing(_path, FtpListOption.Recursive | FtpListOption.Modify).ConfigureAwait(false))
-            .Where(f => f.Type == FtpObjectType.File);
+        int retries = _defaultRetries * 2;
+        do try
+        {
+            return (await client.GetListing(_path, FtpListOption.Recursive | FtpListOption.Modify).ConfigureAwait(false))
+                .Where(f => f.Type == FtpObjectType.File);
+        }
+        catch (Exception ex)
+        {
+            lock (_writeLock)
+            {
+                ColoredConsole.WriteLineError($"{ConsoleColor.Yellow}⚠️ {client.Host}: {ex.Message}").ResetColor();
+            }
+            await Task.Delay(_random.Next(100, 1000)).ConfigureAwait(false);
+        }
+        while (--retries > 0);
+        throw new Exception("Překročen počet pokusů o získání seznamu souborů.");
     }
 
     private void PrintListingStartMessage(string hostname, bool checkLimit)
@@ -111,6 +127,8 @@ internal sealed class FtpSynchronizer : FtpBase
             if (_bigFiles.Length > 0)
             {
                 using var tmpClient2 = new AsyncFtpClient(Client2.Host, Client2.Credentials, config: Client2.Config);
+                tmpClient2.ValidateCertificate += ValidateVshostingCert;
+
                 await tmpClient2.Connect().ConfigureAwait(false);
                 lock (_writeLock)
                     ColoredConsole.SetColor(ConsoleColor.Yellow).Write(Client1.Host)
@@ -252,6 +270,7 @@ internal sealed class FtpSynchronizer : FtpBase
         CheckLocal,
     }
 
+    #pragma warning disable MA0051 // Method is too long
     private async Task HandlePhpFileAsync(AsyncFtpClient sourceClient, string sourcePath, PhpHandleMode handleMode)
     {
         if (sourcePath.Contains("gopay", StringComparison.OrdinalIgnoreCase))
@@ -275,8 +294,37 @@ internal sealed class FtpSynchronizer : FtpBase
                 if (!localFileInfo!.Directory!.Exists)
                     localFileInfo.Directory.Create();
 
-                var fs = await sourceClient.DownloadFile(localFileInfo.FullName, sourcePath, FtpLocalExists.Overwrite).ConfigureAwait(false);
-                deleteBackupFile = fs.IsSuccess();
+                FtpStatus? fs = null;
+                int retries = _defaultRetries;
+                restartDownload:
+                var cancelTokenSource = new CancellationTokenSource();
+                var cancelToken = cancelTokenSource.Token;
+
+                var downloadTask = Task.Run(async () =>
+                {
+                    return fs = await sourceClient.DownloadFile(localFileInfo.FullName,
+                                                                sourcePath,
+                                                                FtpLocalExists.Overwrite,
+                                                                token: cancelToken).ConfigureAwait(false);
+                });
+                var timeoutTask = Task.Delay(60000, cancelToken);
+
+                var completedTask = await Task.WhenAny(downloadTask, timeoutTask).ConfigureAwait(false);
+                await cancelTokenSource.CancelAsync().ConfigureAwait(false);
+
+                if (completedTask == timeoutTask)
+                {
+                    if (--retries > 0)
+                    {
+                        lock (_writeLock)
+                            ColoredConsole.WriteLineError($"{ConsoleColor.Yellow}⚠️ {sourcePath}: Timeout při stahování souboru, opakování...").ResetColor();
+                        goto restartDownload;
+                    }
+                    lock (_writeLock)
+                        ColoredConsole.WriteLineError($"{ConsoleColor.Red}❌ {sourcePath}: Timeout při stahování souboru.").ResetColor();
+                    fs = null;
+                }
+                deleteBackupFile = fs is not null && fs.Value.IsSuccess();
                 break;
 
             case PhpHandleMode.DeleteLocal:
@@ -292,7 +340,7 @@ internal sealed class FtpSynchronizer : FtpBase
                         localFileInfo.Directory.Create();
                     try
                     {
-                        await sourceClient.DownloadFile(localFileInfo.FullName, sourcePath).ConfigureAwait(false);
+                        await sourceClient.DownloadFile(localFileInfo.FullName, sourcePath, token: CancellationToken.None).ConfigureAwait(false);
                         lock (_writeLock)
                             ColoredConsole.WriteLine($"🔽 Stažen chybějící soubor:\t{ConsoleColor.DarkGray}{sourcePath}{Symbols.PREVIOUS_COLOR}...");
                     }
@@ -314,6 +362,7 @@ internal sealed class FtpSynchronizer : FtpBase
                 File.Delete(backupFilePath);
         }
     }
+    #pragma warning restore MA0051 // Method is too long
 
     private async Task DeleteRedundantFilesAsync(ImmutableArray<FtpListItem> files1, ImmutableDictionary<string, DateTime> files2)
     {

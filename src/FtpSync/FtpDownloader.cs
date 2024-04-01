@@ -1,12 +1,7 @@
 ﻿namespace FtpSync;
 
-internal sealed class FtpDownloader : FtpBase
+internal sealed class FtpDownloader(string path, string baseFolder, string webName, string server, string username, string password) : FtpBase(path, baseFolder, webName, server, username, password)
 {
-    public FtpDownloader(string path, string baseFolder, string webName, string server, string username, string password)
-        : base(path, baseFolder, webName, server, username, password)
-    {
-    }
-
     public async Task DownloadPhpsAsync()
     {
         await ConnectClientVerboseAsync(Client1).ConfigureAwait(false);

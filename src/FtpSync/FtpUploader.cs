@@ -2,13 +2,8 @@
 
 #pragma warning disable MA0052
 
-internal sealed class FtpUploader : FtpBase
+internal sealed class FtpUploader(string path, string baseFolder, string webName, string server, string username, string password) : FtpBase(path, baseFolder, webName, server, username, password)
 {
-    public FtpUploader(string path, string baseFolder, string webName, string server, string username, string password)
-        : base(path, baseFolder, webName, server, username, password)
-    {
-    }
-
     public async Task UploadPhpsAsync()
     {
         await ConnectClientVerboseAsync(Client1).ConfigureAwait(false);
@@ -55,7 +50,37 @@ internal sealed class FtpUploader : FtpBase
                 lock (_writeLock)
                     ColoredConsole.WriteLine($"🔼 Probíhá upload\t{ConsoleColor.DarkGray}{remotePath}{Symbols.PREVIOUS_COLOR}...");
 
-                await client.UploadFile(localPath, remotePath, createRemoteDir: true, existsMode: FtpRemoteExists.Overwrite).ConfigureAwait(false);
+                int retries = _defaultRetries;
+                restartUpload:
+                var cancelTokenSource = new CancellationTokenSource();
+                var cancelToken = cancelTokenSource.Token;
+
+                var uploadTask = Task.Run(async () =>
+                {
+                    return _ = await client.UploadFile(localPath,
+                                                       remotePath,
+                                                       createRemoteDir: true,
+                                                       existsMode: FtpRemoteExists.Overwrite,
+                                                       token: cancelToken).ConfigureAwait(false);
+                });
+                // Timeout 1 minute (should be enough for a single file upload).
+                var timeoutTask = Task.Delay(60000, cancelToken);
+
+                var completedTask = await Task.WhenAny(uploadTask, timeoutTask).ConfigureAwait(false);
+
+                await cancelTokenSource.CancelAsync().ConfigureAwait(false);
+
+                if (completedTask == timeoutTask)
+                {
+                    if (--retries > 0)
+                    {
+                        lock (_writeLock)
+                            ColoredConsole.WriteLine($"{ConsoleColor.Yellow}⚠️ Upload souboru {remotePath} trval příliš dlouho, bude zopakován.{Symbols.PREVIOUS_COLOR}");
+                        goto restartUpload;
+                    }
+                    lock (_writeLock)
+                        ColoredConsole.WriteLine($"{ConsoleColor.Red}❌ Upload souboru {remotePath} trval příliš dlouho, zrušen.{Symbols.PREVIOUS_COLOR}");
+                }
             }
             clients.Enqueue(client);
         }

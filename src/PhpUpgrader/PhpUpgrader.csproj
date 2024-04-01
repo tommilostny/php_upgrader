@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
       <OutputType>Exe</OutputType>
-      <TargetFramework>net7.0</TargetFramework>
+      <TargetFramework>net8.0</TargetFramework>
       <Nullable>annotations</Nullable>
       <Version>1.2.300.0</Version>
       <ImplicitUsings>enable</ImplicitUsings>
@@ -14,13 +14,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Meziantou.Analyzer" Version="2.0.78">
+    <PackageReference Include="Meziantou.Analyzer" Version="2.0.146">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="System.CommandLine.DragonFruit" Version="0.4.0-alpha.22272.1" />
-    <PackageReference Include="ZString" Version="2.5.0" />
+    <PackageReference Include="ZString" Version="2.6.0" />
   </ItemGroup>
 
   <ItemGroup>

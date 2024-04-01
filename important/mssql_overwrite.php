@@ -6,7 +6,12 @@
 define('MSSQL_ASSOC', SQLSRV_FETCH_ASSOC);
 define('MSSQL_NUM', SQLSRV_FETCH_NUMERIC);
 define('MSSQL_BOTH', SQLSRV_FETCH_BOTH);
-define('MSSQL_DEBUG', true);
+define('MSSQL_DEBUG', false);
+
+if (MSSQL_DEBUG) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', "1");
+}
 
 /** Global connection variable used when the $conn parameter is null. */
 $_mssql_overwrite_conn = null;
@@ -45,7 +50,7 @@ function mssql_connect($serverInfo, $username, $password, $database) {
     global $_mssql_overwrite_conn;
     $_mssql_overwrite_conn = sqlsrv_connect($serverInfo, $connectionOptions);
     
-    if (file_exists($connectionOptions['TraceFile'])) {
+    if (MSSQL_DEBUG && file_exists($connectionOptions['TraceFile'])) {
         $log = file_get_contents($connectionOptions['TraceFile']);
         echo "<pre><b>Trace</b>: $log</pre><br>";
         unlink($connectionOptions['TraceFile']);
@@ -77,6 +82,9 @@ function mssql_result($result, $row, $field) {
     }
     // Fetch the specified field's value
     $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_BOTH);
+    if ($row === false || $row === null) {
+        return false;
+    }
     return $row[$field];
 }
 
