@@ -5,6 +5,7 @@ public static partial class Regexes
     public static string RegexReplaceSchema(this string content) => _schemaRegex().Replace(content, _schemaEval);
     public static string RegexReplaceDrop(this string content) => _dropRegex().Replace(content, _dropEval);
     public static string RegexReplaceDefaultNumVals(this string content) => _smallintRegex().Replace(content, _smallintEval);
+    public static string RegexReplaceTruncate(this string content) => _truncateRegex().Replace(content, _truncateEval);
 
 
     [GeneratedRegex(@".*?(SCHEMA|(FUNCTION(?!\w|.*?')(.|\n)*?;))", RegexOptions.ExplicitCapture)]
@@ -29,5 +30,13 @@ public static partial class Regexes
     private static MatchEvaluator _smallintEval = new
     (
         match => $"{match.Groups["type"]} DEFAULT '{match.Groups["num"]}'"
+    );
+
+    [GeneratedRegex("TRUNCATE(?<what>(.(?!CASCADE))+?);", RegexOptions.ExplicitCapture)]
+    private static partial Regex _truncateRegex();
+
+    private static MatchEvaluator _truncateEval = new
+    (
+        match => $"TRUNCATE{match.Groups["what"]} CASCADE;"
     );
 }
