@@ -26,6 +26,8 @@ while (runPhpUpgrader is null)
                 $"Rubicon: {config.Rubicon.ToYesNo()}",
                 $"Maximální velikost souboru pro FTP synchronizaci: [white]{config.MaxFileSizeMB} MB[/]",
                 $"Mazat redundantní soubory: {config.DeleteRedundantFiles.ToYesNo()}",
+                $"Adresa FTP serveru: [white]{config.FtpHost}[/]",
+                $"Adresa FTP serveru pro upgrade: [white]{config.FtpHostUpgrade}[/]",
                 $"Host: [white]{config.Host}[/]",
                 $"Databáze: [white]{config.Database}[/]",
                 $"Uživatel: [white]{config.UserName}[/]",
@@ -81,6 +83,18 @@ while (runPhpUpgrader is null)
     if (option.StartsWith("Mazat redundantní soubory:", StringComparison.Ordinal))
     {
         config.DeleteRedundantFiles = !config.DeleteRedundantFiles;
+        continue;
+    }
+    if (option.StartsWith("Adresa FTP serveru:", StringComparison.Ordinal))
+    {
+        config.FtpHost = AnsiConsole.Ask<string>("Zadejte adresu FTP serveru: ");
+        Console.SetCursorPosition(0, Console.CursorTop - 1);
+        continue;
+    }
+    if (option.StartsWith("Adresa FTP serveru pro upgrade:", StringComparison.Ordinal))
+    {
+        config.FtpHostUpgrade = AnsiConsole.Ask<string>("Zadejte adresu FTP serveru pro upgrade: ");
+        Console.SetCursorPosition(0, Console.CursorTop - 1);
         continue;
     }
     if (option.StartsWith("Výchozí složka:", StringComparison.Ordinal))
@@ -152,6 +166,7 @@ if (runPhpUpgrader is false)
     return;
 }
 AnsiConsole.WriteLine();
+
 await PhpUpgrader.Program.Main
 (
     webName: config.WebName,
@@ -164,6 +179,8 @@ await PhpUpgrader.Program.Main
     useBackup: config.UseBackup,
     ftpMaxMb: config.MaxFileSizeMB,
     deleteRedundant: config.DeleteRedundantFiles,
+    ftpHost: config.FtpHost,
+    ftpHostUpgrade: config.FtpHostUpgrade,
     host: HostnameToKnownIP(config.Host),
     db: string.IsNullOrWhiteSpace(config.Database) ? null : config.Database,
     user: string.IsNullOrWhiteSpace(config.UserName) ? null : config.UserName,

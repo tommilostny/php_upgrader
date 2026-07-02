@@ -38,6 +38,10 @@ internal struct UpgraderConfig
 
     public bool DeleteRedundantFiles { get; set; } = true;
 
+    public string FtpHost { get; set; } = FtpSync.McraiFtp.DefaultHostname1;
+
+    public string FtpHostUpgrade { get; set; } = FtpSync.McraiFtp.DefaultHostnameUpgrade;
+
     public static UpgraderConfig Load()
     {
         if (File.Exists(ConfigFileName))

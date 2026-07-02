@@ -36,12 +36,15 @@ public static class Program
     /// <param name="devUser"> Uživatelské jméno k dev databázi. </param>
     /// <param name="devPassword"> Heslo k dev databázi. </param>
     /// <param name="deleteRedundant"> Smazat redundantní soubory (jsou na mcrai-upgrade, ale už ne na starém mcrai). </param>
+    /// <param name="ftpHost"> Adresa FTP serveru. </param>
+    /// <param name="ftpHostUpgrade"> Adresa FTP serveru pro upgrade. </param>
     public static async Task Main(string webName, string[]? adminFolders = null, string[]? rootFolders = null,
                                   string baseFolder = "/McRAI", string? db = null, string? user = null, string? password = null,
                                   string host = "127.0.0.1", string? beta = null, string connectionFile = "connection.php",
                                   bool rubicon = false, bool ignoreConnect = false, bool useBackup = false, bool ignoreBackup = false,
                                   bool checkFtp = false, bool ignoreFtp = false, bool upload = false, bool dontUpload = false, bool dontUpgrade = false,
-                                  double ftpMaxMb = 500, string? devDb = null, string? devUser = null, string? devPassword = null, bool deleteRedundant = true)
+                                  double ftpMaxMb = 500, string? devDb = null, string? devUser = null, string? devPassword = null, bool deleteRedundant = true,
+                                  string ftpHost = McraiFtp.DefaultHostname1, string ftpHostUpgrade = McraiFtp.DefaultHostnameUpgrade)
     {
         if (webName is null or { Length: 0 })
         {
@@ -53,30 +56,30 @@ public static class Program
         var startTime = DateTime.Now;
         _baseFolder = baseFolder;
         _webName = webName;
-        _lazyFtp = new(() => new McraiFtp(_webName, _baseFolder, Convert.ToInt64(ftpMaxMb * 1024 * 1024), deleteRedundant));
-        _lazyRubiconFtp = new(() => new McraiFtp($"{_webName}-rubicon", _baseFolder, -1, deleteRedundant, silentLoginParseError: true));
-        _lazyWebUsersFtp = new(() => new McraiFtp($"{_webName}-web_users", _baseFolder, -1, deleteRedundant, silentLoginParseError: true));
+        _lazyFtp = new(() => new McraiFtp(_webName, _baseFolder, Convert.ToInt64(ftpMaxMb * 1024 * 1024), deleteRedundant, ftpHost));
+        _lazyRubiconFtp = new(() => new McraiFtp($"{_webName}-rubicon", _baseFolder, -1, deleteRedundant, ftpHost, silentLoginParseError: true));
+        _lazyWebUsersFtp = new(() => new McraiFtp($"{_webName}-web_users", _baseFolder, -1, deleteRedundant, ftpHost, silentLoginParseError: true));
 
-        //0. fáze: příprava PHP upgraderu (kontrola zadaných argumentů)
+        // 0. fáze: příprava PHP upgraderu (kontrola zadaných argumentů)
         // Může nastat případ, kdy složka webu neexistuje. Uživatel je tázán, zda se pokusit stáhnout z FTP mcrai1.
         var uw = await LoadPhpUpgraderAsync(rubicon, adminFolders, rootFolders, beta,
                                             connectionFile, ignoreConnect, db, user, password, host, dontUpgrade,
                                             devDb, devUser, devPassword).ConfigureAwait(false);
-        if (uw is not null and var (upgrader, workDir)) //PHP upgrader se povedlo inicializovat.
+        if (uw is not null and var (upgrader, workDir)) // PHP upgrader se povedlo inicializovat.
         {
-            //1. fáze: (pokud je vyžadováno)
+            // 1. fáze: (pokud je vyžadováno)
             // Kontrola nově upravených souborů na původním serveru (mcrai1) a jejich případné stažení.
-            await CheckForUpdatesAndDownloadFromFtpAsync(checkFtp, ignoreFtp, upgrader).ConfigureAwait(false);
+            await CheckForUpdatesAndDownloadFromFtpAsync(checkFtp, ignoreFtp, upgrader, ftpHost, ftpHostUpgrade).ConfigureAwait(false);
             if (!dontUpgrade)
             {
-                //2. fáze: Aktualizace celé složky webu
+                // 2. fáze: Aktualizace celé složky webu
                 // (případně i načtení souborů ze zálohy, pokud toto není spuštěno poprvé).
                 RunUpgrade(upgrader, useBackup, ignoreBackup, workDir);
                 PrintUpgradeResults(upgrader);
 
-                //3. fáze: (pokud je vyžadováno)
+                // 3. fáze: (pokud je vyžadováno)
                 // Nahrání veškerých aktualizovaných souborů na nový server.
-                await UploadToFtpAsync(upgrader, upload, dontUpload).ConfigureAwait(false);
+                await UploadToFtpAsync(upgrader, upload, dontUpload, ftpHost, ftpHostUpgrade).ConfigureAwait(false);
             }
         }
         Console.WriteLine($"Celkový čas: {DateTime.Now - startTime}");
@@ -199,7 +202,7 @@ public static class Program
         }
     }
 
-    static async Task CheckForUpdatesAndDownloadFromFtpAsync(bool checkFtp, bool ignoreFtp, PhpUpgraderBase upgrader)
+    static async Task CheckForUpdatesAndDownloadFromFtpAsync(bool checkFtp, bool ignoreFtp, PhpUpgraderBase upgrader, string ftpHost, string ftpHostUpgrade)
     {
         if (ignoreFtp)
         {
@@ -207,23 +210,23 @@ public static class Program
         }
         if (!checkFtp)
         {
-            Console.WriteLine($"Zkontrolovat a případně stáhnout aktuální verze souborů z FTP {McraiFtp.DefaultHostname1}? (y/n)");
+            Console.WriteLine($"Zkontrolovat a případně stáhnout aktuální verze souborů z FTP {ftpHost}? (y/n)");
             checkFtp = Console.Read() == 'y';
         }
-        if (checkFtp)
+        if (checkFtp && !string.Equals(ftpHost, ftpHostUpgrade, StringComparison.Ordinal))
         {
-            await _lazyFtp.Value.UpdateAsync().ConfigureAwait(false);
+            await _lazyFtp.Value.UpdateAsync(ftpHostUpgrade).ConfigureAwait(false);
             if (upgrader is RubiconUpgrader ru)
             {
                 if (ru.HasRubiconOutside)
-                    await _lazyRubiconFtp.Value.UpdateAsync().ConfigureAwait(false);
+                    await _lazyRubiconFtp.Value.UpdateAsync(ftpHostUpgrade).ConfigureAwait(false);
                 if (ru.HasWebUsersOutside)
-                    await _lazyWebUsersFtp.Value.UpdateAsync().ConfigureAwait(false);
+                    await _lazyWebUsersFtp.Value.UpdateAsync(ftpHostUpgrade).ConfigureAwait(false);
             }
         }
     }
 
-    static async Task UploadToFtpAsync(PhpUpgraderBase upgrader, bool upload, bool dontUpload)
+    static async Task UploadToFtpAsync(PhpUpgraderBase upgrader, bool upload, bool dontUpload, string ftpHost, string ftpHostUpgrade)
     {
         if (dontUpload || upgrader.ModifiedFiles.Count == 0 || upgrader.FilesContainingMysql.Count > 0)
         {
@@ -231,18 +234,18 @@ public static class Program
         }
         if (!upload)
         {
-            Console.WriteLine($"Nahrát modifikované soubory na FTP {McraiFtp.DefaultHostnameUpgrade}? (y/n)");
+            Console.WriteLine($"Nahrát modifikované soubory na FTP {ftpHostUpgrade}? (y/n)");
             upload = Console.Read() == 'y';
         }
-        if (upload)
+        if (upload && !string.Equals(ftpHost, ftpHostUpgrade, StringComparison.Ordinal))
         {
-            await _lazyFtp.Value.UploadAsync().ConfigureAwait(false);
+            await _lazyFtp.Value.UploadAsync(ftpHostUpgrade).ConfigureAwait(false);
             if (upgrader is RubiconUpgrader ru)
             {
                 if (ru.HasRubiconOutside)
-                    await _lazyRubiconFtp.Value.UploadAsync().ConfigureAwait(false);
+                    await _lazyRubiconFtp.Value.UploadAsync(ftpHostUpgrade).ConfigureAwait(false);
                 if (ru.HasWebUsersOutside)
-                    await _lazyWebUsersFtp.Value.UploadAsync().ConfigureAwait(false);
+                    await _lazyWebUsersFtp.Value.UploadAsync(ftpHostUpgrade).ConfigureAwait(false);
             }
         }
     }

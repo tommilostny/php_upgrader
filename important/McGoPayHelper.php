@@ -127,6 +127,21 @@ class McGoPayHelper {
         elseif (isset($_GET['orderid'])) $id = $this->mcgopay->getPaymentIDbyOrderID($_GET['orderid']);
 
         if (!isset($id)) {
+            ?>
+            
+            <div class="text-center">
+                <table width="100%">
+                    <tr>
+                        <td width="175px" class="resp_table_500">
+                            <img src="/gopay/img/icons-basket/_gp_nopaid.jpg"/>
+                        </td>
+                        <td class="resp_table_500">
+                            <p class="gp_label gp_red">Stav platby GoPay: <b>Nevytvořena</b></p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <?php
             return false;
         }
 
