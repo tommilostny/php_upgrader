@@ -71,8 +71,14 @@ public abstract class PhpUpgraderBase
         {
             UpgradeAllFilesRecursively(subdir);
         }
+
+        string[] fileExtensions = [".php", ".phtml", ".inc"];
+        var filesEnumerator = Directory
+            .EnumerateFiles(directoryPath)
+            .Where(file => fileExtensions.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase));
+
         //aktualizace aktuální složky
-        foreach (var filePath in Directory.GetFiles(directoryPath, "*.php"))
+        foreach (var filePath in filesEnumerator)
         {
             if (filePath.EndsWith("mssql_overwrite.php", StringComparison.Ordinal))
                 continue;

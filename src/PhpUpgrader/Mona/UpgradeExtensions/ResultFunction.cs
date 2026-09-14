@@ -2,8 +2,8 @@
 
 public static partial class ResultFunction
 {
-    private static readonly string[] _oldResultFuncs = { "mysql_result", "pg_result" };
-    private static readonly string[] _newNumRowsFuncs = { "mysqli_num_rows", "pg_num_rows" };
+    private static readonly string[] _oldResultFuncs = ["mysql_result", "pg_result"];
+    private static readonly string[] _newNumRowsFuncs = ["mysqli_num_rows", "pg_num_rows"];
     private static readonly string _secureLoginPhp = Path.Join("funkce", "secure", "login.php");
 
     /// <summary>
@@ -45,6 +45,11 @@ public static partial class ResultFunction
                     if (upgrader is not RubiconUpgrader)
                     {
                         file.Warnings.Add($"Neobvyklé použití {oldResultFunc}!");
+
+                        currentLine.Replace(IncMysqlResultRegex().Replace(
+                            currentLine.ToString(),
+                            m => $"mysqli_fetch_array({m.Groups["query"]})['{m.Groups["column"]}'];"
+                        ));
                         continue;
                     }
                     currentLine.Replace(oldResultFunc, "pg_fetch_result");
@@ -61,4 +66,7 @@ public static partial class ResultFunction
 
     [GeneratedRegex(@"\$loginStrGroup\s*=\s*mysql_result\(\$LoginRS,\s*0,\s*'valid'\);\s*\n\s*\$loginUserid\s*=\s*mysql_result\(\$LoginRS,\s*0,\s*'user_id'\);", RegexOptions.None, matchTimeoutMilliseconds: 66666)]
     private static partial Regex LoginMysqlResultRegex();
+
+    [GeneratedRegex(@"mysql_result\s*?\((?<query>mysqli?_query\s*?\((\$beta,\s)?""SELECT\s*?(?<column>[^\s]+).*?\)).*?;", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 66666)]
+    private static partial Regex IncMysqlResultRegex();
 }
